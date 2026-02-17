@@ -2,6 +2,9 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Globe, ArrowRight, Check, MapPin, Compass, Heart, Coffee, Mountain, Palette, BookOpen, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const personalities = [
   { id: "explorer", emoji: "🧭", title: "The Explorer", desc: "You chase horizons and unmarked trails" },
@@ -57,8 +60,18 @@ const Onboarding = () => {
     (step === 2 && selectedPlaces.length > 0) ||
     (step === 3 && selectedInterests.length > 0);
 
-  const handleNext = () => {
+  const { user } = useAuth();
+
+  const handleNext = async () => {
     if (step === 3) {
+      // Save personality & interests to profile
+      if (user) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ personality: personality || "", interests: selectedInterests })
+          .eq("user_id", user.id);
+        if (error) toast.error("Failed to save preferences");
+      }
       localStorage.setItem("globethrotters_onboarded", "true");
       navigate("/");
     } else {

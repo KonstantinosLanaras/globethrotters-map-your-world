@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      credit_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       list_places: {
         Row: {
           added_at: string
@@ -208,6 +235,56 @@ export type Database = {
         }
         Relationships: []
       }
+      promoted_places: {
+        Row: {
+          business_name: string
+          business_type: string
+          created_at: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          impressions: number
+          is_active: boolean
+          place_id: string | null
+          quality_score: number
+          website_url: string | null
+        }
+        Insert: {
+          business_name: string
+          business_type?: string
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          impressions?: number
+          is_active?: boolean
+          place_id?: string | null
+          quality_score?: number
+          website_url?: string | null
+        }
+        Update: {
+          business_name?: string
+          business_type?: string
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          impressions?: number
+          is_active?: boolean
+          place_id?: string | null
+          quality_score?: number
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promoted_places_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           created_at: string
@@ -339,6 +416,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_credits: {
+        Row: {
+          ad_opt_in: boolean
+          balance: number
+          created_at: string
+          id: string
+          lifetime_earned: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ad_opt_in?: boolean
+          balance?: number
+          created_at?: string
+          id?: string
+          lifetime_earned?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ad_opt_in?: boolean
+          balance?: number
+          created_at?: string
+          id?: string
+          lifetime_earned?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

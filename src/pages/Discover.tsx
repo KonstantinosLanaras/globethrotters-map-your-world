@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import { Compass, TrendingUp, MapPin, Star } from "lucide-react";
+import { Compass, TrendingUp, MapPin, Star, Sparkles } from "lucide-react";
+import { usePromotedPlaces } from "@/hooks/usePromotedPlaces";
+import PromotedCard from "@/components/PromotedCard";
 
 const featured = [
   { title: "Hidden Kyoto", subtitle: "Beyond the tourist temples", emoji: "⛩️", tag: "Culture" },
@@ -16,6 +18,8 @@ const trending = [
 ];
 
 const Discover = () => {
+  const { data: promoted = [] } = usePromotedPlaces();
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -58,6 +62,21 @@ const Discover = () => {
             ))}
           </div>
         </section>
+
+        {/* Promoted Discovery */}
+        {promoted.length > 0 && (
+          <section className="mb-10">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <h2 className="font-display text-lg font-medium text-foreground">Curated Picks</h2>
+            </div>
+            <div className="space-y-3">
+              {promoted.map((place) => (
+                <PromotedCard key={place.id} place={place} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Trending */}
         <section>

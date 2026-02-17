@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import TrustScoreCard from "@/components/TrustScoreCard";
 import TravelerLevelCard from "@/components/TravelerLevelCard";
+import CreditsDashboard from "@/components/CreditsDashboard";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -85,6 +86,16 @@ const Profile = () => {
           className="mb-6"
         >
           <TravelerLevelCard level={level} />
+        </motion.div>
+
+        {/* Credits */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.28 }}
+          className="mb-6"
+        >
+          <CreditsDashboard />
         </motion.div>
 
         {/* Interests */}

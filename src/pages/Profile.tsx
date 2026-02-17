@@ -4,9 +4,11 @@ import { User, Globe, MapPin, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { usePlaces } from "@/hooks/usePlaces";
+import { useTravelerLevel } from "@/hooks/useTravelerLevel";
 import { useNavigate } from "react-router-dom";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import TrustScoreCard from "@/components/TrustScoreCard";
+import TravelerLevelCard from "@/components/TravelerLevelCard";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -17,6 +19,7 @@ const Profile = () => {
   const visitedCount = places.filter((p) => p.type === "visited").length;
   const wishlistCount = places.filter((p) => p.type === "wishlist").length;
   const countries = new Set(places.filter((p) => p.type === "visited").map((p) => p.country)).size;
+  const level = useTravelerLevel(places);
 
   const handleSignOut = async () => {
     await signOut();
@@ -72,6 +75,16 @@ const Profile = () => {
             trustScore={profile?.trust_score ?? 0}
             isVerified={profile?.is_verified ?? false}
           />
+        </motion.div>
+
+        {/* Traveler Level */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mb-6"
+        >
+          <TravelerLevelCard level={level} />
         </motion.div>
 
         {/* Interests */}

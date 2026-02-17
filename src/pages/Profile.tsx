@@ -1,10 +1,12 @@
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import { User, Globe, MapPin, Trophy, LogOut, Shield } from "lucide-react";
+import { User, Globe, MapPin, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { usePlaces } from "@/hooks/usePlaces";
 import { useNavigate } from "react-router-dom";
+import VerifiedBadge from "@/components/VerifiedBadge";
+import TrustScoreCard from "@/components/TrustScoreCard";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -34,9 +36,12 @@ const Profile = () => {
           <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
             <User className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h1 className="font-display text-2xl font-semibold text-foreground">
-            {profile?.display_name || "Traveler"}
-          </h1>
+          <div className="flex items-center justify-center gap-1.5">
+            <h1 className="font-display text-2xl font-semibold text-foreground">
+              {profile?.display_name || "Traveler"}
+            </h1>
+            <VerifiedBadge isVerified={profile?.is_verified ?? false} size="md" />
+          </div>
           <p className="text-xs text-muted-foreground mt-1">{user?.email}</p>
           <div className="flex items-center justify-center gap-1.5 mt-2">
             <Shield className="w-3.5 h-3.5 text-muted-foreground" />
@@ -49,11 +54,24 @@ const Profile = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="grid grid-cols-3 gap-3 mb-8"
+          className="grid grid-cols-3 gap-3 mb-6"
         >
           <StatCard icon={<Globe className="w-4 h-4" />} value={countries} label="Countries" />
           <StatCard icon={<MapPin className="w-4 h-4" />} value={visitedCount} label="Visited" />
           <StatCard icon={<MapPin className="w-4 h-4" />} value={wishlistCount} label="Wishlist" />
+        </motion.div>
+
+        {/* Trust Score */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-6"
+        >
+          <TrustScoreCard
+            trustScore={profile?.trust_score ?? 0}
+            isVerified={profile?.is_verified ?? false}
+          />
         </motion.div>
 
         {/* Interests */}

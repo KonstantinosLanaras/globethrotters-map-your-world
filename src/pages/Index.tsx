@@ -1,11 +1,21 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import WorldMap from "@/components/WorldMap";
+import Navbar from "@/components/Navbar";
+import SidePanel from "@/components/SidePanel";
+import LocationPanel from "@/components/LocationPanel";
+import { samplePins } from "@/data/sampleData";
+import { Pin } from "@/types/travel";
 
 const Index = () => {
+  const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="h-screen w-screen overflow-hidden relative">
+      <Navbar />
+      <SidePanel />
+      <LocationPanel pin={selectedPin} onClose={() => setSelectedPin(null)} />
+      <div className="absolute inset-0 pt-[73px]">
+        <WorldMap pins={samplePins} onPinClick={setSelectedPin} />
       </div>
     </div>
   );

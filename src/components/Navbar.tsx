@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Globe, Compass, Bookmark, User, Menu, X, Map } from "lucide-react";
+import { Compass, Bookmark, User, Menu, X, Map } from "lucide-react";
+import GlobethrottersLogo from "@/components/GlobethrottersLogo";
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -22,11 +23,8 @@ const Navbar = () => {
       transition={{ duration: 0.5 }}
       className="fixed top-0 left-0 right-0 z-[1000] flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-xl border-b border-border"
     >
-      <button onClick={() => navigate("/")} className="flex items-center gap-2">
-        <Globe className="w-6 h-6 text-primary" />
-        <span className="font-display text-xl font-semibold text-foreground tracking-tight">
-          Globethrotters
-        </span>
+      <button onClick={() => navigate("/")}>
+        <GlobethrottersLogo variant="full" size={28} animate={false} className="text-foreground" />
       </button>
 
       {/* Desktop nav */}

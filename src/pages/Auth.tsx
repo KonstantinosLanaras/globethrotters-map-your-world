@@ -6,86 +6,134 @@ import { lovable } from "@/integrations/lovable";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-/* ── Refined illustrated globe ── */
+/* ── Refined illustrated globe — based on founder's sketch ── */
 const IllustratedGlobe = () => (
-  <svg viewBox="0 0 600 600" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Main globe circle */}
-    <circle cx="300" cy="310" r="200"
-      stroke="hsl(var(--foreground))" strokeWidth="0.6" opacity="0.1" />
-    <circle cx="300" cy="310" r="200"
-      stroke="hsl(var(--foreground))" strokeWidth="0.3" opacity="0.05"
-      transform="rotate(8 300 310)" />
+  <svg viewBox="0 0 600 620" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Globe circle — slightly organic, hand-drawn feel */}
+    <circle cx="300" cy="340" r="210"
+      stroke="hsl(var(--foreground))" strokeWidth="1.2" opacity="0.12" />
+    <circle cx="300" cy="340" r="210"
+      stroke="hsl(var(--foreground))" strokeWidth="0.4" opacity="0.06"
+      strokeDasharray="3 5" />
 
     {/* Latitude lines */}
-    {[-80, -50, -20, 10, 40, 70].map((offset, i) => {
-      const y = 310 + offset;
-      const rx = Math.sqrt(Math.max(0, 200 * 200 - offset * offset));
+    {[-120, -70, -25, 25, 70, 120].map((offset, i) => {
+      const y = 340 + offset;
+      const rx = Math.sqrt(Math.max(0, 210 * 210 - offset * offset));
       return (
         <ellipse key={`lat-${i}`} cx="300" cy={y} rx={rx} ry={6}
-          stroke="hsl(var(--foreground))" strokeWidth="0.3"
+          stroke="hsl(var(--foreground))" strokeWidth="0.4"
           opacity={0.06} fill="none" />
       );
     })}
 
     {/* Longitude meridians */}
-    {[-80, -40, 0, 40, 80].map((offset, i) => (
-      <ellipse key={`lng-${i}`} cx={300 + offset} cy="310"
-        rx={28} ry="200"
-        stroke="hsl(var(--foreground))" strokeWidth="0.3"
+    {[-100, -50, 0, 50, 100].map((offset, i) => (
+      <ellipse key={`lng-${i}`} cx={300 + offset * 0.6} cy="340"
+        rx={30} ry="210"
+        stroke="hsl(var(--foreground))" strokeWidth="0.4"
         opacity={0.05} fill="none" />
     ))}
 
-    {/* Landmasses — refined, organic shapes */}
-    <path d="M220 270 Q248 248 280 255 Q305 242 330 252 Q358 240 378 260 Q390 278 380 292 Q362 305 335 298 Q310 308 285 300 Q258 308 238 295 Q215 282 220 270Z"
-      fill="hsl(var(--sand))" opacity="0.5" />
-    <path d="M350 310 Q372 296 395 305 Q412 298 418 318 Q414 338 400 342 Q382 345 368 335 Q350 330 350 310Z"
-      fill="hsl(var(--sand))" opacity="0.4" />
-    <path d="M250 325 Q268 312 288 320 Q300 314 306 328 Q304 348 290 352 Q272 354 260 342 Q246 335 250 325Z"
+    {/* Continents — simplified, organic, hand-drawn shapes */}
+    {/* Europe */}
+    <path d="M280 260 Q295 250 315 255 Q335 248 348 262 Q355 275 345 288 Q330 295 310 290 Q290 296 278 285 Q268 272 280 260Z"
+      fill="hsl(var(--sand))" opacity="0.5" stroke="hsl(var(--foreground))" strokeWidth="0.3" strokeOpacity="0.08" />
+    {/* Africa */}
+    <path d="M290 310 Q308 298 322 305 Q332 300 340 318 Q345 340 338 360 Q330 378 315 380 Q298 376 290 358 Q284 340 285 325Z"
+      fill="hsl(var(--sand))" opacity="0.4" stroke="hsl(var(--foreground))" strokeWidth="0.3" strokeOpacity="0.06" />
+    {/* Americas */}
+    <path d="M180 280 Q198 268 210 278 Q218 290 215 308 Q210 330 200 345 Q188 355 178 345 Q170 330 172 310 Q175 295 180 280Z"
       fill="hsl(var(--sand))" opacity="0.35" />
-    <path d="M295 365 Q312 355 335 360 Q348 358 350 374 Q346 388 332 390 Q314 392 302 382 Q290 375 295 365Z"
+    {/* South America */}
+    <path d="M195 360 Q210 350 215 365 Q218 385 210 400 Q200 410 190 400 Q184 388 188 372Z"
       fill="hsl(var(--sand))" opacity="0.3" />
+    {/* Asia */}
+    <path d="M355 265 Q378 258 400 268 Q418 278 415 298 Q408 315 390 318 Q370 320 358 308 Q348 295 350 278Z"
+      fill="hsl(var(--sand))" opacity="0.35" />
+    {/* Australia */}
+    <path d="M390 380 Q405 372 418 380 Q425 392 418 402 Q405 408 394 400 Q386 392 390 380Z"
+      fill="hsl(var(--sand))" opacity="0.25" />
 
-    {/* Small place markers */}
+    {/* Place markers with tiny labels — like in the sketch */}
     {[
-      [265, 265], [320, 255], [370, 268], [395, 310],
-      [278, 328], [340, 300], [310, 370], [240, 288],
-      [360, 340], [300, 390],
-    ].map(([cx, cy], i) => (
-      <circle key={`p-${i}`} cx={cx} cy={cy} r={1.2}
-        fill="hsl(var(--primary))" opacity={0.15 + (i % 4) * 0.08} />
+      { x: 295, y: 268, label: "London" },
+      { x: 340, y: 280, label: "" },
+      { x: 195, y: 290, label: "NYC" },
+      { x: 380, y: 275, label: "" },
+      { x: 310, y: 340, label: "" },
+      { x: 200, y: 375, label: "" },
+      { x: 405, y: 385, label: "" },
+      { x: 250, y: 300, label: "" },
+    ].map(({ x, y, label }, i) => (
+      <g key={`marker-${i}`}>
+        {/* Pin dot */}
+        <circle cx={x} cy={y} r={2}
+          fill="hsl(var(--primary))" opacity={0.25 + (i % 3) * 0.1} />
+        {/* Pin line */}
+        <line x1={x} y1={y - 2} x2={x} y2={y - 7}
+          stroke="hsl(var(--primary))" strokeWidth="0.6" opacity={0.2} />
+        {/* Label */}
+        {label && (
+          <text x={x + 5} y={y - 4} fontSize="7"
+            fontFamily="var(--font-body)" fill="hsl(var(--foreground))" opacity="0.15">
+            {label}
+          </text>
+        )}
+      </g>
     ))}
 
-    {/* Walking figure — minimal, abstract silhouette */}
+    {/* Walking figure — larger, poetic, gender-neutral (matching sketch) */}
     <motion.g
-      animate={{ x: [0, 4, 0], y: [0, -1, 0] }}
+      animate={{ x: [0, 5, 0], y: [0, -2, 0] }}
       transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
     >
       {/* Head */}
-      <circle cx="298" cy="200" r="3" fill="hsl(var(--foreground))" opacity="0.35" />
+      <circle cx="300" cy="100" r="10" fill="hsl(var(--foreground))" opacity="0.3" />
+
+      {/* Neck */}
+      <line x1="300" y1="110" x2="300" y2="116"
+        stroke="hsl(var(--foreground))" strokeWidth="1.8" opacity="0.28" strokeLinecap="round" />
+
       {/* Torso */}
-      <line x1="298" y1="203" x2="298" y2="216"
-        stroke="hsl(var(--foreground))" strokeWidth="0.9" opacity="0.35" strokeLinecap="round" />
-      {/* Arms */}
-      <line x1="298" y1="207" x2="293.5" y2="213"
-        stroke="hsl(var(--foreground))" strokeWidth="0.7" opacity="0.3" strokeLinecap="round" />
-      <line x1="298" y1="207" x2="302.5" y2="212"
-        stroke="hsl(var(--foreground))" strokeWidth="0.7" opacity="0.3" strokeLinecap="round" />
-      {/* Legs */}
-      <motion.line x1="298" y1="216"
-        animate={{ x2: [302, 294, 302], y2: [225, 225, 225] }}
-        transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-        stroke="hsl(var(--foreground))" strokeWidth="0.7" opacity="0.3" strokeLinecap="round" />
-      <motion.line x1="298" y1="216"
-        animate={{ x2: [294, 302, 294], y2: [225, 225, 225] }}
-        transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-        stroke="hsl(var(--foreground))" strokeWidth="0.7" opacity="0.3" strokeLinecap="round" />
+      <line x1="300" y1="116" x2="300" y2="148"
+        stroke="hsl(var(--foreground))" strokeWidth="2" opacity="0.28" strokeLinecap="round" />
+
+      {/* Arms — natural walking swing */}
+      <motion.line x1="300" y1="122"
+        animate={{ x2: [288, 312, 288], y2: [138, 136, 138] }}
+        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        stroke="hsl(var(--foreground))" strokeWidth="1.4" opacity="0.22" strokeLinecap="round" />
+      <motion.line x1="300" y1="122"
+        animate={{ x2: [312, 288, 312], y2: [136, 138, 136] }}
+        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        stroke="hsl(var(--foreground))" strokeWidth="1.4" opacity="0.22" strokeLinecap="round" />
+
+      {/* Legs — walking stride */}
+      <motion.line x1="300" y1="148"
+        animate={{ x2: [314, 286, 314], y2: [170, 170, 170] }}
+        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        stroke="hsl(var(--foreground))" strokeWidth="1.6" opacity="0.25" strokeLinecap="round" />
+      <motion.line x1="300" y1="148"
+        animate={{ x2: [286, 314, 286], y2: [170, 170, 170] }}
+        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        stroke="hsl(var(--foreground))" strokeWidth="1.6" opacity="0.25" strokeLinecap="round" />
+
+      {/* Small backpack hint */}
+      <rect x="302" y="118" width="6" height="10" rx="2"
+        fill="hsl(var(--foreground))" opacity="0.1" />
     </motion.g>
 
-    {/* Trail dots */}
-    {[265, 273, 281, 289].map((x, i) => (
-      <circle key={`t-${i}`} cx={x} cy={224 - (289 - x) * 0.08} r={0.5}
-        fill="hsl(var(--foreground))" opacity={0.05 + i * 0.03} />
+    {/* Footstep trail */}
+    {[260, 268, 276, 284, 292].map((x, i) => (
+      <circle key={`step-${i}`} cx={x} cy={172 - i * 0.8} r={0.8}
+        fill="hsl(var(--foreground))" opacity={0.04 + i * 0.02} />
     ))}
+
+    {/* Horizon line — hand-drawn feel */}
+    <line x1="80" y1="555" x2="520" y2="555"
+      stroke="hsl(var(--foreground))" strokeWidth="0.4" opacity="0.06"
+      strokeDasharray="2 4" />
   </svg>
 );
 

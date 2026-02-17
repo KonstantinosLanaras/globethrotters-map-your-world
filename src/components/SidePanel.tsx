@@ -1,8 +1,13 @@
 import { motion } from "framer-motion";
 import { MapPin, Globe, Trophy, ChevronRight, Bookmark } from "lucide-react";
 import { travelStats, curatedLists } from "@/data/sampleData";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const SidePanel = () => {
+  const isMobile = useIsMobile();
+
+  if (isMobile) return null;
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -19,7 +24,6 @@ const SidePanel = () => {
           </span>
         </div>
 
-        {/* Progress bar */}
         <div className="mb-2">
           <div className="flex justify-between text-xs text-muted-foreground mb-1">
             <span>{travelStats.progress}%</span>
@@ -35,21 +39,11 @@ const SidePanel = () => {
           </div>
         </div>
 
-        {/* Quick stats */}
         <div className="grid grid-cols-2 gap-3 mt-4">
-          <StatCard
-            icon={<Globe className="w-3.5 h-3.5" />}
-            value={travelStats.countriesVisited}
-            label="Countries"
-          />
-          <StatCard
-            icon={<MapPin className="w-3.5 h-3.5" />}
-            value={travelStats.totalPins}
-            label="Pins"
-          />
+          <StatCard icon={<Globe className="w-3.5 h-3.5" />} value={travelStats.countriesVisited} label="Countries" />
+          <StatCard icon={<MapPin className="w-3.5 h-3.5" />} value={travelStats.totalPins} label="Pins" />
         </div>
 
-        {/* Pin legend */}
         <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full bg-visited" />
@@ -79,12 +73,8 @@ const SidePanel = () => {
             >
               <span className="text-lg">{list.emoji}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {list.title}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {list.pinCount} places
-                </p>
+                <p className="text-sm font-medium text-foreground truncate">{list.title}</p>
+                <p className="text-xs text-muted-foreground truncate">{list.pinCount} places</p>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </motion.button>
@@ -97,10 +87,7 @@ const SidePanel = () => {
         <p className="text-xs text-muted-foreground mb-2">Recent Badges</p>
         <div className="flex flex-wrap gap-1.5">
           {travelStats.badges.slice(0, 3).map((badge) => (
-            <span
-              key={badge}
-              className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-medium"
-            >
+            <span key={badge} className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-medium">
               {badge}
             </span>
           ))}
@@ -110,21 +97,11 @@ const SidePanel = () => {
   );
 };
 
-const StatCard = ({
-  icon,
-  value,
-  label,
-}: {
-  icon: React.ReactNode;
-  value: number;
-  label: string;
-}) => (
+const StatCard = ({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) => (
   <div className="flex items-center gap-2 p-2.5 rounded-xl bg-muted/60">
     <div className="text-primary">{icon}</div>
     <div>
-      <p className="text-lg font-display font-semibold text-foreground leading-none">
-        {value}
-      </p>
+      <p className="text-lg font-display font-semibold text-foreground leading-none">{value}</p>
       <p className="text-[10px] text-muted-foreground">{label}</p>
     </div>
   </div>

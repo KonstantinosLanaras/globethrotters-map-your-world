@@ -62,35 +62,35 @@ const GlobethrottersLogo = ({
         stroke="currentColor" strokeWidth="0.4" opacity="0.08" />
 
       {/* Continents — clearer, more recognizable shapes */}
-      {/* Europe + Mediterranean */}
+      {/* Europe */}
       <path
-        d="M44 40 Q47 37 51 39 Q54 37 57 40 Q58 44 56 47 Q53 49 50 48 Q46 50 44 47 Q42 44 44 40Z"
-        fill="currentColor" opacity="0.18" stroke="currentColor" strokeWidth="0.3" strokeOpacity="0.1"
+        d="M43 39 Q46 36 50 37 Q53 36 56 38 Q58 41 57 45 Q55 48 52 47 Q48 49 45 47 Q42 44 43 39Z"
+        fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeWidth="0.8" opacity="0.45" strokeLinejoin="round"
       />
-      {/* Africa — elongated south */}
+      {/* Africa */}
       <path
-        d="M47 51 Q51 49 54 51 Q56 49 58 54 Q59 60 56 66 Q53 70 50 69 Q47 68 46 63 Q44 57 46 53Z"
-        fill="currentColor" opacity="0.15" stroke="currentColor" strokeWidth="0.3" strokeOpacity="0.08"
+        d="M47 50 Q51 48 55 50 Q57 48 58 53 Q59 59 57 65 Q54 69 51 68 Q48 67 46 62 Q44 56 46 52Z"
+        fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="0.8" opacity="0.4" strokeLinejoin="round"
       />
       {/* North America */}
       <path
-        d="M26 42 Q30 38 34 41 Q37 44 36 50 Q34 56 30 58 Q26 56 25 52 Q24 48 26 42Z"
-        fill="currentColor" opacity="0.14" stroke="currentColor" strokeWidth="0.3" strokeOpacity="0.08"
+        d="M26 41 Q29 37 33 39 Q36 42 36 48 Q34 54 31 57 Q27 55 25 51 Q24 47 26 41Z"
+        fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="0.8" opacity="0.4" strokeLinejoin="round"
       />
       {/* South America */}
       <path
-        d="M30 62 Q34 58 36 62 Q37 68 34 73 Q30 76 28 72 Q26 68 30 62Z"
-        fill="currentColor" opacity="0.12" stroke="currentColor" strokeWidth="0.3" strokeOpacity="0.06"
+        d="M30 60 Q34 57 36 61 Q37 67 34 72 Q31 75 28 71 Q26 66 30 60Z"
+        fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeWidth="0.7" opacity="0.35" strokeLinejoin="round"
       />
-      {/* Asia — broad mass */}
+      {/* Asia */}
       <path
-        d="M60 38 Q66 36 72 40 Q76 44 74 50 Q70 54 66 52 Q62 50 60 46 Q58 42 60 38Z"
-        fill="currentColor" opacity="0.14" stroke="currentColor" strokeWidth="0.3" strokeOpacity="0.08"
+        d="M60 37 Q65 35 71 38 Q75 42 74 48 Q70 53 66 51 Q62 49 60 45 Q58 41 60 37Z"
+        fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="0.8" opacity="0.4" strokeLinejoin="round"
       />
       {/* Australia */}
       <path
-        d="M66 64 Q70 61 74 64 Q76 68 73 72 Q70 74 67 71 Q64 68 66 64Z"
-        fill="currentColor" opacity="0.1" stroke="currentColor" strokeWidth="0.3" strokeOpacity="0.06"
+        d="M66 63 Q70 60 74 63 Q76 67 73 71 Q70 73 67 70 Q64 67 66 63Z"
+        fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeWidth="0.7" opacity="0.35" strokeLinejoin="round"
       />
 
       {/* Walking figure — gender-neutral, poetic, on top of globe */}

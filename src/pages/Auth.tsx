@@ -35,19 +35,31 @@ const IllustratedGlobe = () => (
         opacity={0.08} fill="none" />
     ))}
 
-    {/* Continents */}
-    <path d="M280 260 Q295 250 315 255 Q335 248 348 262 Q355 275 345 288 Q330 295 310 290 Q290 296 278 285 Q268 272 280 260Z"
-      fill="hsl(var(--sand))" opacity="0.7" stroke="hsl(var(--foreground))" strokeWidth="0.5" strokeOpacity="0.15" />
-    <path d="M290 310 Q308 298 322 305 Q332 300 340 318 Q345 340 338 360 Q330 378 315 380 Q298 376 290 358 Q284 340 285 325Z"
-      fill="hsl(var(--sand))" opacity="0.6" stroke="hsl(var(--foreground))" strokeWidth="0.5" strokeOpacity="0.12" />
-    <path d="M180 280 Q198 268 210 278 Q218 290 215 308 Q210 330 200 345 Q188 355 178 345 Q170 330 172 310 Q175 295 180 280Z"
-      fill="hsl(var(--sand))" opacity="0.55" stroke="hsl(var(--foreground))" strokeWidth="0.4" strokeOpacity="0.1" />
-    <path d="M195 360 Q210 350 215 365 Q218 385 210 400 Q200 410 190 400 Q184 388 188 372Z"
-      fill="hsl(var(--sand))" opacity="0.5" stroke="hsl(var(--foreground))" strokeWidth="0.4" strokeOpacity="0.1" />
-    <path d="M355 265 Q378 258 400 268 Q418 278 415 298 Q408 315 390 318 Q370 320 358 308 Q348 295 350 278Z"
-      fill="hsl(var(--sand))" opacity="0.55" stroke="hsl(var(--foreground))" strokeWidth="0.4" strokeOpacity="0.1" />
-    <path d="M390 380 Q405 372 418 380 Q425 392 418 402 Q405 408 394 400 Q386 392 390 380Z"
-      fill="hsl(var(--sand))" opacity="0.45" stroke="hsl(var(--foreground))" strokeWidth="0.4" strokeOpacity="0.1" />
+    {/* Continents — clear outlines, hand-drawn style */}
+    {/* Europe — Iberia, Italy boot, Scandinavia hint */}
+    <path d="M275 258 Q280 250 290 248 L298 250 Q305 247 312 249 L320 248 Q330 245 340 250 Q348 255 350 262 Q352 270 348 278 L345 284 Q340 290 332 292 Q325 290 318 288 L310 290 Q302 294 295 292 Q288 296 280 290 Q274 284 272 276 Q270 268 275 258Z"
+      fill="hsl(var(--sand))" fillOpacity="0.35" stroke="hsl(var(--foreground))" strokeWidth="1.2" strokeOpacity="0.35" strokeLinejoin="round" />
+    {/* Africa — triangular, wider north, tapers south */}
+    <path d="M288 305 Q295 300 305 298 Q315 297 325 300 Q335 298 342 308 L345 320 Q348 335 345 350 Q342 362 335 372 Q328 380 318 383 Q308 384 300 380 Q293 375 290 365 L287 350 Q283 338 284 325 Q285 315 288 305Z"
+      fill="hsl(var(--sand))" fillOpacity="0.3" stroke="hsl(var(--foreground))" strokeWidth="1.2" strokeOpacity="0.3" strokeLinejoin="round" />
+    {/* North America — broad, recognizable */}
+    <path d="M172 270 Q180 258 192 255 Q202 258 210 265 Q218 272 220 282 L218 295 Q216 310 210 322 Q205 332 198 340 Q190 348 182 345 Q175 340 170 330 L168 315 Q165 300 167 285Z"
+      fill="hsl(var(--sand))" fillOpacity="0.28" stroke="hsl(var(--foreground))" strokeWidth="1.1" strokeOpacity="0.28" strokeLinejoin="round" />
+    {/* Central America bridge */}
+    <path d="M198 345 Q202 348 205 355 Q203 362 198 365 Q194 360 195 352Z"
+      fill="hsl(var(--sand))" fillOpacity="0.2" stroke="hsl(var(--foreground))" strokeWidth="0.8" strokeOpacity="0.22" strokeLinejoin="round" />
+    {/* South America */}
+    <path d="M195 365 Q205 358 212 365 Q218 375 216 388 Q212 400 205 408 Q198 412 190 406 Q184 398 182 386 Q182 375 188 368Z"
+      fill="hsl(var(--sand))" fillOpacity="0.25" stroke="hsl(var(--foreground))" strokeWidth="1.1" strokeOpacity="0.25" strokeLinejoin="round" />
+    {/* Asia — large mass, with subcontinent */}
+    <path d="M352 258 Q362 252 375 254 Q388 252 400 258 Q412 265 418 275 Q422 288 418 300 Q412 310 402 315 Q392 320 380 318 Q370 322 360 316 Q352 310 348 300 Q345 290 346 278 Q348 268 352 258Z"
+      fill="hsl(var(--sand))" fillOpacity="0.28" stroke="hsl(var(--foreground))" strokeWidth="1.1" strokeOpacity="0.28" strokeLinejoin="round" />
+    {/* India subcontinent */}
+    <path d="M378 320 Q385 318 390 325 Q392 335 388 342 Q382 346 378 340 Q374 332 378 320Z"
+      fill="hsl(var(--sand))" fillOpacity="0.2" stroke="hsl(var(--foreground))" strokeWidth="0.8" strokeOpacity="0.22" strokeLinejoin="round" />
+    {/* Australia */}
+    <path d="M388 378 Q398 370 410 372 Q420 376 424 386 Q425 396 420 404 Q412 410 402 408 Q392 404 388 396 Q385 388 388 378Z"
+      fill="hsl(var(--sand))" fillOpacity="0.22" stroke="hsl(var(--foreground))" strokeWidth="1" strokeOpacity="0.25" strokeLinejoin="round" />
 
     {/* Place markers */}
     {[

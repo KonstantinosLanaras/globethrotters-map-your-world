@@ -3,6 +3,7 @@ import WorldMap from "@/components/WorldMap";
 import Navbar from "@/components/Navbar";
 import SidePanel from "@/components/SidePanel";
 import LocationPanel from "@/components/LocationPanel";
+import GlobethrottersLogo from "@/components/GlobethrottersLogo";
 import { usePlaces, Place } from "@/hooks/usePlaces";
 import { Pin } from "@/types/travel";
 
@@ -30,6 +31,10 @@ const Index = () => {
       <Navbar />
       <SidePanel />
       <LocationPanel pin={selectedPin} onClose={() => setSelectedPin(null)} />
+      {/* Subtle brand watermark */}
+      <div className="absolute bottom-4 right-4 z-[500] opacity-20 hover:opacity-40 transition-opacity duration-500 pointer-events-none">
+        <GlobethrottersLogo variant="icon" size={36} animate={false} className="text-foreground" />
+      </div>
       <div className="absolute inset-0 pt-[73px]">
         <WorldMap pins={pins} onPinClick={setSelectedPin} />
       </div>

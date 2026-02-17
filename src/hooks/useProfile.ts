@@ -10,6 +10,9 @@ export interface Profile {
   personality: string;
   interests: string[];
   privacy: "private" | "friends" | "public";
+  is_verified: boolean;
+  trust_score: number;
+  verified_at: string | null;
   created_at: string;
   updated_at: string;
 }

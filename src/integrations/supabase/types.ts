@@ -170,10 +170,13 @@ export type Database = {
           display_name: string | null
           id: string
           interests: string[] | null
+          is_verified: boolean
           personality: string | null
           privacy: string
+          trust_score: number
           updated_at: string
           user_id: string
+          verified_at: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -181,10 +184,13 @@ export type Database = {
           display_name?: string | null
           id?: string
           interests?: string[] | null
+          is_verified?: boolean
           personality?: string | null
           privacy?: string
+          trust_score?: number
           updated_at?: string
           user_id: string
+          verified_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -192,12 +198,147 @@ export type Database = {
           display_name?: string | null
           id?: string
           interests?: string[] | null
+          is_verified?: boolean
           personality?: string | null
           privacy?: string
+          trust_score?: number
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          reported_place_id: string | null
+          reported_user_id: string | null
+          reporter_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason: string
+          reported_place_id?: string | null
+          reported_user_id?: string | null
+          reporter_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          reported_place_id?: string | null
+          reported_user_id?: string | null
+          reporter_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_reported_place_id_fkey"
+            columns: ["reported_place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_scores: {
+        Row: {
+          authenticity_score: number
+          created_at: string
+          depth_score: number
+          has_detailed_notes: boolean
+          has_photos: boolean
+          has_specific_tags: boolean
+          id: string
+          place_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          authenticity_score?: number
+          created_at?: string
+          depth_score?: number
+          has_detailed_notes?: boolean
+          has_photos?: boolean
+          has_specific_tags?: boolean
+          id?: string
+          place_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          authenticity_score?: number
+          created_at?: string
+          depth_score?: number
+          has_detailed_notes?: boolean
+          has_photos?: boolean
+          has_specific_tags?: boolean
+          id?: string
+          place_id?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "review_scores_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spam_flags: {
+        Row: {
+          confidence: number
+          created_at: string
+          details: Json | null
+          flag_type: string
+          id: string
+          place_id: string | null
+          resolved: boolean
+          user_id: string
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          details?: Json | null
+          flag_type: string
+          id?: string
+          place_id?: string | null
+          resolved?: boolean
+          user_id: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          details?: Json | null
+          flag_type?: string
+          id?: string
+          place_id?: string | null
+          resolved?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spam_flags_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

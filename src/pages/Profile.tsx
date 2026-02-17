@@ -1,9 +1,26 @@
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import { User, Globe, MapPin, Trophy, ChevronRight } from "lucide-react";
-import { travelStats } from "@/data/sampleData";
+import { User, Globe, MapPin, Trophy, LogOut, Shield } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { usePlaces } from "@/hooks/usePlaces";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
+  const { user, signOut } = useAuth();
+  const { data: profile } = useProfile();
+  const { data: places = [] } = usePlaces();
+  const navigate = useNavigate();
+
+  const visitedCount = places.filter((p) => p.type === "visited").length;
+  const wishlistCount = places.filter((p) => p.type === "wishlist").length;
+  const countries = new Set(places.filter((p) => p.type === "visited").map((p) => p.country)).size;
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -17,10 +34,13 @@ const Profile = () => {
           <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
             <User className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h1 className="font-display text-2xl font-semibold text-foreground">Traveler</h1>
+          <h1 className="font-display text-2xl font-semibold text-foreground">
+            {profile?.display_name || "Traveler"}
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">{user?.email}</p>
           <div className="flex items-center justify-center gap-1.5 mt-2">
-            <Trophy className="w-3.5 h-3.5 text-gold" />
-            <span className="text-sm text-muted-foreground">{travelStats.level}</span>
+            <Shield className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground capitalize">{profile?.privacy || "private"}</span>
           </div>
         </motion.div>
 
@@ -31,51 +51,46 @@ const Profile = () => {
           transition={{ delay: 0.15 }}
           className="grid grid-cols-3 gap-3 mb-8"
         >
-          <StatCard icon={<Globe className="w-4 h-4" />} value={travelStats.countriesVisited} label="Countries" />
-          <StatCard icon={<MapPin className="w-4 h-4" />} value={travelStats.visitedCount} label="Visited" />
-          <StatCard icon={<MapPin className="w-4 h-4" />} value={travelStats.wishlistCount} label="Wishlist" />
+          <StatCard icon={<Globe className="w-4 h-4" />} value={countries} label="Countries" />
+          <StatCard icon={<MapPin className="w-4 h-4" />} value={visitedCount} label="Visited" />
+          <StatCard icon={<MapPin className="w-4 h-4" />} value={wishlistCount} label="Wishlist" />
         </motion.div>
 
-        {/* Progress */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="p-5 rounded-2xl bg-card border border-border mb-6"
-        >
-          <div className="flex justify-between text-sm mb-2">
-            <span className="font-medium text-foreground">{travelStats.level}</span>
-            <span className="text-muted-foreground">{travelStats.nextLevel}</span>
-          </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${travelStats.progress}%` }}
-              transition={{ duration: 1, delay: 0.5 }}
-              className="h-full bg-primary rounded-full"
-            />
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">{travelStats.progress}% to next level</p>
-        </motion.div>
+        {/* Interests */}
+        {profile?.interests && profile.interests.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="p-5 rounded-2xl bg-card border border-border mb-6"
+          >
+            <h3 className="font-display text-base font-medium text-foreground mb-3">Interests</h3>
+            <div className="flex flex-wrap gap-2">
+              {profile.interests.map((interest) => (
+                <span
+                  key={interest}
+                  className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium capitalize"
+                >
+                  {interest}
+                </span>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
-        {/* Badges */}
+        {/* Sign out */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="p-5 rounded-2xl bg-card border border-border"
         >
-          <h3 className="font-display text-base font-medium text-foreground mb-3">Badges</h3>
-          <div className="flex flex-wrap gap-2">
-            {travelStats.badges.map((badge) => (
-              <span
-                key={badge}
-                className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium"
-              >
-                {badge}
-              </span>
-            ))}
-          </div>
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
         </motion.div>
       </div>
     </div>

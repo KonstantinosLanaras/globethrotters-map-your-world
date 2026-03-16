@@ -7,6 +7,10 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Onboarding from "./pages/Onboarding";
 import Discover from "./pages/Discover";
+import Places from "./pages/Places";
+import Activities from "./pages/Activities";
+import Travelers from "./pages/Travelers";
+import Wishlist from "./pages/Wishlist";
 import Lists from "./pages/Lists";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
@@ -28,6 +32,10 @@ const RequireOnboarding = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
+  <RequireAuth><RequireOnboarding>{children}</RequireOnboarding></RequireAuth>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -39,10 +47,14 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
-            <Route path="/" element={<RequireAuth><RequireOnboarding><Index /></RequireOnboarding></RequireAuth>} />
-            <Route path="/discover" element={<RequireAuth><RequireOnboarding><Discover /></RequireOnboarding></RequireAuth>} />
-            <Route path="/lists" element={<RequireAuth><RequireOnboarding><Lists /></RequireOnboarding></RequireAuth>} />
-            <Route path="/profile" element={<RequireAuth><RequireOnboarding><Profile /></RequireOnboarding></RequireAuth>} />
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/discover" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
+            <Route path="/places" element={<ProtectedRoute><Places /></ProtectedRoute>} />
+            <Route path="/activities" element={<ProtectedRoute><Activities /></ProtectedRoute>} />
+            <Route path="/travelers" element={<ProtectedRoute><Travelers /></ProtectedRoute>} />
+            <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+            <Route path="/lists" element={<ProtectedRoute><Lists /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

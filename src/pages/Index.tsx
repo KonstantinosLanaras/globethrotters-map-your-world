@@ -35,7 +35,7 @@ const Index = () => {
       <div className="absolute bottom-4 right-4 z-[500] opacity-20 hover:opacity-40 transition-opacity duration-500 pointer-events-none">
         <GlobethrottersLogo variant="icon" size={36} animate={false} className="text-foreground" />
       </div>
-      <div className="absolute inset-0 pt-[73px]">
+      <div className="absolute inset-0 pt-[65px]">
         <WorldMap pins={pins} onPinClick={setSelectedPin} />
       </div>
     </div>

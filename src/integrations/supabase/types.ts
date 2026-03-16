@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      destination_activities: {
+        Row: {
+          activities: Json
+          country: string
+          created_at: string
+          id: string
+          place_name: string
+          updated_at: string
+        }
+        Insert: {
+          activities?: Json
+          country: string
+          created_at?: string
+          id?: string
+          place_name: string
+          updated_at?: string
+        }
+        Update: {
+          activities?: Json
+          country?: string
+          created_at?: string
+          id?: string
+          place_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       list_places: {
         Row: {
           added_at: string

@@ -147,10 +147,51 @@
   background: hsl(35 20% 90%) !important;
 }
 
-.custom-pin-visited {
+.saved-pin-visited {
   filter: drop-shadow(0 2px 4px rgba(180, 90, 30, 0.4));
 }
 
-.custom-pin-wishlist {
+.saved-pin-wishlist {
   filter: drop-shadow(0 2px 4px rgba(70, 120, 170, 0.4));
+}
+
+.city-marker-default,
+.city-marker-visited,
+.city-marker-wishlist {
+  transition: transform 0.15s ease;
+}
+
+.city-marker-default:hover,
+.city-marker-visited:hover,
+.city-marker-wishlist:hover {
+  transform: scale(1.4);
+  z-index: 1000 !important;
+}
+
+.city-marker-visited {
+  filter: drop-shadow(0 1px 3px rgba(180, 90, 30, 0.5));
+}
+
+.city-marker-wishlist {
+  filter: drop-shadow(0 1px 3px rgba(70, 120, 170, 0.5));
+}
+
+.city-tooltip {
+  background: hsl(36 33% 97%) !important;
+  border: 1px solid hsl(35 20% 88%) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+  padding: 6px 10px !important;
+  font-family: var(--font-body) !important;
+}
+
+.city-tooltip::before {
+  border-top-color: hsl(36 33% 97%) !important;
+}
+
+.leaflet-control-zoom {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  border: none !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
 }

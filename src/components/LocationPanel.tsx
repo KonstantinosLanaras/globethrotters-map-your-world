@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MapPin, Star, Heart, Calendar, Tag, ChevronRight, Flag, Bookmark, Plus, Utensils, Mountain, Landmark, Camera, Train, Gem } from "lucide-react";
+import { X, MapPin, Star, Heart, Calendar, Tag, Flag, Bookmark, Utensils, Mountain, Landmark, Camera, Train, Gem, Loader2, Clock, Gauge } from "lucide-react";
 import { Pin } from "@/types/travel";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import ReportDialog from "@/components/ReportDialog";
 import AddToListDialog from "@/components/AddToListDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useAddPlace } from "@/hooks/usePlaces";
+import { useActivities, Activity } from "@/hooks/useActivities";
 import { toast } from "sonner";
 
 interface LocationPanelProps {
@@ -16,20 +17,33 @@ interface LocationPanelProps {
   onClose: () => void;
 }
 
-const activityCategories = [
-  { icon: <Utensils className="w-4 h-4" />, label: "Food & Dining", color: "text-visited" },
-  { icon: <Mountain className="w-4 h-4" />, label: "Hiking & Nature", color: "text-ocean" },
-  { icon: <Landmark className="w-4 h-4" />, label: "Culture & Monuments", color: "text-gold" },
-  { icon: <Camera className="w-4 h-4" />, label: "Scenic Views", color: "text-primary" },
-  { icon: <Train className="w-4 h-4" />, label: "Transport & Routes", color: "text-secondary" },
-  { icon: <Gem className="w-4 h-4" />, label: "Hidden Gems", color: "text-terracotta" },
-];
+const categoryConfig: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+  food: { icon: <Utensils className="w-3.5 h-3.5" />, color: "bg-visited/15 text-visited", label: "Food" },
+  hiking: { icon: <Mountain className="w-3.5 h-3.5" />, color: "bg-ocean/15 text-ocean", label: "Hiking" },
+  nature: { icon: <Mountain className="w-3.5 h-3.5" />, color: "bg-ocean/15 text-ocean", label: "Nature" },
+  culture: { icon: <Landmark className="w-3.5 h-3.5" />, color: "bg-gold/15 text-gold", label: "Culture" },
+  scenic: { icon: <Camera className="w-3.5 h-3.5" />, color: "bg-primary/15 text-primary", label: "Scenic" },
+  transport: { icon: <Train className="w-3.5 h-3.5" />, color: "bg-secondary/15 text-secondary", label: "Transport" },
+  hidden_gem: { icon: <Gem className="w-3.5 h-3.5" />, color: "bg-terracotta/15 text-terracotta", label: "Hidden Gem" },
+};
+
+const difficultyColors: Record<string, string> = {
+  easy: "text-ocean",
+  moderate: "text-gold",
+  challenging: "text-destructive",
+};
 
 const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
   const [showReport, setShowReport] = useState(false);
   const [showAddToList, setShowAddToList] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const { user } = useAuth();
   const addPlace = useAddPlace();
+
+  const { activities, loading: activitiesLoading, error: activitiesError } = useActivities(
+    pin?.name ?? null,
+    pin?.country ?? null
+  );
 
   const { data: reviewScore } = useQuery({
     queryKey: ["review-score", pin?.id],
@@ -81,6 +95,12 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
     }
   };
 
+  const filteredActivities = activeCategory
+    ? activities.filter((a) => a.category === activeCategory)
+    : activities;
+
+  const uniqueCategories = [...new Set(activities.map((a) => a.category))];
+
   return (
     <>
       <AnimatePresence>
@@ -90,7 +110,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 30 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="fixed top-[65px] right-4 bottom-4 w-[380px] z-[1000] bg-card/95 backdrop-blur-xl rounded-2xl border border-border shadow-2xl overflow-hidden flex flex-col"
+          className="fixed top-[65px] right-4 bottom-4 w-[390px] z-[1000] bg-card/95 backdrop-blur-xl rounded-2xl border border-border shadow-2xl overflow-hidden flex flex-col"
         >
           {/* Photos strip */}
           {photos.length > 0 && (
@@ -230,24 +250,73 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
               </div>
             )}
 
-            {/* Activity categories */}
-            <div className="pt-2 space-y-2">
+            {/* AI Activity Discovery */}
+            <div className="pt-2 space-y-3">
               <h3 className="font-display text-base font-medium text-foreground">
-                Activities in {pin.name}
+                Things to do in {pin.name}
               </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {activityCategories.map((cat) => (
-                  <button
-                    key={cat.label}
-                    className="flex items-center gap-2 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group text-left"
-                  >
-                    <span className={cat.color}>{cat.icon}</span>
-                    <span className="text-xs font-medium text-foreground/80 group-hover:text-foreground transition-colors">
-                      {cat.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
+
+              {activitiesLoading && (
+                <div className="flex items-center gap-2 py-6 justify-center text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Discovering activities...</span>
+                </div>
+              )}
+
+              {activitiesError && (
+                <div className="p-3 rounded-xl bg-destructive/5 text-destructive text-xs">
+                  {activitiesError}
+                </div>
+              )}
+
+              {!activitiesLoading && activities.length > 0 && (
+                <>
+                  {/* Category filter chips */}
+                  <div className="flex gap-1.5 flex-wrap">
+                    <button
+                      onClick={() => setActiveCategory(null)}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                        activeCategory === null
+                          ? "bg-foreground text-background"
+                          : "bg-muted text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      All ({activities.length})
+                    </button>
+                    {uniqueCategories.map((cat) => {
+                      const config = categoryConfig[cat];
+                      const count = activities.filter((a) => a.category === cat).length;
+                      return (
+                        <button
+                          key={cat}
+                          onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                            activeCategory === cat
+                              ? "bg-foreground text-background"
+                              : `${config?.color || "bg-muted text-muted-foreground"} hover:opacity-80`
+                          }`}
+                        >
+                          {config?.icon}
+                          {config?.label || cat} ({count})
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Activity cards */}
+                  <div className="space-y-2">
+                    {filteredActivities.map((activity, i) => (
+                      <ActivityCard key={`${activity.name}-${i}`} activity={activity} index={i} />
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {!activitiesLoading && !activitiesError && activities.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  No activities found for this destination yet.
+                </p>
+              )}
             </div>
 
             {/* Mark as visited CTA for wishlist items */}
@@ -277,6 +346,45 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
         />
       )}
     </>
+  );
+};
+
+const ActivityCard = ({ activity, index }: { activity: Activity; index: number }) => {
+  const config = categoryConfig[activity.category] || categoryConfig.culture;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      className="p-3 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors group"
+    >
+      <div className="flex items-start gap-2.5">
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${config.color}`}>
+          {config.icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-foreground truncate">{activity.name}</p>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
+            {activity.description}
+          </p>
+          <div className="flex items-center gap-3 mt-1.5">
+            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+              <Clock className="w-2.5 h-2.5" />
+              {activity.duration}
+            </span>
+            {activity.difficulty !== "none" && (
+              <span className={`inline-flex items-center gap-1 text-[10px] font-medium capitalize ${difficultyColors[activity.difficulty] || "text-muted-foreground"}`}>
+                <Gauge className="w-2.5 h-2.5" />
+                {activity.difficulty}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 };
 

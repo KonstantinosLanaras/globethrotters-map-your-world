@@ -1,0 +1,92 @@
+export interface City {
+  name: string;
+  country: string;
+  lat: number;
+  lng: number;
+  population?: number;
+  continent: string;
+}
+
+export const worldCities: City[] = [
+  // Europe
+  { name: "London", country: "United Kingdom", lat: 51.5074, lng: -0.1278, continent: "Europe", population: 8982000 },
+  { name: "Paris", country: "France", lat: 48.8566, lng: 2.3522, continent: "Europe", population: 2161000 },
+  { name: "Berlin", country: "Germany", lat: 52.52, lng: 13.405, continent: "Europe", population: 3645000 },
+  { name: "Rome", country: "Italy", lat: 41.9028, lng: 12.4964, continent: "Europe", population: 2873000 },
+  { name: "Madrid", country: "Spain", lat: 40.4168, lng: -3.7038, continent: "Europe", population: 3223000 },
+  { name: "Barcelona", country: "Spain", lat: 41.3874, lng: 2.1686, continent: "Europe", population: 1621000 },
+  { name: "Amsterdam", country: "Netherlands", lat: 52.3676, lng: 4.9041, continent: "Europe", population: 872680 },
+  { name: "Prague", country: "Czech Republic", lat: 50.0755, lng: 14.4378, continent: "Europe", population: 1309000 },
+  { name: "Vienna", country: "Austria", lat: 48.2082, lng: 16.3738, continent: "Europe", population: 1897000 },
+  { name: "Lisbon", country: "Portugal", lat: 38.7223, lng: -9.1393, continent: "Europe", population: 505526 },
+  { name: "Athens", country: "Greece", lat: 37.9838, lng: 23.7275, continent: "Europe", population: 3154000 },
+  { name: "Istanbul", country: "Turkey", lat: 41.0082, lng: 28.9784, continent: "Europe", population: 15462000 },
+  { name: "Stockholm", country: "Sweden", lat: 59.3293, lng: 18.0686, continent: "Europe", population: 975904 },
+  { name: "Copenhagen", country: "Denmark", lat: 55.6761, lng: 12.5683, continent: "Europe", population: 794128 },
+  { name: "Dublin", country: "Ireland", lat: 53.3498, lng: -6.2603, continent: "Europe", population: 1388000 },
+  { name: "Edinburgh", country: "United Kingdom", lat: 55.9533, lng: -3.1883, continent: "Europe", population: 524930 },
+  { name: "Budapest", country: "Hungary", lat: 47.4979, lng: 19.0402, continent: "Europe", population: 1756000 },
+  { name: "Reykjavik", country: "Iceland", lat: 64.1466, lng: -21.9426, continent: "Europe", population: 131136 },
+  { name: "Dubrovnik", country: "Croatia", lat: 42.6507, lng: 18.0944, continent: "Europe", population: 42615 },
+  { name: "Santorini", country: "Greece", lat: 36.3932, lng: 25.4615, continent: "Europe", population: 15550 },
+  { name: "Florence", country: "Italy", lat: 43.7696, lng: 11.2558, continent: "Europe", population: 382258 },
+  { name: "Munich", country: "Germany", lat: 48.1351, lng: 11.582, continent: "Europe", population: 1472000 },
+  { name: "Zurich", country: "Switzerland", lat: 47.3769, lng: 8.5417, continent: "Europe", population: 434008 },
+  // Asia
+  { name: "Tokyo", country: "Japan", lat: 35.6762, lng: 139.6503, continent: "Asia", population: 13960000 },
+  { name: "Kyoto", country: "Japan", lat: 35.0116, lng: 135.7681, continent: "Asia", population: 1475000 },
+  { name: "Bangkok", country: "Thailand", lat: 13.7563, lng: 100.5018, continent: "Asia", population: 10539000 },
+  { name: "Singapore", country: "Singapore", lat: 1.3521, lng: 103.8198, continent: "Asia", population: 5454000 },
+  { name: "Hong Kong", country: "China", lat: 22.3193, lng: 114.1694, continent: "Asia", population: 7482000 },
+  { name: "Seoul", country: "South Korea", lat: 37.5665, lng: 126.978, continent: "Asia", population: 9776000 },
+  { name: "Bali", country: "Indonesia", lat: -8.3405, lng: 115.092, continent: "Asia", population: 4225000 },
+  { name: "Dubai", country: "United Arab Emirates", lat: 25.2048, lng: 55.2708, continent: "Asia", population: 3331000 },
+  { name: "Mumbai", country: "India", lat: 19.076, lng: 72.8777, continent: "Asia", population: 20411000 },
+  { name: "Delhi", country: "India", lat: 28.7041, lng: 77.1025, continent: "Asia", population: 16787941 },
+  { name: "Hanoi", country: "Vietnam", lat: 21.0285, lng: 105.8542, continent: "Asia", population: 8054000 },
+  { name: "Kuala Lumpur", country: "Malaysia", lat: 3.139, lng: 101.6869, continent: "Asia", population: 1768000 },
+  { name: "Beijing", country: "China", lat: 39.9042, lng: 116.4074, continent: "Asia", population: 21540000 },
+  { name: "Shanghai", country: "China", lat: 31.2304, lng: 121.4737, continent: "Asia", population: 24870000 },
+  { name: "Taipei", country: "Taiwan", lat: 25.033, lng: 121.5654, continent: "Asia", population: 2646000 },
+  { name: "Kathmandu", country: "Nepal", lat: 27.7172, lng: 85.324, continent: "Asia", population: 1442271 },
+  { name: "Siem Reap", country: "Cambodia", lat: 13.3671, lng: 103.8448, continent: "Asia", population: 250798 },
+  // North America
+  { name: "New York", country: "United States", lat: 40.7128, lng: -74.006, continent: "North America", population: 8336817 },
+  { name: "Los Angeles", country: "United States", lat: 34.0522, lng: -118.2437, continent: "North America", population: 3979576 },
+  { name: "San Francisco", country: "United States", lat: 37.7749, lng: -122.4194, continent: "North America", population: 873965 },
+  { name: "Chicago", country: "United States", lat: 41.8781, lng: -87.6298, continent: "North America", population: 2693976 },
+  { name: "Miami", country: "United States", lat: 25.7617, lng: -80.1918, continent: "North America", population: 467963 },
+  { name: "Toronto", country: "Canada", lat: 43.6532, lng: -79.3832, continent: "North America", population: 2930000 },
+  { name: "Vancouver", country: "Canada", lat: 49.2827, lng: -123.1207, continent: "North America", population: 631486 },
+  { name: "Mexico City", country: "Mexico", lat: 19.4326, lng: -99.1332, continent: "North America", population: 9209944 },
+  { name: "Havana", country: "Cuba", lat: 23.1136, lng: -82.3666, continent: "North America", population: 2130081 },
+  { name: "Cancun", country: "Mexico", lat: 21.1619, lng: -86.8515, continent: "North America", population: 888797 },
+  { name: "Oaxaca", country: "Mexico", lat: 17.0732, lng: -96.7266, continent: "North America", population: 300050 },
+  { name: "Austin", country: "United States", lat: 30.2672, lng: -97.7431, continent: "North America", population: 978908 },
+  { name: "Nashville", country: "United States", lat: 36.1627, lng: -86.7816, continent: "North America", population: 689447 },
+  // South America
+  { name: "Buenos Aires", country: "Argentina", lat: -34.6037, lng: -58.3816, continent: "South America", population: 3054000 },
+  { name: "Rio de Janeiro", country: "Brazil", lat: -22.9068, lng: -43.1729, continent: "South America", population: 6748000 },
+  { name: "São Paulo", country: "Brazil", lat: -23.5505, lng: -46.6333, continent: "South America", population: 12325000 },
+  { name: "Lima", country: "Peru", lat: -12.0464, lng: -77.0428, continent: "South America", population: 10719000 },
+  { name: "Bogotá", country: "Colombia", lat: 4.711, lng: -74.0721, continent: "South America", population: 7181000 },
+  { name: "Medellín", country: "Colombia", lat: 6.2442, lng: -75.5812, continent: "South America", population: 2569000 },
+  { name: "Cartagena", country: "Colombia", lat: 10.3932, lng: -75.5144, continent: "South America", population: 1028736 },
+  { name: "Cusco", country: "Peru", lat: -13.5319, lng: -71.9675, continent: "South America", population: 428450 },
+  { name: "Santiago", country: "Chile", lat: -33.4489, lng: -70.6693, continent: "South America", population: 6310000 },
+  // Africa
+  { name: "Cape Town", country: "South Africa", lat: -33.9249, lng: 18.4241, continent: "Africa", population: 4618000 },
+  { name: "Marrakech", country: "Morocco", lat: 31.6295, lng: -7.9811, continent: "Africa", population: 928850 },
+  { name: "Cairo", country: "Egypt", lat: 30.0444, lng: 31.2357, continent: "Africa", population: 20076000 },
+  { name: "Nairobi", country: "Kenya", lat: -1.2921, lng: 36.8219, continent: "Africa", population: 4397000 },
+  { name: "Accra", country: "Ghana", lat: 5.6037, lng: -0.187, continent: "Africa", population: 2514000 },
+  { name: "Lagos", country: "Nigeria", lat: 6.5244, lng: 3.3792, continent: "Africa", population: 15388000 },
+  { name: "Zanzibar City", country: "Tanzania", lat: -6.1659, lng: 39.2026, continent: "Africa", population: 223033 },
+  { name: "Dakar", country: "Senegal", lat: 14.7167, lng: -17.4677, continent: "Africa", population: 1146053 },
+  // Oceania
+  { name: "Sydney", country: "Australia", lat: -33.8688, lng: 151.2093, continent: "Oceania", population: 5312000 },
+  { name: "Melbourne", country: "Australia", lat: -37.8136, lng: 144.9631, continent: "Oceania", population: 5078000 },
+  { name: "Auckland", country: "New Zealand", lat: -36.8485, lng: 174.7633, continent: "Oceania", population: 1657000 },
+  { name: "Queenstown", country: "New Zealand", lat: -45.0312, lng: 168.6626, continent: "Oceania", population: 15800 },
+  { name: "Fiji", country: "Fiji", lat: -17.7134, lng: 178.065, continent: "Oceania", population: 93970 },
+];

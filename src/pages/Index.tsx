@@ -1,42 +1,81 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import WorldMap from "@/components/WorldMap";
 import Navbar from "@/components/Navbar";
-import SidePanel from "@/components/SidePanel";
-import LocationPanel from "@/components/LocationPanel";
-import GlobethrottersLogo from "@/components/GlobethrottersLogo";
+import MapControls from "@/components/MapControls";
+import CityDetailsCard from "@/components/CityDetailsCard";
 import { usePlaces, Place } from "@/hooks/usePlaces";
-import { Pin } from "@/types/travel";
+import { worldCities, City } from "@/data/cities";
 
 const Index = () => {
-  const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
+  const [showCities, setShowCities] = useState(true);
+  const [mapFilter, setMapFilter] = useState<"all" | "visited" | "wishlist">("all");
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const { data: places = [] } = usePlaces();
 
-  // Map DB places to Pin type for existing components
-  const pins: Pin[] = places.map((p: Place) => ({
-    id: p.id,
-    name: p.name,
-    country: p.country,
-    lat: p.lat,
-    lng: p.lng,
-    type: p.type as "visited" | "wishlist",
-    tags: p.tags || [],
-    rating: p.rating || 0,
-    notes: p.notes || "",
-    photos: [],
-    dateVisited: p.date_visited || undefined,
-  }));
+  const stats = useMemo(() => ({
+    visited: places.filter((p) => p.type === "visited").length,
+    wishlist: places.filter((p) => p.type === "wishlist").length,
+    countries: new Set(places.filter((p) => p.type === "visited").map((p) => p.country)).size,
+  }), [places]);
+
+  // Find if selected city is already saved
+  const savedPlace = useMemo(() => {
+    if (!selectedCity) return null;
+    return places.find(
+      (p) =>
+        p.name.toLowerCase() === selectedCity.name.toLowerCase() &&
+        p.country.toLowerCase() === selectedCity.country.toLowerCase()
+    ) ?? null;
+  }, [selectedCity, places]);
+
+  const handleCityClick = useCallback((city: City) => {
+    setSelectedCity(city);
+  }, []);
+
+  const handlePlaceClick = useCallback((place: Place) => {
+    // Find matching city or create a pseudo-city from the place
+    const matchingCity = worldCities.find(
+      (c) => c.name.toLowerCase() === place.name.toLowerCase()
+    );
+    if (matchingCity) {
+      setSelectedCity(matchingCity);
+    } else {
+      setSelectedCity({
+        name: place.name,
+        country: place.country,
+        lat: place.lat,
+        lng: place.lng,
+        continent: "",
+      });
+    }
+  }, []);
 
   return (
     <div className="h-screen w-screen overflow-hidden relative">
       <Navbar />
-      <SidePanel />
-      <LocationPanel pin={selectedPin} onClose={() => setSelectedPin(null)} />
-      {/* Subtle brand watermark */}
-      <div className="absolute bottom-4 right-4 z-[500] opacity-20 hover:opacity-40 transition-opacity duration-500 pointer-events-none">
-        <GlobethrottersLogo variant="icon" size={36} animate={false} className="text-foreground" />
-      </div>
-      <div className="absolute inset-0 pt-[65px]">
-        <WorldMap pins={pins} onPinClick={setSelectedPin} />
+      <MapControls
+        showCities={showCities}
+        onToggleCities={() => setShowCities(!showCities)}
+        mapFilter={mapFilter}
+        onFilterChange={setMapFilter}
+        stats={stats}
+      />
+      {selectedCity && (
+        <CityDetailsCard
+          city={selectedCity}
+          savedPlace={savedPlace}
+          onClose={() => setSelectedCity(null)}
+        />
+      )}
+      <div className="absolute inset-0 pt-[60px]">
+        <WorldMap
+          cities={worldCities}
+          places={places}
+          showCities={showCities}
+          mapFilter={mapFilter}
+          onCityClick={handleCityClick}
+          onPlaceClick={handlePlaceClick}
+        />
       </div>
     </div>
   );

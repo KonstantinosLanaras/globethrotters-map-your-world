@@ -6,10 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Onboarding from "./pages/Onboarding";
-import Discover from "./pages/Discover";
 import Places from "./pages/Places";
-import Activities from "./pages/Activities";
-import Travelers from "./pages/Travelers";
 import Wishlist from "./pages/Wishlist";
 import Lists from "./pages/Lists";
 import Profile from "./pages/Profile";
@@ -48,10 +45,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/discover" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
             <Route path="/places" element={<ProtectedRoute><Places /></ProtectedRoute>} />
-            <Route path="/activities" element={<ProtectedRoute><Activities /></ProtectedRoute>} />
-            <Route path="/travelers" element={<ProtectedRoute><Travelers /></ProtectedRoute>} />
             <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
             <Route path="/lists" element={<ProtectedRoute><Lists /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

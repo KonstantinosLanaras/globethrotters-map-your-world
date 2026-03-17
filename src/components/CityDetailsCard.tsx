@@ -353,7 +353,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const addToList = useAddPlaceToList();
   const { data: profile } = useProfile();
   const { data: allPlaces = [] } = usePlaces();
-  const { sponsored, topPicks, trending, hiddenGems, allSeeded, loading: unifiedLoading } = useUnifiedExperiences(city.name, city.country);
+  const { sponsored, allSeeded, loading: unifiedLoading } = useUnifiedExperiences(city.name, city.country);
   const toggleSave = useToggleExperienceSave();
   const { data: savedExpIds = new Set<string>() } = useExperienceSaves();
 

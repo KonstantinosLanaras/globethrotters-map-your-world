@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, MapPin, Check, Heart, Star, Bookmark, Plus, Loader2, ArrowLeftRight,
-  Sparkles, BadgeCheck, Utensils, Mountain, Landmark, Eye, Bus, Gem, TreePine, Wine, Camera, Info
+  Sparkles, BadgeCheck, Utensils, Mountain, Landmark, Eye, Bus, Gem, TreePine, Wine, Camera, Info,
+  Search, MoreVertical, SlidersHorizontal
 } from "lucide-react";
 import { City } from "@/data/cities";
 import { Place, useAddPlace, useUpdatePlace } from "@/hooks/usePlaces";
@@ -21,6 +22,63 @@ interface CityDetailsCardProps {
   savedPlace: Place | null;
   onClose: () => void;
 }
+
+// --- Filter definitions per category ---
+interface FilterOption {
+  key: string;
+  label: string;
+  type: "toggle" | "select" | "range";
+  options?: string[];
+}
+
+const categoryFilters: Record<string, FilterOption[]> = {
+  food: [
+    { key: "cuisine", label: "Cuisine", type: "select", options: ["Italian", "Asian", "Mexican", "French", "Local", "Fusion"] },
+    { key: "dietary", label: "Dietary", type: "select", options: ["Vegan", "Vegetarian", "Gluten-free"] },
+    { key: "price", label: "Price range", type: "select", options: ["€", "€€", "€€€", "€€€€"] },
+    { key: "kidFriendly", label: "Kid-friendly", type: "toggle" },
+  ],
+  bars: [
+    { key: "barType", label: "Type", type: "select", options: ["Cocktail bar", "Wine bar", "Pub", "Rooftop", "Dive bar"] },
+    { key: "price", label: "Price range", type: "select", options: ["€", "€€", "€€€"] },
+  ],
+  hiking: [
+    { key: "difficulty", label: "Difficulty", type: "select", options: ["Easy", "Moderate", "Hard"] },
+    { key: "duration", label: "Duration", type: "select", options: ["< 1h", "1-3h", "3-6h", "Full day"] },
+  ],
+  nature: [
+    { key: "activityType", label: "Type", type: "select", options: ["Park", "Garden", "Lake", "Beach", "Forest"] },
+    { key: "kidFriendly", label: "Kid-friendly", type: "toggle" },
+  ],
+  culture: [
+    { key: "cultureType", label: "Type", type: "select", options: ["Museum", "Monument", "Architecture", "Historic", "Gallery"] },
+    { key: "duration", label: "Duration", type: "select", options: ["< 1h", "1-2h", "Half day", "Full day"] },
+  ],
+  scenic: [
+    { key: "scenicType", label: "Type", type: "select", options: ["Viewpoint", "Sunset spot", "Photo spot", "Panorama"] },
+  ],
+  hidden_gem: [
+    { key: "gemType", label: "Type", type: "select", options: ["Local spot", "Off-beat", "Secret", "Underrated"] },
+  ],
+  transport: [],
+};
+
+// Generic fallback filters for any category
+const genericFilters: FilterOption[] = [
+  { key: "rating", label: "Min rating", type: "select", options: ["4.0+", "4.5+", "4.8+"] },
+  { key: "popularity", label: "Popularity", type: "select", options: ["Any", "Popular", "Hidden"] },
+];
+
+const searchPlaceholders: Record<string, string> = {
+  food: "Search restaurants or cuisines",
+  bars: "Search bars or nightlife",
+  hiking: "Search trails or hikes",
+  nature: "Search nature spots",
+  culture: "Search museums, monuments...",
+  scenic: "Search viewpoints or scenic spots",
+  hidden_gem: "Search hidden gems",
+  transport: "Search transport options",
+};
 
 const categoryConfig: Record<string, { icon: typeof Utensils; label: string; color: string }> = {
   food: { icon: Utensils, label: "Food", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" },

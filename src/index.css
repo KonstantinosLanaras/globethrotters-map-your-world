@@ -36,9 +36,9 @@
 
     --radius: 0.75rem;
 
-    --visited: 24 75% 50%;
-    --visited-foreground: 36 33% 97%;
-    --wishlist: 210 30% 55%;
+    --visited: 0 72% 51%;
+    --visited-foreground: 0 0% 100%;
+    --wishlist: 217 91% 60%;
     --wishlist-foreground: 0 0% 100%;
 
     --gold: 40 80% 55%;

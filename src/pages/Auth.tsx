@@ -130,21 +130,27 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(null);
+  const [authChecking, setAuthChecking] = useState(true);
   const navigate = useNavigate();
 
-  // Redirect authenticated users away from auth page
+  // Redirect authenticated users away from auth page — only on real session
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
+      if (event === "SIGNED_IN" && session?.user) {
+        setOauthLoading(null);
         navigate("/", { replace: true });
+      }
+      if (event === "INITIAL_SESSION") {
+        setAuthChecking(false);
       }
     });
 
-    // Also check current session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         navigate("/", { replace: true });
       }
+      setAuthChecking(false);
     });
 
     return () => subscription.unsubscribe();

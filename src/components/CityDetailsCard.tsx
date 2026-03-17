@@ -184,6 +184,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string | boolean>>({});
   const filterRef = useRef<HTMLDivElement>(null);
+  const [activityListMenu, setActivityListMenu] = useState<string | null>(null);
+  const [savingActivity, setSavingActivity] = useState<string | null>(null);
 
   const isVisited = savedPlace?.type === "visited";
   const isWishlist = savedPlace?.type === "wishlist";
@@ -304,6 +306,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   };
 
   const handleAddToList = async (listId: string) => {
+    if (!user) { toast.error("Sign in first"); return; }
     if (!savedPlace) {
       try {
         const result = await addPlace.mutateAsync({
@@ -335,6 +338,48 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
       setNewListName("");
       setShowNewList(false);
     } catch { toast.error("Failed to create list"); }
+  };
+
+  // Save an activity as a place, then optionally add to a list
+  const handleSaveActivity = async (activity: Activity, type: "wishlist" | "visited") => {
+    if (!user) { toast.error("Sign in to save"); return; }
+    setSavingActivity(activity.name);
+    try {
+      await addPlace.mutateAsync({
+        name: activity.name, country: city.country, lat: city.lat, lng: city.lng,
+        type, tags: [activity.category], rating: 0, notes: activity.description || "",
+        date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
+      });
+      toast.success(`${activity.name} added to ${type}!`);
+    } catch (err: any) {
+      if (err?.message?.includes("Already")) toast.info(err.message);
+      else toast.error("Failed to save");
+    } finally {
+      setSavingActivity(null);
+    }
+  };
+
+  const handleAddActivityToList = async (activity: Activity, listId: string) => {
+    if (!user) { toast.error("Sign in first"); return; }
+    setSavingActivity(activity.name);
+    try {
+      // First save as a place
+      const result = await addPlace.mutateAsync({
+        name: activity.name, country: city.country, lat: city.lat, lng: city.lng,
+        type: "wishlist", tags: [activity.category], rating: 0, notes: activity.description || "",
+        date_visited: null,
+      });
+      if (result?.id) {
+        await addToList.mutateAsync({ listId, placeId: result.id });
+        toast.success(`${activity.name} added to list!`);
+      }
+    } catch (err: any) {
+      if (err?.message?.includes("Already")) toast.info("Already saved");
+      else toast.error("Failed to add to list");
+    } finally {
+      setSavingActivity(null);
+      setActivityListMenu(null);
+    }
   };
 
   return (
@@ -698,6 +743,67 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                                 ✨ {matchReason}
                               </span>
                             )}
+                          </div>
+                          {/* Save actions */}
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <button
+                              onClick={() => handleSaveActivity(activity, "wishlist")}
+                              disabled={savingActivity === activity.name}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-accent/50 text-accent-foreground hover:bg-accent transition-colors"
+                            >
+                              {savingActivity === activity.name ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Heart className="w-3 h-3" />
+                              )}
+                              Wishlist
+                            </button>
+                            <button
+                              onClick={() => handleSaveActivity(activity, "visited")}
+                              disabled={savingActivity === activity.name}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-accent/50 text-accent-foreground hover:bg-accent transition-colors"
+                            >
+                              <Check className="w-3 h-3" />
+                              Visited
+                            </button>
+                            <div className="relative">
+                              <button
+                                onClick={() => setActivityListMenu(activityListMenu === activity.name ? null : activity.name)}
+                                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+                              >
+                                <Bookmark className="w-3 h-3" />
+                                List
+                              </button>
+                              {/* Mini list picker */}
+                              <AnimatePresence>
+                                {activityListMenu === activity.name && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                                    className="absolute bottom-full left-0 mb-1 w-[180px] bg-card border border-border rounded-xl shadow-xl z-30 overflow-hidden"
+                                  >
+                                    <div className="p-2 max-h-[140px] overflow-y-auto space-y-0.5">
+                                      {lists.length === 0 ? (
+                                        <p className="text-[11px] text-muted-foreground text-center py-2">No lists yet</p>
+                                      ) : (
+                                        lists.map(list => (
+                                          <button
+                                            key={list.id}
+                                            onClick={() => handleAddActivityToList(activity, list.id)}
+                                            className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
+                                          >
+                                            <span className="text-sm">{list.emoji}</span>
+                                            <span className="text-[11px] font-medium text-foreground truncate flex-1">{list.title}</span>
+                                            <Plus className="w-3 h-3 text-muted-foreground" />
+                                          </button>
+                                        ))
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
                           </div>
                         </div>
                       </div>

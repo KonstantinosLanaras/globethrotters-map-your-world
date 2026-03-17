@@ -4,7 +4,7 @@ import {
   X, MapPin, Check, Heart, Star, Bookmark, Plus, Loader2, ArrowLeftRight,
   BadgeCheck, Utensils, Mountain, Landmark, Eye, Bus, Gem, TreePine, Wine, Camera,
   Search, MoreVertical, SlidersHorizontal, TrendingUp, Flame, Users, PenLine,
-  Moon, Compass, ListIcon
+  Moon, Compass, ListIcon, Shield, Sun, CloudSun, Baby, UserCheck, UsersRound, Volume2
 } from "lucide-react";
 import { City } from "@/data/cities";
 import { Place, useAddPlace, useUpdatePlace, usePlaces } from "@/hooks/usePlaces";
@@ -369,6 +369,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const [savingItem, setSavingItem] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
   const [showMyLists, setShowMyLists] = useState(false);
+  const [explorerChips, setExplorerChips] = useState<Set<string>>(new Set());
 
   const isVisited = savedPlace?.type === "visited";
   const isWishlist = savedPlace?.type === "wishlist";
@@ -467,11 +468,91 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     });
   };
 
-  const clearFilters = () => { setActiveFilters({}); setSearchQuery(""); };
+  const clearFilters = () => { setActiveFilters({}); setSearchQuery(""); setExplorerChips(new Set()); };
+
+  // --- Explorer chip definitions ---
+  const explorerChipDefs = useMemo(() => [
+    { id: "budget-low", label: "€ Low", group: "budget", emoji: "💰" },
+    { id: "budget-mid", label: "€€ Medium", group: "budget", emoji: "💰" },
+    { id: "budget-high", label: "€€€ High", group: "budget", emoji: "💰" },
+    { id: "safe", label: "Safe", group: "safety", emoji: "🛡️" },
+    { id: "food", label: "Good for Food", group: "preference", emoji: "🍽️" },
+    { id: "nightlife", label: "Nightlife", group: "preference", emoji: "🌙" },
+    { id: "nature-pref", label: "Nature", group: "preference", emoji: "🌿" },
+    { id: "culture-pref", label: "Culture", group: "preference", emoji: "🏛️" },
+    { id: "family", label: "Family-friendly", group: "style", emoji: "👨‍👩‍👧" },
+    { id: "solo", label: "Solo-friendly", group: "style", emoji: "🎒" },
+    { id: "low-crowds", label: "Low crowds", group: "crowd", emoji: "🤫" },
+    { id: "warm", label: "Warm weather", group: "climate", emoji: "☀️" },
+  ], []);
+
+  const toggleExplorerChip = (chipId: string) => {
+    setExplorerChips(prev => {
+      const next = new Set(prev);
+      if (next.has(chipId)) next.delete(chipId);
+      else next.add(chipId);
+      return next;
+    });
+  };
+
+  const hasExplorerFilters = explorerChips.size > 0;
+
+  // Seasonal hint based on current month
+  const seasonalHint = useMemo(() => {
+    const month = new Date().toLocaleString("en", { month: "long" });
+    const hints: Record<string, string> = {
+      January: "Winter season — cooler temperatures, fewer tourists",
+      February: "Late winter — budget-friendly, quiet atmosphere",
+      March: "Early spring — mild weather, shoulder season",
+      April: "Spring bloom — pleasant temperatures, moderate crowds",
+      May: "Late spring — ideal weather in many destinations",
+      June: "Early summer — warm, beginning of peak season",
+      July: "Peak summer — hot, busy, vibrant nightlife",
+      August: "High summer — high crowds, strong sun exposure",
+      September: "Early autumn — warm, crowds thinning",
+      October: "Autumn — cooler, beautiful foliage, quieter",
+      November: "Late autumn — off-season deals, cool weather",
+      December: "Winter — holiday atmosphere, festive markets",
+    };
+    return { month, hint: hints[month] || "Great time to explore!" };
+  }, []);
+
+  // Explorer boost: re-rank items based on explorer chips (boost, don't hide)
+  const explorerBoostedItems = useMemo(() => {
+    if (!hasExplorerFilters) return displayedItems;
+
+    const boostScore = (item: UnifiedExperience): number => {
+      let boost = 0;
+      const cat = item.category.toLowerCase();
+      const desc = (item.description || "").toLowerCase();
+      const name = item.name.toLowerCase();
+      const text = `${cat} ${desc} ${name}`;
+
+      if (explorerChips.has("food") && (cat.includes("food") || cat.includes("restaurant") || cat.includes("cafe"))) boost += 20;
+      if (explorerChips.has("nightlife") && (cat.includes("bar") || cat.includes("nightlife") || cat.includes("club"))) boost += 20;
+      if (explorerChips.has("nature-pref") && (cat.includes("nature") || cat.includes("hik") || cat.includes("scenic") || cat.includes("beach"))) boost += 20;
+      if (explorerChips.has("culture-pref") && (cat.includes("culture") || cat.includes("museum") || cat.includes("monument"))) boost += 20;
+      if (explorerChips.has("family") && (text.includes("family") || text.includes("kid"))) boost += 15;
+      if (explorerChips.has("solo") && (text.includes("solo") || text.includes("backpack"))) boost += 15;
+      if (explorerChips.has("safe") && item.rating >= 4.5) boost += 10;
+      if (explorerChips.has("budget-low") && text.includes("free")) boost += 10;
+      if (explorerChips.has("low-crowds") && (text.includes("hidden") || text.includes("secret") || text.includes("quiet"))) boost += 15;
+      if (explorerChips.has("warm") && (text.includes("beach") || text.includes("outdoor") || text.includes("sun"))) boost += 10;
+
+      return boost;
+    };
+
+    return [...displayedItems].sort((a, b) => {
+      const boostA = boostScore(a);
+      const boostB = boostScore(b);
+      if (boostA !== boostB) return boostB - boostA;
+      return b.engagement - a.engagement;
+    });
+  }, [displayedItems, explorerChips, hasExplorerFilters]);
 
   // Dynamic search placeholder
   const searchPlaceholder = useMemo(() => {
-    if (activeCategory === "all") return `Search in ${city.name}...`;
+    if (activeCategory === "all") return `Search food, beaches, museums in ${city.name}…`;
     const catLabel = categoryNav.find(c => c.id === activeCategory)?.label || activeCategory;
     return `Search ${catLabel.toLowerCase()} in ${city.name}...`;
   }, [activeCategory, city.name]);
@@ -941,6 +1022,51 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               )}
             </div>
 
+            {/* Filtered Explorer chip bar */}
+            <div className="px-4 py-1.5">
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                {explorerChipDefs.map(chip => {
+                  const isActive = explorerChips.has(chip.id);
+                  return (
+                    <button
+                      key={chip.id}
+                      onClick={() => toggleExplorerChip(chip.id)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                        isActive
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      <span className="text-[10px]">{chip.emoji}</span>
+                      {chip.label}
+                      {isActive && <X className="w-2.5 h-2.5 ml-0.5" />}
+                    </button>
+                  );
+                })}
+              </div>
+              {hasExplorerFilters && (
+                <button
+                  onClick={() => setExplorerChips(new Set())}
+                  className="text-[10px] text-primary hover:underline mt-0.5"
+                >
+                  Clear explorer filters
+                </button>
+              )}
+            </div>
+
+            {/* Seasonal hint */}
+            {hasExplorerFilters && (
+              <div className="px-4 pb-2">
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-accent/20 border border-accent/30">
+                  <Sun className="w-3.5 h-3.5 text-accent-foreground mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-[10px] font-medium text-foreground">In {seasonalHint.month}: {seasonalHint.hint}</p>
+                    <p className="text-[9px] text-muted-foreground mt-0.5 italic">Insights are based on community contributions and are not verified.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Results */}
             <div className="px-4 pb-5 space-y-2">
               {/* Sponsored (always at top, max 2) */}
@@ -959,7 +1085,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                       saving={savingItem === item.name}
                     />
                   ))}
-                  {displayedItems.length > 0 && (
+                  {explorerBoostedItems.length > 0 && (
                     <div className="flex items-center gap-2 py-1">
                       <div className="flex-1 h-px bg-border" />
                       <span className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">Recommended for you</span>
@@ -978,8 +1104,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     <Skeleton className="h-3 w-1/2" />
                   </div>
                 ))
-              ) : displayedItems.length > 0 ? (
-                displayedItems.map((item, idx) => (
+              ) : explorerBoostedItems.length > 0 ? (
+                explorerBoostedItems.map((item, idx) => (
                   <ExperienceCard
                     key={`${item.type}-${item.name}-${idx}`}
                     item={item}

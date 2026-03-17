@@ -844,6 +844,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
       <ExperienceComposer
         open={showComposer}
         onClose={() => setShowComposer(false)}
+        defaultCity={city.name}
+        defaultCountry={city.country}
       />
     </>
   );

@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, MapPin, Check, Heart, Star, Bookmark, Plus, Loader2, ArrowLeftRight,
+  X, MapPin, Check, Heart, Star, Bookmark, Plus, Loader2,
   BadgeCheck, Utensils, Mountain, Landmark, Eye, Bus, Gem, TreePine, Wine, Camera,
-  Search, MoreVertical, SlidersHorizontal, TrendingUp, Flame, Users, PenLine,
-  Moon, Compass, ListIcon, Shield, Sun, CloudSun, Baby, UserCheck, UsersRound, Volume2
+  Search, SlidersHorizontal, TrendingUp, Flame, Users,
+  Moon, ListIcon
 } from "lucide-react";
 import { City } from "@/data/cities";
 import { Place, useAddPlace, useUpdatePlace, usePlaces } from "@/hooks/usePlaces";

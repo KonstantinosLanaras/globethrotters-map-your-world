@@ -106,17 +106,88 @@ export type Database = {
           },
         ]
       }
+      experience_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          experience_id: string
+          id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          experience_id: string
+          id?: string
+          rating: number
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          experience_id?: string
+          id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_reviews_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experience_saves: {
+        Row: {
+          created_at: string
+          experience_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          experience_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          experience_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_saves_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       experiences: {
         Row: {
           caption: string | null
           category: string
           city: string | null
+          clicks_count: number
           country: string | null
           created_at: string
+          engagement_score: number
           experience_date: string | null
           id: string
+          is_seeded: boolean
+          is_sponsored: boolean
           lat: number | null
           lng: number | null
+          rating_avg: number
+          review_count: number
+          saves_count: number
           tags: string[] | null
           title: string
           updated_at: string
@@ -127,12 +198,19 @@ export type Database = {
           caption?: string | null
           category?: string
           city?: string | null
+          clicks_count?: number
           country?: string | null
           created_at?: string
+          engagement_score?: number
           experience_date?: string | null
           id?: string
+          is_seeded?: boolean
+          is_sponsored?: boolean
           lat?: number | null
           lng?: number | null
+          rating_avg?: number
+          review_count?: number
+          saves_count?: number
           tags?: string[] | null
           title: string
           updated_at?: string
@@ -143,12 +221,19 @@ export type Database = {
           caption?: string | null
           category?: string
           city?: string | null
+          clicks_count?: number
           country?: string | null
           created_at?: string
+          engagement_score?: number
           experience_date?: string | null
           id?: string
+          is_seeded?: boolean
+          is_sponsored?: boolean
           lat?: number | null
           lng?: number | null
+          rating_avg?: number
+          review_count?: number
+          saves_count?: number
           tags?: string[] | null
           title?: string
           updated_at?: string

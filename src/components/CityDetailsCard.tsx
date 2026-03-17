@@ -253,7 +253,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
 
   const activeFilterChips = useMemo(() => {
     return Object.entries(activeFilters)
-      .filter(([, v]) => v && v !== false)
+      .filter(([, v]) => v !== undefined && v !== "" && v !== false)
       .map(([key, value]) => {
         const def = currentFilters.find(f => f.key === key);
         return { key, label: def?.label || key, value: typeof value === "boolean" ? def?.label || key : String(value) };

@@ -59,7 +59,7 @@ function getContinent(country: string): string {
   return CONTINENT_MAP[country] || "Other";
 }
 
-export function computeTravelerLevel(places: Place[]): TravelerLevel {
+export function computeTravelerLevel(places: Place[], contributionScore: number = 0): TravelerLevel {
   const visited = places.filter((p) => p.type === "visited");
   const countries = new Set(visited.map((p) => p.country));
   const continents = new Set(visited.map((p) => getContinent(p.country)));
@@ -74,13 +74,14 @@ export function computeTravelerLevel(places: Place[]): TravelerLevel {
   ).length;
   const ratedPlaces = visited.filter((p) => p.rating && p.rating > 0).length;
 
-  // Score formula: countries (×3) + continents (×8) + detailed reviews (×2) + tagged (×1) + rated (×1)
+  // Score formula: countries (×3) + continents (×8) + detailed reviews (×2) + tagged (×1) + rated (×1) + contributions (×1)
   const totalScore =
     countryCount * 3 +
     continentCount * 8 +
     detailedReviews * 2 +
     taggedPlaces * 1 +
-    ratedPlaces * 1;
+    ratedPlaces * 1 +
+    contributionScore;
 
   // Find current tier
   let tier = 0;

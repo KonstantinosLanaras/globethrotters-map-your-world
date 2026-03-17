@@ -988,13 +988,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                       saving={savingItem === item.name}
                     />
                   ))}
-                  {explorerBoostedItems.length > 0 && (
-                    <div className="flex items-center gap-2 py-1">
-                      <div className="flex-1 h-px bg-border" />
-                      <span className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">Recommended for you</span>
-                      <div className="flex-1 h-px bg-border" />
-                    </div>
-                  )}
+                  {/* No divider — continuous list */}
                 </>
               )}
 

@@ -32,14 +32,14 @@ interface ExperienceComposerProps {
   defaultCountry?: string;
 }
 
-const ExperienceComposer = ({ open, onClose }: ExperienceComposerProps) => {
+const ExperienceComposer = ({ open, onClose, defaultCity, defaultCountry }: ExperienceComposerProps) => {
   const addExperience = useAddExperience();
   const addAttachment = useAddAttachment();
 
   const [title, setTitle] = useState("");
   const [caption, setCaption] = useState("");
-  const [city, setCity] = useState("");
-  const [country, setCountry] = useState("");
+  const [city, setCity] = useState(defaultCity || "");
+  const [country, setCountry] = useState(defaultCountry || "");
   const [category, setCategory] = useState("general");
   const [visibility, setVisibility] = useState("public");
   const [tags, setTags] = useState("");

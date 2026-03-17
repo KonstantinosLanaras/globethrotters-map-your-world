@@ -406,7 +406,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     setSearchQuery("");
     setActiveFilters({});
     setShowFilters(false);
-  }, [activeSection, activeCategory]);
+  }, [activeCategory]);
 
   // Section data
   const sectionItems = useMemo((): UnifiedExperience[] => {

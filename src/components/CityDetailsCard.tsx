@@ -996,6 +996,26 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                   </Tooltip>
                 </TooltipProvider>
 
+                {/* Explorer toggle button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => setShowExplorer(!showExplorer)}
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                          showExplorer || hasExplorerFilters
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted/80 text-foreground hover:bg-muted"
+                        }`}
+                        aria-label="Filtered Explorer"
+                      >
+                        <Compass className="w-4 h-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom"><p className="text-xs">Filtered Explorer</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
                 {/* Add experience button */}
                 <button
                   onClick={() => setShowComposer(true)}

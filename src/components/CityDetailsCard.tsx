@@ -957,51 +957,15 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                   </Tooltip>
                 </TooltipProvider>
 
-                {/* Explorer toggle button */}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => setShowExplorer(!showExplorer)}
-                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
-                          showExplorer || hasExplorerFilters
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted/80 text-foreground hover:bg-muted"
-                        }`}
-                        aria-label="Filtered Explorer"
-                      >
-                        <Compass className="w-4 h-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom"><p className="text-xs">Filtered Explorer</p></TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
                 {/* Add experience button */}
                 <button
                   onClick={() => setShowComposer(true)}
                   className="w-9 h-9 rounded-lg flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
                   aria-label="Share experience"
                 >
-                  <PenLine className="w-4 h-4" />
+                  <Plus className="w-4 h-4" />
                 </button>
               </div>
-
-              {/* Active filter chips */}
-              {activeFilterChips.length > 0 && (
-                <div className="flex gap-1.5 mt-2 flex-wrap">
-                  {activeFilterChips.map(chip => (
-                    <button
-                      key={chip.key}
-                      onClick={() => toggleFilter(chip.key, activeFilters[chip.key])}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
-                    >
-                      {chip.value}
-                      <X className="w-2.5 h-2.5" />
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Filtered Explorer chip bar — hidden by default */}

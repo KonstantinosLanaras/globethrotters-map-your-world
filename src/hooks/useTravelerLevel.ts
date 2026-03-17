@@ -155,6 +155,28 @@ export function computeTravelerLevel(places: Place[], contributionScore: number 
       icon: "🗺️",
       earned: visited.length >= 25,
     },
+    // Contribution achievements
+    {
+      id: "contributor",
+      title: "Contributor",
+      description: "Share 3 community experiences",
+      icon: "✍️",
+      earned: contributionScore >= 3,
+    },
+    {
+      id: "local_guide",
+      title: "Local Guide",
+      description: "Get 10 saves on your experiences",
+      icon: "🧭",
+      earned: contributionScore >= 10,
+    },
+    {
+      id: "top_explorer",
+      title: "Top Explorer",
+      description: "Reach 25 contribution points",
+      icon: "🏆",
+      earned: contributionScore >= 25,
+    },
   ];
 
   return {
@@ -166,6 +188,29 @@ export function computeTravelerLevel(places: Place[], contributionScore: number 
     achievements,
   };
 }
+
+// Hook to compute contribution score from user's experiences
+export const useContributionScore = (userId: string | undefined) => {
+  return useQuery({
+    queryKey: ["contribution-score", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("experiences")
+        .select("saves_count, review_count, rating_avg, engagement_score")
+        .eq("user_id", userId!);
+      if (error) throw error;
+      if (!data || data.length === 0) return 0;
+      // Score: 1 per experience + 1 per save received + 2 per review received
+      let score = data.length; // 1 point per experience shared
+      for (const exp of data) {
+        score += (exp.saves_count || 0);
+        score += (exp.review_count || 0) * 2;
+      }
+      return score;
+    },
+  });
+};
 
 export const useTravelerLevel = (places: Place[]) => {
   return useMemo(() => computeTravelerLevel(places), [places]);

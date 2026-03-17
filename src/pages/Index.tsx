@@ -11,6 +11,7 @@ const Index = () => {
   const [showCities, setShowCities] = useState(true);
   const [mapFilter, setMapFilter] = useState<"all" | "visited" | "wishlist">("all");
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(true);
   const { data: places = [] } = usePlaces();
 
   const stats = useMemo(() => ({
@@ -30,9 +31,11 @@ const Index = () => {
 
   const handleCityClick = useCallback((city: City) => {
     setSelectedCity(city);
+    setIsRecommendationsOpen(false);
   }, []);
 
   const handlePlaceClick = useCallback((place: Place) => {
+    setIsRecommendationsOpen(false);
     const matchingCity = worldCities.find(
       (c) => c.name.toLowerCase() === place.name.toLowerCase()
     );
@@ -50,7 +53,7 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="h-screen w-screen overflow-hidden relative">
+    <div className="relative h-screen w-screen overflow-hidden">
       <Navbar />
       <MapControls
         showCities={showCities}
@@ -66,7 +69,9 @@ const Index = () => {
           onClose={() => setSelectedCity(null)}
         />
       )}
-      {!selectedCity && <RecommendationsSection />}
+      {!selectedCity && isRecommendationsOpen && (
+        <RecommendationsSection onClose={() => setIsRecommendationsOpen(false)} />
+      )}
       <div className="absolute inset-0 pt-[60px]">
         <WorldMap
           cities={worldCities}

@@ -546,12 +546,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     });
   }, [displayedItems, explorerChips, hasExplorerFilters]);
 
-  // Dynamic search placeholder
-  const searchPlaceholder = useMemo(() => {
-    if (activeCategory === "all") return `Search food, beaches, museums in ${city.name}…`;
-    const catLabel = categoryNav.find(c => c.id === activeCategory)?.label || activeCategory;
-    return `Search ${catLabel.toLowerCase()} in ${city.name}...`;
-  }, [activeCategory, city.name]);
+  const searchPlaceholder = `Search places in ${city.name} (food, museums, beaches…)`;
 
   // --- Save handlers ---
   const handleSave = async (type: "visited" | "wishlist") => {

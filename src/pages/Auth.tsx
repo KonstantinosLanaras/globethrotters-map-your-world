@@ -187,10 +187,34 @@ const Auth = () => {
   };
 
   const handleOAuth = async (provider: "google" | "apple") => {
-    const result = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin,
-    });
-    if (result?.error) toast.error(String(result.error));
+    try {
+      setOauthLoading(provider);
+      const result = await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: window.location.origin,
+      });
+
+      // If the browser is being redirected to the provider, do nothing more
+      if (result?.redirected) return;
+
+      // If there's an error (user cancelled, provider error, etc.)
+      if (result?.error) {
+        const errMsg = String(result.error);
+        if (errMsg.toLowerCase().includes("cancel") || errMsg.toLowerCase().includes("closed")) {
+          toast.error("Login was cancelled");
+        } else {
+          toast.error("Sign-in failed. Please try again.");
+        }
+        setOauthLoading(null);
+        return;
+      }
+
+      // If tokens were returned directly (non-redirect flow), session is set by lovable module
+      // onAuthStateChange will handle the redirect
+    } catch (err: any) {
+      console.error("OAuth error:", err);
+      toast.error("Sign-in failed. Please try again.");
+      setOauthLoading(null);
+    }
   };
 
   const heading = {

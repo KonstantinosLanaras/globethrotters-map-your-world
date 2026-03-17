@@ -361,7 +361,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const [newListName, setNewListName] = useState("");
   const [showNewList, setShowNewList] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
-  const [activeSection, setActiveSection] = useState<"top" | "trending" | "hidden" | "recommended">("top");
+  // activeSection removed — single flat list now
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string | boolean>>({});

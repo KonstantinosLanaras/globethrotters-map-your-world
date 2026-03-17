@@ -68,6 +68,122 @@ export type Database = {
         }
         Relationships: []
       }
+      experience_attachments: {
+        Row: {
+          attachment_type: string
+          created_at: string
+          experience_id: string
+          id: string
+          thumbnail_url: string | null
+          title: string | null
+          url: string
+        }
+        Insert: {
+          attachment_type?: string
+          created_at?: string
+          experience_id: string
+          id?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          url: string
+        }
+        Update: {
+          attachment_type?: string
+          created_at?: string
+          experience_id?: string
+          id?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_attachments_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experiences: {
+        Row: {
+          caption: string | null
+          category: string
+          city: string | null
+          country: string | null
+          created_at: string
+          experience_date: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+          visibility: string
+        }
+        Insert: {
+          caption?: string | null
+          category?: string
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          experience_date?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+          visibility?: string
+        }
+        Update: {
+          caption?: string | null
+          category?: string
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          experience_date?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          visibility?: string
+        }
+        Relationships: []
+      }
+      followers: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+          is_close_friend: boolean
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+          is_close_friend?: boolean
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+          is_close_friend?: boolean
+          status?: string
+        }
+        Relationships: []
+      }
       list_places: {
         Row: {
           added_at: string
@@ -184,6 +300,7 @@ export type Database = {
           type: string
           updated_at: string
           user_id: string
+          visibility: string
         }
         Insert: {
           country?: string
@@ -199,6 +316,7 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id: string
+          visibility?: string
         }
         Update: {
           country?: string
@@ -214,50 +332,72 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id?: string
+          visibility?: string
         }
         Relationships: []
       }
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
+          dream_destinations: string[] | null
+          home_base: string | null
           id: string
           interests: string[] | null
           is_verified: boolean
+          languages: string[] | null
+          next_trip: string | null
           personality: string | null
           privacy: string
+          travel_style: string[] | null
           trust_score: number
           updated_at: string
           user_id: string
+          username: string | null
           verified_at: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
+          dream_destinations?: string[] | null
+          home_base?: string | null
           id?: string
           interests?: string[] | null
           is_verified?: boolean
+          languages?: string[] | null
+          next_trip?: string | null
           personality?: string | null
           privacy?: string
+          travel_style?: string[] | null
           trust_score?: number
           updated_at?: string
           user_id: string
+          username?: string | null
           verified_at?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
+          dream_destinations?: string[] | null
+          home_base?: string | null
           id?: string
           interests?: string[] | null
           is_verified?: boolean
+          languages?: string[] | null
+          next_trip?: string | null
           personality?: string | null
           privacy?: string
+          travel_style?: string[] | null
           trust_score?: number
           updated_at?: string
           user_id?: string
+          username?: string | null
           verified_at?: string | null
         }
         Relationships: []

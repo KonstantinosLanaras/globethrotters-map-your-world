@@ -854,31 +854,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               })}
             </div>
 
-            {/* Section tabs */}
-            <div className="px-4 pt-2 pb-1 flex gap-1 overflow-x-auto scrollbar-hide">
-              {sections.map(sec => {
-                const SIcon = sec.icon;
-                const isActive = activeSection === sec.id;
-                const count = sec.id === "top" ? topPicks.length :
-                  sec.id === "trending" ? trending.length :
-                  sec.id === "hidden" ? hiddenGems.length : allSeeded.length;
-                return (
-                  <button
-                    key={sec.id}
-                    onClick={() => setActiveSection(sec.id)}
-                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
-                      isActive
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <SIcon className="w-2.5 h-2.5" />
-                    {sec.label}
-                    {count > 0 && <span className="text-[8px] opacity-70">({count})</span>}
-                  </button>
-                );
-              })}
-            </div>
+            {/* Section tabs removed — category bar is the only navigation */}
 
             {/* Search + filters */}
             <div className="px-4 py-2 sticky top-0 z-10 bg-card">

@@ -1001,8 +1001,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     <Skeleton className="h-3 w-1/2" />
                   </div>
                 ))
-              ) : explorerBoostedItems.length > 0 ? (
-                explorerBoostedItems.map((item, idx) => (
+              ) : displayedItems.length > 0 ? (
+                displayedItems.map((item, idx) => (
                   <ExperienceCard
                     key={`${item.type}-${item.name}-${idx}`}
                     item={item}
@@ -1026,20 +1026,14 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               ) : !unifiedLoading ? (
                 <div className="text-center py-6">
                   <Camera className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    {activeSection === "trending" ? "No trending experiences yet" :
-                     activeSection === "hidden" ? "No community discoveries yet — be the first!" :
-                     "Discovering activities..."}
-                  </p>
-                  {(activeSection === "trending" || activeSection === "hidden") && (
-                    <button
-                      onClick={() => setShowComposer(true)}
-                      className="inline-flex items-center gap-1.5 mt-2 text-xs text-primary hover:underline"
-                    >
-                      <PenLine className="w-3 h-3" />
-                      Share your experience
-                    </button>
-                  )}
+                  <p className="text-sm text-muted-foreground">Discovering activities...</p>
+                  <button
+                    onClick={() => setShowComposer(true)}
+                    className="inline-flex items-center gap-1.5 mt-2 text-xs text-primary hover:underline"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Share your experience
+                  </button>
                 </div>
               ) : null}
             </div>

@@ -408,20 +408,9 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     setShowFilters(false);
   }, [activeCategory]);
 
-  // Section data
-  const sectionItems = useMemo((): UnifiedExperience[] => {
-    switch (activeSection) {
-      case "top": return topPicks;
-      case "trending": return trending;
-      case "hidden": return hiddenGems;
-      case "recommended": return allSeeded;
-      default: return topPicks;
-    }
-  }, [activeSection, topPicks, trending, hiddenGems, allSeeded]);
-
-  // Category + Filter + search
+  // All items sorted by popularity (engagement + rating)
   const displayedItems = useMemo(() => {
-    let items = sectionItems;
+    let items = [...allSeeded];
     // Category filter
     if (activeCategory !== "all") {
       items = items.filter(i => matchesCategory(i.category, activeCategory));
@@ -431,8 +420,14 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
       const q = searchQuery.toLowerCase();
       items = items.filter(i => i.name.toLowerCase().includes(q) || i.description.toLowerCase().includes(q));
     }
+    // Sort by popularity: engagement + rating
+    items.sort((a, b) => {
+      const scoreA = a.engagement + a.rating * 10;
+      const scoreB = b.engagement + b.rating * 10;
+      return scoreB - scoreA;
+    });
     return items;
-  }, [sectionItems, searchQuery, activeCategory]);
+  }, [allSeeded, searchQuery, activeCategory]);
 
   // Filters adapt to selected category
   const currentFilters = useMemo(() => {

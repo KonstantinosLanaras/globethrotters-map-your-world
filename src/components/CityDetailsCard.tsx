@@ -4,7 +4,7 @@ import {
   X, MapPin, Check, Heart, Star, Bookmark, Plus, Loader2,
   BadgeCheck, Utensils, Mountain, Landmark, Eye, Bus, Gem, TreePine, Wine, Camera,
   Search, SlidersHorizontal, TrendingUp, Flame, Users,
-  Moon, ListIcon
+  Moon, Compass, ListIcon
 } from "lucide-react";
 import { City } from "@/data/cities";
 import { Place, useAddPlace, useUpdatePlace, usePlaces } from "@/hooks/usePlaces";

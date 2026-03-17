@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, MapPin, Check, Heart, Star, Bookmark, Plus, Loader2, ArrowLeftRight,
+  X, MapPin, Check, Heart, Star, Bookmark, Plus, Loader2,
   BadgeCheck, Utensils, Mountain, Landmark, Eye, Bus, Gem, TreePine, Wine, Camera,
-  Search, MoreVertical, SlidersHorizontal, TrendingUp, Flame, Users, PenLine,
-  Moon, Compass, ListIcon, Shield, Sun, CloudSun, Baby, UserCheck, UsersRound, Volume2
+  Search, SlidersHorizontal, TrendingUp, Flame, Users,
+  Moon, Compass, ListIcon
 } from "lucide-react";
 import { City } from "@/data/cities";
 import { Place, useAddPlace, useUpdatePlace, usePlaces } from "@/hooks/usePlaces";
@@ -353,7 +353,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const addToList = useAddPlaceToList();
   const { data: profile } = useProfile();
   const { data: allPlaces = [] } = usePlaces();
-  const { sponsored, topPicks, trending, hiddenGems, allSeeded, loading: unifiedLoading } = useUnifiedExperiences(city.name, city.country);
+  const { sponsored, allSeeded, loading: unifiedLoading } = useUnifiedExperiences(city.name, city.country);
   const toggleSave = useToggleExperienceSave();
   const { data: savedExpIds = new Set<string>() } = useExperienceSaves();
 
@@ -361,7 +361,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const [newListName, setNewListName] = useState("");
   const [showNewList, setShowNewList] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
-  const [activeSection, setActiveSection] = useState<"top" | "trending" | "hidden" | "recommended">("top");
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string | boolean>>({});
@@ -369,8 +369,6 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const [savingItem, setSavingItem] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
   const [showMyLists, setShowMyLists] = useState(false);
-  const [explorerChips, setExplorerChips] = useState<Set<string>>(new Set());
-  const [showExplorer, setShowExplorer] = useState(false);
 
   const isVisited = savedPlace?.type === "visited";
   const isWishlist = savedPlace?.type === "wishlist";
@@ -406,22 +404,11 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     setSearchQuery("");
     setActiveFilters({});
     setShowFilters(false);
-  }, [activeSection, activeCategory]);
+  }, [activeCategory]);
 
-  // Section data
-  const sectionItems = useMemo((): UnifiedExperience[] => {
-    switch (activeSection) {
-      case "top": return topPicks;
-      case "trending": return trending;
-      case "hidden": return hiddenGems;
-      case "recommended": return allSeeded;
-      default: return topPicks;
-    }
-  }, [activeSection, topPicks, trending, hiddenGems, allSeeded]);
-
-  // Category + Filter + search
+  // All items sorted by popularity (engagement + rating)
   const displayedItems = useMemo(() => {
-    let items = sectionItems;
+    let items = [...allSeeded];
     // Category filter
     if (activeCategory !== "all") {
       items = items.filter(i => matchesCategory(i.category, activeCategory));
@@ -431,8 +418,14 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
       const q = searchQuery.toLowerCase();
       items = items.filter(i => i.name.toLowerCase().includes(q) || i.description.toLowerCase().includes(q));
     }
+    // Sort by popularity: engagement + rating
+    items.sort((a, b) => {
+      const scoreA = a.engagement + a.rating * 10;
+      const scoreB = b.engagement + b.rating * 10;
+      return scoreB - scoreA;
+    });
     return items;
-  }, [sectionItems, searchQuery, activeCategory]);
+  }, [allSeeded, searchQuery, activeCategory]);
 
   // Filters adapt to selected category
   const currentFilters = useMemo(() => {
@@ -469,94 +462,9 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     });
   };
 
-  const clearFilters = () => { setActiveFilters({}); setSearchQuery(""); setExplorerChips(new Set()); };
+  const clearFilters = () => { setActiveFilters({}); setSearchQuery(""); };
 
-  // --- Explorer chip definitions ---
-  const explorerChipDefs = useMemo(() => [
-    { id: "budget-low", label: "€ Low", group: "budget", emoji: "💰" },
-    { id: "budget-mid", label: "€€ Medium", group: "budget", emoji: "💰" },
-    { id: "budget-high", label: "€€€ High", group: "budget", emoji: "💰" },
-    { id: "safe", label: "Safe", group: "safety", emoji: "🛡️" },
-    { id: "food", label: "Good for Food", group: "preference", emoji: "🍽️" },
-    { id: "nightlife", label: "Nightlife", group: "preference", emoji: "🌙" },
-    { id: "nature-pref", label: "Nature", group: "preference", emoji: "🌿" },
-    { id: "culture-pref", label: "Culture", group: "preference", emoji: "🏛️" },
-    { id: "family", label: "Family-friendly", group: "style", emoji: "👨‍👩‍👧" },
-    { id: "solo", label: "Solo-friendly", group: "style", emoji: "🎒" },
-    { id: "low-crowds", label: "Low crowds", group: "crowd", emoji: "🤫" },
-    { id: "warm", label: "Warm weather", group: "climate", emoji: "☀️" },
-  ], []);
-
-  const toggleExplorerChip = (chipId: string) => {
-    setExplorerChips(prev => {
-      const next = new Set(prev);
-      if (next.has(chipId)) next.delete(chipId);
-      else next.add(chipId);
-      return next;
-    });
-  };
-
-  const hasExplorerFilters = explorerChips.size > 0;
-
-  // Seasonal hint based on current month
-  const seasonalHint = useMemo(() => {
-    const month = new Date().toLocaleString("en", { month: "long" });
-    const hints: Record<string, string> = {
-      January: "Winter season — cooler temperatures, fewer tourists",
-      February: "Late winter — budget-friendly, quiet atmosphere",
-      March: "Early spring — mild weather, shoulder season",
-      April: "Spring bloom — pleasant temperatures, moderate crowds",
-      May: "Late spring — ideal weather in many destinations",
-      June: "Early summer — warm, beginning of peak season",
-      July: "Peak summer — hot, busy, vibrant nightlife",
-      August: "High summer — high crowds, strong sun exposure",
-      September: "Early autumn — warm, crowds thinning",
-      October: "Autumn — cooler, beautiful foliage, quieter",
-      November: "Late autumn — off-season deals, cool weather",
-      December: "Winter — holiday atmosphere, festive markets",
-    };
-    return { month, hint: hints[month] || "Great time to explore!" };
-  }, []);
-
-  // Explorer boost: re-rank items based on explorer chips (boost, don't hide)
-  const explorerBoostedItems = useMemo(() => {
-    if (!hasExplorerFilters) return displayedItems;
-
-    const boostScore = (item: UnifiedExperience): number => {
-      let boost = 0;
-      const cat = item.category.toLowerCase();
-      const desc = (item.description || "").toLowerCase();
-      const name = item.name.toLowerCase();
-      const text = `${cat} ${desc} ${name}`;
-
-      if (explorerChips.has("food") && (cat.includes("food") || cat.includes("restaurant") || cat.includes("cafe"))) boost += 20;
-      if (explorerChips.has("nightlife") && (cat.includes("bar") || cat.includes("nightlife") || cat.includes("club"))) boost += 20;
-      if (explorerChips.has("nature-pref") && (cat.includes("nature") || cat.includes("hik") || cat.includes("scenic") || cat.includes("beach"))) boost += 20;
-      if (explorerChips.has("culture-pref") && (cat.includes("culture") || cat.includes("museum") || cat.includes("monument"))) boost += 20;
-      if (explorerChips.has("family") && (text.includes("family") || text.includes("kid"))) boost += 15;
-      if (explorerChips.has("solo") && (text.includes("solo") || text.includes("backpack"))) boost += 15;
-      if (explorerChips.has("safe") && item.rating >= 4.5) boost += 10;
-      if (explorerChips.has("budget-low") && text.includes("free")) boost += 10;
-      if (explorerChips.has("low-crowds") && (text.includes("hidden") || text.includes("secret") || text.includes("quiet"))) boost += 15;
-      if (explorerChips.has("warm") && (text.includes("beach") || text.includes("outdoor") || text.includes("sun"))) boost += 10;
-
-      return boost;
-    };
-
-    return [...displayedItems].sort((a, b) => {
-      const boostA = boostScore(a);
-      const boostB = boostScore(b);
-      if (boostA !== boostB) return boostB - boostA;
-      return b.engagement - a.engagement;
-    });
-  }, [displayedItems, explorerChips, hasExplorerFilters]);
-
-  // Dynamic search placeholder
-  const searchPlaceholder = useMemo(() => {
-    if (activeCategory === "all") return `Search food, beaches, museums in ${city.name}…`;
-    const catLabel = categoryNav.find(c => c.id === activeCategory)?.label || activeCategory;
-    return `Search ${catLabel.toLowerCase()} in ${city.name}...`;
-  }, [activeCategory, city.name]);
+  const searchPlaceholder = `Search places in ${city.name} (food, museums, beaches…)`;
 
   // --- Save handlers ---
   const handleSave = async (type: "visited" | "wishlist") => {
@@ -667,12 +575,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     }
   };
 
-  const sections = [
-    { id: "top" as const, label: `Top picks`, icon: Star },
-    { id: "trending" as const, label: "Trending", icon: Flame },
-    { id: "hidden" as const, label: "Hidden gems", icon: Gem },
-    { id: "recommended" as const, label: "For you", icon: Heart },
-  ];
+  // sections tabs removed — single flat list
 
   // Sponsored filtered by category
   const filteredSponsored = useMemo(() => {
@@ -869,31 +772,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               })}
             </div>
 
-            {/* Section tabs */}
-            <div className="px-4 pt-2 pb-1 flex gap-1 overflow-x-auto scrollbar-hide">
-              {sections.map(sec => {
-                const SIcon = sec.icon;
-                const isActive = activeSection === sec.id;
-                const count = sec.id === "top" ? topPicks.length :
-                  sec.id === "trending" ? trending.length :
-                  sec.id === "hidden" ? hiddenGems.length : allSeeded.length;
-                return (
-                  <button
-                    key={sec.id}
-                    onClick={() => setActiveSection(sec.id)}
-                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
-                      isActive
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <SIcon className="w-2.5 h-2.5" />
-                    {sec.label}
-                    {count > 0 && <span className="text-[8px] opacity-70">({count})</span>}
-                  </button>
-                );
-              })}
-            </div>
+            {/* Section tabs removed — category bar is the only navigation */}
 
             {/* Search + filters */}
             <div className="px-4 py-2 sticky top-0 z-10 bg-card">
@@ -996,119 +875,18 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                   </Tooltip>
                 </TooltipProvider>
 
-                {/* Explorer toggle button */}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => setShowExplorer(!showExplorer)}
-                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
-                          showExplorer || hasExplorerFilters
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted/80 text-foreground hover:bg-muted"
-                        }`}
-                        aria-label="Filtered Explorer"
-                      >
-                        <Compass className="w-4 h-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom"><p className="text-xs">Filtered Explorer</p></TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
                 {/* Add experience button */}
                 <button
                   onClick={() => setShowComposer(true)}
                   className="w-9 h-9 rounded-lg flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
                   aria-label="Share experience"
                 >
-                  <PenLine className="w-4 h-4" />
+                  <Plus className="w-4 h-4" />
                 </button>
               </div>
-
-              {/* Active filter chips */}
-              {activeFilterChips.length > 0 && (
-                <div className="flex gap-1.5 mt-2 flex-wrap">
-                  {activeFilterChips.map(chip => (
-                    <button
-                      key={chip.key}
-                      onClick={() => toggleFilter(chip.key, activeFilters[chip.key])}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
-                    >
-                      {chip.value}
-                      <X className="w-2.5 h-2.5" />
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
-            {/* Filtered Explorer chip bar — hidden by default */}
-            <AnimatePresence>
-              {showExplorer && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <div className="px-4 py-1.5">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Filtered Explorer</span>
-                      <button
-                        onClick={() => { setShowExplorer(false); setExplorerChips(new Set()); }}
-                        className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                        Close
-                      </button>
-                    </div>
-                    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
-                      {explorerChipDefs.map(chip => {
-                        const isActive = explorerChips.has(chip.id);
-                        return (
-                          <button
-                            key={chip.id}
-                            onClick={() => toggleExplorerChip(chip.id)}
-                            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
-                              isActive
-                                ? "bg-primary text-primary-foreground shadow-sm"
-                                : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                            }`}
-                          >
-                            <span className="text-[10px]">{chip.emoji}</span>
-                            {chip.label}
-                            {isActive && <X className="w-2.5 h-2.5 ml-0.5" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {hasExplorerFilters && (
-                      <button
-                        onClick={() => setExplorerChips(new Set())}
-                        className="text-[10px] text-primary hover:underline mt-0.5"
-                      >
-                        Clear explorer filters
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Seasonal hint */}
-                  {hasExplorerFilters && (
-                    <div className="px-4 pb-2">
-                      <div className="flex items-start gap-2 p-2.5 rounded-lg bg-accent/20 border border-accent/30">
-                        <Sun className="w-3.5 h-3.5 text-accent-foreground mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-[10px] font-medium text-foreground">In {seasonalHint.month}: {seasonalHint.hint}</p>
-                          <p className="text-[9px] text-muted-foreground mt-0.5 italic">Insights are based on community contributions and are not verified.</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Explorer section removed — filters are in filter panel only */}
 
             {/* Results */}
             <div className="px-4 pb-5 space-y-2">
@@ -1128,13 +906,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                       saving={savingItem === item.name}
                     />
                   ))}
-                  {explorerBoostedItems.length > 0 && (
-                    <div className="flex items-center gap-2 py-1">
-                      <div className="flex-1 h-px bg-border" />
-                      <span className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">Recommended for you</span>
-                      <div className="flex-1 h-px bg-border" />
-                    </div>
-                  )}
+                  {/* No divider — continuous list */}
                 </>
               )}
 
@@ -1147,8 +919,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     <Skeleton className="h-3 w-1/2" />
                   </div>
                 ))
-              ) : explorerBoostedItems.length > 0 ? (
-                explorerBoostedItems.map((item, idx) => (
+              ) : displayedItems.length > 0 ? (
+                displayedItems.map((item, idx) => (
                   <ExperienceCard
                     key={`${item.type}-${item.name}-${idx}`}
                     item={item}
@@ -1172,20 +944,14 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               ) : !unifiedLoading ? (
                 <div className="text-center py-6">
                   <Camera className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    {activeSection === "trending" ? "No trending experiences yet" :
-                     activeSection === "hidden" ? "No community discoveries yet — be the first!" :
-                     "Discovering activities..."}
-                  </p>
-                  {(activeSection === "trending" || activeSection === "hidden") && (
-                    <button
-                      onClick={() => setShowComposer(true)}
-                      className="inline-flex items-center gap-1.5 mt-2 text-xs text-primary hover:underline"
-                    >
-                      <PenLine className="w-3 h-3" />
-                      Share your experience
-                    </button>
-                  )}
+                  <p className="text-sm text-muted-foreground">Discovering activities...</p>
+                  <button
+                    onClick={() => setShowComposer(true)}
+                    className="inline-flex items-center gap-1.5 mt-2 text-xs text-primary hover:underline"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Share your experience
+                  </button>
                 </div>
               ) : null}
             </div>

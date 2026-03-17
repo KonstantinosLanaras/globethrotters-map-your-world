@@ -487,40 +487,13 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
 
           {/* Recommendations – scrollable area */}
           <div className="flex-1 overflow-y-auto">
-            {/* Section header */}
-            <div className="px-5 pt-4 pb-2 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                {profile?.personality ? "Recommended for you" : "Things to do"}
-              </span>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="w-3 h-3 text-muted-foreground/50 cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[220px] text-xs">
-                    Sponsored results are promoted listings from highly rated businesses.
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-
-            {/* Sponsored results (top 1-3, only if qualified) */}
-            {qualifiedSponsored.length > 0 && (
-              <div className="px-5 pb-2 space-y-2">
-                {qualifiedSponsored.map(p => (
-                  <SponsoredCard key={p.id} place={p} />
-                ))}
-              </div>
-            )}
-
             {/* Category chips */}
             {activitiesLoading ? (
               <div className="px-5 py-2 flex gap-2">
                 {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-7 w-20 rounded-full" />)}
               </div>
             ) : availableCategories.length > 0 ? (
-              <div className="px-5 py-2 flex gap-2 overflow-x-auto scrollbar-hide">
+              <div className="px-5 pt-3 pb-1 flex gap-2 overflow-x-auto scrollbar-hide">
                 {availableCategories.map(cat => {
                   const conf = categoryConfig[cat];
                   if (!conf) return null;
@@ -544,8 +517,136 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               </div>
             ) : null}
 
-            {/* Activity cards */}
-            <div className="px-5 pb-5 pt-1 space-y-2">
+            {/* Search bar + filter menu */}
+            <div className="px-5 py-2 sticky top-0 z-10 bg-card">
+              <div className="flex items-center gap-1.5">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={activeCategory ? searchPlaceholders[activeCategory] || "Search..." : "Search..."}
+                    className="w-full pl-8 pr-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 transition-colors"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20"
+                    >
+                      <X className="w-2.5 h-2.5 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
+                {/* 3-dot filter button */}
+                <div className="relative" ref={filterRef}>
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                      showFilters || activeFilterChips.length > 0
+                        ? "bg-primary/10 text-primary"
+                        : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                    aria-label="Filters"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+
+                  {/* Filter dropdown */}
+                  <AnimatePresence>
+                    {showFilters && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-11 w-[240px] bg-card border border-border rounded-xl shadow-xl z-20 overflow-hidden"
+                      >
+                        <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                            <SlidersHorizontal className="w-3.5 h-3.5" />
+                            Filters
+                          </div>
+                          {activeFilterChips.length > 0 && (
+                            <button onClick={clearFilters} className="text-[10px] text-primary hover:underline">
+                              Clear all
+                            </button>
+                          )}
+                        </div>
+                        <div className="p-3 space-y-3 max-h-[280px] overflow-y-auto">
+                          {currentFilters.map(filter => (
+                            <div key={filter.key}>
+                              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">{filter.label}</p>
+                              {filter.type === "toggle" ? (
+                                <button
+                                  onClick={() => toggleFilter(filter.key, !activeFilters[filter.key])}
+                                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                    activeFilters[filter.key]
+                                      ? "bg-primary text-primary-foreground"
+                                      : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                                  }`}
+                                >
+                                  {activeFilters[filter.key] ? "✓ " : ""}{filter.label}
+                                </button>
+                              ) : filter.options ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {filter.options.map(opt => (
+                                    <button
+                                      key={opt}
+                                      onClick={() => toggleFilter(filter.key, opt)}
+                                      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${
+                                        activeFilters[filter.key] === opt
+                                          ? "bg-primary text-primary-foreground"
+                                          : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                                      }`}
+                                    >
+                                      {opt}
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Active filter chips */}
+              {activeFilterChips.length > 0 && (
+                <div className="flex gap-1.5 mt-2 flex-wrap">
+                  {activeFilterChips.map(chip => (
+                    <button
+                      key={chip.key}
+                      onClick={() => toggleFilter(chip.key, activeFilters[chip.key])}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+                    >
+                      {chip.value}
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Continuous results: Sponsored → organic */}
+            <div className="px-5 pb-5 space-y-2">
+              {/* Sponsored (max 2, only if qualified + category-relevant) */}
+              {qualifiedSponsored.map(p => (
+                <SponsoredCard key={p.id} place={p} />
+              ))}
+
+              {/* Subtle divider if we have both sponsored and organic */}
+              {qualifiedSponsored.length > 0 && displayedActivities.length > 0 && (
+                <div className="flex items-center gap-2 py-1">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">Recommended for you</span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+              )}
+
+              {/* Organic activity cards */}
               {activitiesLoading ? (
                 [1, 2, 3].map(i => (
                   <div key={i} className="p-3 rounded-xl bg-muted/30 space-y-2">
@@ -603,6 +704,14 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     </motion.div>
                   );
                 })
+              ) : !activitiesLoading && (searchQuery || activeFilterChips.length > 0) ? (
+                <div className="text-center py-6">
+                  <Search className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No results match your filters</p>
+                  <button onClick={clearFilters} className="text-xs text-primary hover:underline mt-1">
+                    Clear filters
+                  </button>
+                </div>
               ) : !activitiesLoading && activities.length === 0 ? (
                 <div className="text-center py-6">
                   <Camera className="w-6 h-6 text-muted-foreground mx-auto mb-2" />

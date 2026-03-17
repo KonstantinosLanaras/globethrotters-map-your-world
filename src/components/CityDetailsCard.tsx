@@ -306,6 +306,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   };
 
   const handleAddToList = async (listId: string) => {
+    if (!user) { toast.error("Sign in first"); return; }
     if (!savedPlace) {
       try {
         const result = await addPlace.mutateAsync({
@@ -337,6 +338,48 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
       setNewListName("");
       setShowNewList(false);
     } catch { toast.error("Failed to create list"); }
+  };
+
+  // Save an activity as a place, then optionally add to a list
+  const handleSaveActivity = async (activity: Activity, type: "wishlist" | "visited") => {
+    if (!user) { toast.error("Sign in to save"); return; }
+    setSavingActivity(activity.name);
+    try {
+      await addPlace.mutateAsync({
+        name: activity.name, country: city.country, lat: city.lat, lng: city.lng,
+        type, tags: [activity.category], rating: 0, notes: activity.description || "",
+        date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
+      });
+      toast.success(`${activity.name} added to ${type}!`);
+    } catch (err: any) {
+      if (err?.message?.includes("Already")) toast.info(err.message);
+      else toast.error("Failed to save");
+    } finally {
+      setSavingActivity(null);
+    }
+  };
+
+  const handleAddActivityToList = async (activity: Activity, listId: string) => {
+    if (!user) { toast.error("Sign in first"); return; }
+    setSavingActivity(activity.name);
+    try {
+      // First save as a place
+      const result = await addPlace.mutateAsync({
+        name: activity.name, country: city.country, lat: city.lat, lng: city.lng,
+        type: "wishlist", tags: [activity.category], rating: 0, notes: activity.description || "",
+        date_visited: null,
+      });
+      if (result?.id) {
+        await addToList.mutateAsync({ listId, placeId: result.id });
+        toast.success(`${activity.name} added to list!`);
+      }
+    } catch (err: any) {
+      if (err?.message?.includes("Already")) toast.info("Already saved");
+      else toast.error("Failed to add to list");
+    } finally {
+      setSavingActivity(null);
+      setActivityListMenu(null);
+    }
   };
 
   return (

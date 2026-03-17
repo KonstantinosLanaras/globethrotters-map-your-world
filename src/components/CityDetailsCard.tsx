@@ -1022,6 +1022,51 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               )}
             </div>
 
+            {/* Filtered Explorer chip bar */}
+            <div className="px-4 py-1.5">
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                {explorerChipDefs.map(chip => {
+                  const isActive = explorerChips.has(chip.id);
+                  return (
+                    <button
+                      key={chip.id}
+                      onClick={() => toggleExplorerChip(chip.id)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                        isActive
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      <span className="text-[10px]">{chip.emoji}</span>
+                      {chip.label}
+                      {isActive && <X className="w-2.5 h-2.5 ml-0.5" />}
+                    </button>
+                  );
+                })}
+              </div>
+              {hasExplorerFilters && (
+                <button
+                  onClick={() => setExplorerChips(new Set())}
+                  className="text-[10px] text-primary hover:underline mt-0.5"
+                >
+                  Clear explorer filters
+                </button>
+              )}
+            </div>
+
+            {/* Seasonal hint */}
+            {hasExplorerFilters && (
+              <div className="px-4 pb-2">
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-accent/20 border border-accent/30">
+                  <Sun className="w-3.5 h-3.5 text-accent-foreground mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-[10px] font-medium text-foreground">In {seasonalHint.month}: {seasonalHint.hint}</p>
+                    <p className="text-[9px] text-muted-foreground mt-0.5 italic">Insights are based on community contributions and are not verified.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Results */}
             <div className="px-4 pb-5 space-y-2">
               {/* Sponsored (always at top, max 2) */}
@@ -1040,7 +1085,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                       saving={savingItem === item.name}
                     />
                   ))}
-                  {displayedItems.length > 0 && (
+                  {explorerBoostedItems.length > 0 && (
                     <div className="flex items-center gap-2 py-1">
                       <div className="flex-1 h-px bg-border" />
                       <span className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">Recommended for you</span>
@@ -1059,8 +1104,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     <Skeleton className="h-3 w-1/2" />
                   </div>
                 ))
-              ) : displayedItems.length > 0 ? (
-                displayedItems.map((item, idx) => (
+              ) : explorerBoostedItems.length > 0 ? (
+                explorerBoostedItems.map((item, idx) => (
                   <ExperienceCard
                     key={`${item.type}-${item.name}-${idx}`}
                     item={item}

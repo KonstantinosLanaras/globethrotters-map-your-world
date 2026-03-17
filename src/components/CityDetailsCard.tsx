@@ -370,6 +370,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const [showComposer, setShowComposer] = useState(false);
   const [showMyLists, setShowMyLists] = useState(false);
   const [explorerChips, setExplorerChips] = useState<Set<string>>(new Set());
+  const [showExplorer, setShowExplorer] = useState(false);
 
   const isVisited = savedPlace?.type === "visited";
   const isWishlist = savedPlace?.type === "wishlist";
@@ -995,6 +996,26 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                   </Tooltip>
                 </TooltipProvider>
 
+                {/* Explorer toggle button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => setShowExplorer(!showExplorer)}
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                          showExplorer || hasExplorerFilters
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted/80 text-foreground hover:bg-muted"
+                        }`}
+                        aria-label="Filtered Explorer"
+                      >
+                        <Compass className="w-4 h-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom"><p className="text-xs">Filtered Explorer</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
                 {/* Add experience button */}
                 <button
                   onClick={() => setShowComposer(true)}
@@ -1022,50 +1043,72 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               )}
             </div>
 
-            {/* Filtered Explorer chip bar */}
-            <div className="px-4 py-1.5">
-              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
-                {explorerChipDefs.map(chip => {
-                  const isActive = explorerChips.has(chip.id);
-                  return (
-                    <button
-                      key={chip.id}
-                      onClick={() => toggleExplorerChip(chip.id)}
-                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
-                        isActive
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      <span className="text-[10px]">{chip.emoji}</span>
-                      {chip.label}
-                      {isActive && <X className="w-2.5 h-2.5 ml-0.5" />}
-                    </button>
-                  );
-                })}
-              </div>
-              {hasExplorerFilters && (
-                <button
-                  onClick={() => setExplorerChips(new Set())}
-                  className="text-[10px] text-primary hover:underline mt-0.5"
+            {/* Filtered Explorer chip bar — hidden by default */}
+            <AnimatePresence>
+              {showExplorer && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
                 >
-                  Clear explorer filters
-                </button>
-              )}
-            </div>
-
-            {/* Seasonal hint */}
-            {hasExplorerFilters && (
-              <div className="px-4 pb-2">
-                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-accent/20 border border-accent/30">
-                  <Sun className="w-3.5 h-3.5 text-accent-foreground mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-[10px] font-medium text-foreground">In {seasonalHint.month}: {seasonalHint.hint}</p>
-                    <p className="text-[9px] text-muted-foreground mt-0.5 italic">Insights are based on community contributions and are not verified.</p>
+                  <div className="px-4 py-1.5">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Filtered Explorer</span>
+                      <button
+                        onClick={() => { setShowExplorer(false); setExplorerChips(new Set()); }}
+                        className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                        Close
+                      </button>
+                    </div>
+                    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                      {explorerChipDefs.map(chip => {
+                        const isActive = explorerChips.has(chip.id);
+                        return (
+                          <button
+                            key={chip.id}
+                            onClick={() => toggleExplorerChip(chip.id)}
+                            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                              isActive
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            }`}
+                          >
+                            <span className="text-[10px]">{chip.emoji}</span>
+                            {chip.label}
+                            {isActive && <X className="w-2.5 h-2.5 ml-0.5" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {hasExplorerFilters && (
+                      <button
+                        onClick={() => setExplorerChips(new Set())}
+                        className="text-[10px] text-primary hover:underline mt-0.5"
+                      >
+                        Clear explorer filters
+                      </button>
+                    )}
                   </div>
-                </div>
-              </div>
-            )}
+
+                  {/* Seasonal hint */}
+                  {hasExplorerFilters && (
+                    <div className="px-4 pb-2">
+                      <div className="flex items-start gap-2 p-2.5 rounded-lg bg-accent/20 border border-accent/30">
+                        <Sun className="w-3.5 h-3.5 text-accent-foreground mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-[10px] font-medium text-foreground">In {seasonalHint.month}: {seasonalHint.hint}</p>
+                          <p className="text-[9px] text-muted-foreground mt-0.5 italic">Insights are based on community contributions and are not verified.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Results */}
             <div className="px-4 pb-5 space-y-2">

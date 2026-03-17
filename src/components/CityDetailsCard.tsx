@@ -180,6 +180,10 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const [newListName, setNewListName] = useState("");
   const [showNewList, setShowNewList] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<Record<string, string | boolean>>({});
+  const filterRef = useRef<HTMLDivElement>(null);
 
   const isVisited = savedPlace?.type === "visited";
   const isWishlist = savedPlace?.type === "wishlist";
@@ -192,6 +196,23 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
+  // Close filter dropdown on outside click
+  useEffect(() => {
+    if (!showFilters) return;
+    const handler = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setShowFilters(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showFilters]);
+
+  // Reset search & filters when category changes
+  useEffect(() => {
+    setSearchQuery("");
+    setActiveFilters({});
+    setShowFilters(false);
+  }, [selectedCategory]);
+
   // Category & activity logic
   const orderedCategories = getPersonalizedOrder(
     profile?.interests || [], profile?.personality || "", profile?.travel_style || []
@@ -203,11 +224,57 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   });
   const availableCategories = orderedCategories.filter(c => activityMap[c]?.length);
   const activeCategory = selectedCategory && activityMap[selectedCategory] ? selectedCategory : availableCategories[0] || null;
-  const displayedActivities = activeCategory ? activityMap[activeCategory] || [] : [];
 
-  // Sponsored
-  const qualifiedSponsored = promotedPlaces.filter(isPromotedQualified).slice(0, 3);
+  // Filtered + searched activities
+  const displayedActivities = useMemo(() => {
+    const list = activeCategory ? activityMap[activeCategory] || [] : [];
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter(a =>
+      a.name.toLowerCase().includes(q) || a.description?.toLowerCase().includes(q)
+    );
+  }, [activeCategory, activityMap, searchQuery]);
 
+  // Sponsored (max 2 for continuous list)
+  const qualifiedSponsored = useMemo(() => {
+    const qualified = promotedPlaces.filter(isPromotedQualified);
+    // Filter by active category relevance if possible
+    if (activeCategory) {
+      const relevant = qualified.filter(p => p.business_type.toLowerCase().includes(activeCategory));
+      if (relevant.length > 0) return relevant.slice(0, 2);
+    }
+    return qualified.slice(0, 2);
+  }, [promotedPlaces, activeCategory]);
+
+  const currentFilters = useMemo(() => {
+    const specific = activeCategory ? categoryFilters[activeCategory] || [] : [];
+    return [...specific, ...genericFilters];
+  }, [activeCategory]);
+
+  const activeFilterChips = useMemo(() => {
+    return Object.entries(activeFilters)
+      .filter(([, v]) => v && v !== false)
+      .map(([key, value]) => {
+        const def = currentFilters.find(f => f.key === key);
+        return { key, label: def?.label || key, value: typeof value === "boolean" ? def?.label || key : String(value) };
+      });
+  }, [activeFilters, currentFilters]);
+
+  const toggleFilter = (key: string, value: string | boolean) => {
+    setActiveFilters(prev => {
+      if (prev[key] === value) {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      }
+      return { ...prev, [key]: value };
+    });
+  };
+
+  const clearFilters = () => {
+    setActiveFilters({});
+    setSearchQuery("");
+  };
   const handleSave = async (type: "visited" | "wishlist") => {
     if (!user) { toast.error("Sign in to save places"); return; }
     if (isSaved && savedPlace.type === type) {

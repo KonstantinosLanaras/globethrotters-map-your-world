@@ -2,10 +2,12 @@ import { useState, useCallback, useMemo } from "react";
 import WorldMap from "@/components/WorldMap";
 import Navbar from "@/components/Navbar";
 import MapControls from "@/components/MapControls";
+import MapLegend from "@/components/MapLegend";
 import CityDetailsCard from "@/components/CityDetailsCard";
 import RecommendationsSection from "@/components/RecommendationsSection";
-import { usePlaces, Place } from "@/hooks/usePlaces";
+import { usePlaces, useUpdatePlace, useDeletePlace, Place } from "@/hooks/usePlaces";
 import { worldCities, City } from "@/data/cities";
+import { toast } from "sonner";
 
 const Index = () => {
   const [showCities, setShowCities] = useState(true);
@@ -13,6 +15,8 @@ const Index = () => {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(true);
   const { data: places = [] } = usePlaces();
+  const updatePlace = useUpdatePlace();
+  const deletePlace = useDeletePlace();
 
   const stats = useMemo(() => ({
     visited: places.filter((p) => p.type === "visited").length,
@@ -52,6 +56,24 @@ const Index = () => {
     }
   }, []);
 
+  const handleTogglePlace = useCallback((place: Place) => {
+    const newType = place.type === "visited" ? "wishlist" : "visited";
+    updatePlace.mutate(
+      { id: place.id, type: newType },
+      {
+        onSuccess: () => toast.success(`Moved to ${newType === "visited" ? "Visited" : "Wishlist"}`),
+        onError: () => toast.error("Failed to update place"),
+      }
+    );
+  }, [updatePlace]);
+
+  const handleRemovePlace = useCallback((placeId: string) => {
+    deletePlace.mutate(placeId, {
+      onSuccess: () => toast.success("Place removed from map"),
+      onError: () => toast.error("Failed to remove place"),
+    });
+  }, [deletePlace]);
+
   return (
     <div className="relative h-screen w-screen overflow-hidden">
       <Navbar />
@@ -75,6 +97,7 @@ const Index = () => {
           onToggle={() => setIsRecommendationsOpen((v) => !v)}
         />
       )}
+      <MapLegend />
       <div className="absolute inset-0 pt-[60px]">
         <WorldMap
           cities={worldCities}
@@ -83,6 +106,8 @@ const Index = () => {
           mapFilter={mapFilter}
           onCityClick={handleCityClick}
           onPlaceClick={handlePlaceClick}
+          onTogglePlace={handleTogglePlace}
+          onRemovePlace={handleRemovePlace}
         />
       </div>
     </div>

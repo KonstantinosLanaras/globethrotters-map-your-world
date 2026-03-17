@@ -184,6 +184,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string | boolean>>({});
   const filterRef = useRef<HTMLDivElement>(null);
+  const [activityListMenu, setActivityListMenu] = useState<string | null>(null);
+  const [savingActivity, setSavingActivity] = useState<string | null>(null);
 
   const isVisited = savedPlace?.type === "visited";
   const isWishlist = savedPlace?.type === "wishlist";

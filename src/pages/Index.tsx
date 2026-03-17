@@ -69,8 +69,11 @@ const Index = () => {
           onClose={() => setSelectedCity(null)}
         />
       )}
-      {!selectedCity && isRecommendationsOpen && (
-        <RecommendationsSection onClose={() => setIsRecommendationsOpen(false)} />
+      {!selectedCity && (
+        <RecommendationsSection
+          isOpen={isRecommendationsOpen}
+          onToggle={() => setIsRecommendationsOpen((v) => !v)}
+        />
       )}
       <div className="absolute inset-0 pt-[60px]">
         <WorldMap

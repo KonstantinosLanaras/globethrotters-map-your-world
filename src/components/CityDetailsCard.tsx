@@ -657,12 +657,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     }
   };
 
-  const sections = [
-    { id: "top" as const, label: `Top picks`, icon: Star },
-    { id: "trending" as const, label: "Trending", icon: Flame },
-    { id: "hidden" as const, label: "Hidden gems", icon: Gem },
-    { id: "recommended" as const, label: "For you", icon: Heart },
-  ];
+  // sections tabs removed — single flat list
 
   // Sponsored filtered by category
   const filteredSponsored = useMemo(() => {

@@ -744,6 +744,67 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                               </span>
                             )}
                           </div>
+                          {/* Save actions */}
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <button
+                              onClick={() => handleSaveActivity(activity, "wishlist")}
+                              disabled={savingActivity === activity.name}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-accent/50 text-accent-foreground hover:bg-accent transition-colors"
+                            >
+                              {savingActivity === activity.name ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Heart className="w-3 h-3" />
+                              )}
+                              Wishlist
+                            </button>
+                            <button
+                              onClick={() => handleSaveActivity(activity, "visited")}
+                              disabled={savingActivity === activity.name}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-accent/50 text-accent-foreground hover:bg-accent transition-colors"
+                            >
+                              <Check className="w-3 h-3" />
+                              Visited
+                            </button>
+                            <div className="relative">
+                              <button
+                                onClick={() => setActivityListMenu(activityListMenu === activity.name ? null : activity.name)}
+                                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+                              >
+                                <Bookmark className="w-3 h-3" />
+                                List
+                              </button>
+                              {/* Mini list picker */}
+                              <AnimatePresence>
+                                {activityListMenu === activity.name && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                                    className="absolute bottom-full left-0 mb-1 w-[180px] bg-card border border-border rounded-xl shadow-xl z-30 overflow-hidden"
+                                  >
+                                    <div className="p-2 max-h-[140px] overflow-y-auto space-y-0.5">
+                                      {lists.length === 0 ? (
+                                        <p className="text-[11px] text-muted-foreground text-center py-2">No lists yet</p>
+                                      ) : (
+                                        lists.map(list => (
+                                          <button
+                                            key={list.id}
+                                            onClick={() => handleAddActivityToList(activity, list.id)}
+                                            className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
+                                          >
+                                            <span className="text-sm">{list.emoji}</span>
+                                            <span className="text-[11px] font-medium text-foreground truncate flex-1">{list.title}</span>
+                                            <Plus className="w-3 h-3 text-muted-foreground" />
+                                          </button>
+                                        ))
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </motion.div>

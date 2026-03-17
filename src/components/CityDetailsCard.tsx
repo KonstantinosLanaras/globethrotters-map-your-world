@@ -1,21 +1,21 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, MapPin, Check, Heart, Star, Bookmark, Plus, Loader2, ArrowLeftRight,
-  Sparkles, BadgeCheck, Utensils, Mountain, Landmark, Eye, Bus, Gem, TreePine, Wine, Camera, Info,
-  Search, MoreVertical, SlidersHorizontal
+  BadgeCheck, Utensils, Mountain, Landmark, Eye, Bus, Gem, TreePine, Wine, Camera,
+  Search, MoreVertical, SlidersHorizontal, TrendingUp, Flame, Users, PenLine
 } from "lucide-react";
 import { City } from "@/data/cities";
 import { Place, useAddPlace, useUpdatePlace } from "@/hooks/usePlaces";
 import { useLists, useAddList } from "@/hooks/useLists";
 import { useAddPlaceToList } from "@/hooks/useListPlaces";
 import { useAuth } from "@/hooks/useAuth";
-import { useActivities, Activity } from "@/hooks/useActivities";
 import { useProfile } from "@/hooks/useProfile";
-import { usePromotedPlaces, PromotedPlace } from "@/hooks/usePromotedPlaces";
+import { useUnifiedExperiences, UnifiedExperience, useToggleExperienceSave, useExperienceSaves } from "@/hooks/useCityExperiences";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import ExperienceComposer from "@/components/ExperienceComposer";
 
 interface CityDetailsCardProps {
   city: City;
@@ -46,6 +46,10 @@ const categoryFilters: Record<string, FilterOption[]> = {
     { key: "difficulty", label: "Difficulty", type: "select", options: ["Easy", "Moderate", "Hard"] },
     { key: "duration", label: "Duration", type: "select", options: ["< 1h", "1-3h", "3-6h", "Full day"] },
   ],
+  hike: [
+    { key: "difficulty", label: "Difficulty", type: "select", options: ["Easy", "Moderate", "Hard"] },
+    { key: "duration", label: "Duration", type: "select", options: ["< 1h", "1-3h", "3-6h", "Full day"] },
+  ],
   nature: [
     { key: "activityType", label: "Type", type: "select", options: ["Park", "Garden", "Lake", "Beach", "Forest"] },
     { key: "kidFriendly", label: "Kid-friendly", type: "toggle" },
@@ -60,110 +64,179 @@ const categoryFilters: Record<string, FilterOption[]> = {
   hidden_gem: [
     { key: "gemType", label: "Type", type: "select", options: ["Local spot", "Off-beat", "Secret", "Underrated"] },
   ],
-  transport: [],
 };
 
-// Generic fallback filters for any category
 const genericFilters: FilterOption[] = [
   { key: "rating", label: "Min rating", type: "select", options: ["4.0+", "4.5+", "4.8+"] },
   { key: "popularity", label: "Popularity", type: "select", options: ["Any", "Popular", "Hidden"] },
 ];
 
-const searchPlaceholders: Record<string, string> = {
-  food: "Search restaurants or cuisines",
-  bars: "Search bars or nightlife",
-  hiking: "Search trails or hikes",
-  nature: "Search nature spots",
-  culture: "Search museums, monuments...",
-  scenic: "Search viewpoints or scenic spots",
-  hidden_gem: "Search hidden gems",
-  transport: "Search transport options",
-};
-
 const categoryConfig: Record<string, { icon: typeof Utensils; label: string; color: string }> = {
   food: { icon: Utensils, label: "Food", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" },
   hiking: { icon: Mountain, label: "Hiking", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+  hike: { icon: Mountain, label: "Hike", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
   nature: { icon: TreePine, label: "Nature", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   culture: { icon: Landmark, label: "Culture", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
   scenic: { icon: Eye, label: "Scenic", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
   transport: { icon: Bus, label: "Transport", color: "bg-slate-100 text-slate-600 dark:bg-slate-800/30 dark:text-slate-400" },
   hidden_gem: { icon: Gem, label: "Hidden Gems", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
   bars: { icon: Wine, label: "Bars", color: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400" },
+  monument: { icon: Landmark, label: "Monument", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  beach: { icon: Eye, label: "Beach", color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400" },
+  museum: { icon: Landmark, label: "Museum", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" },
+  city_walk: { icon: MapPin, label: "City Walk", color: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400" },
+  road_trip: { icon: Bus, label: "Road Trip", color: "bg-slate-100 text-slate-600 dark:bg-slate-800/30 dark:text-slate-400" },
+  hotel: { icon: MapPin, label: "Hotel", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400" },
+  general: { icon: Camera, label: "Other", color: "bg-muted text-muted-foreground" },
 };
 
-const SPONSORED_MIN_RATING = 4.5;
-const SPONSORED_MIN_SHIPMENTS = 5;
-
-const getPersonalizedOrder = (interests: string[], personality: string, travelStyle: string[]): string[] => {
-  const all = [...interests, ...travelStyle, personality].map(s => s?.toLowerCase() || "");
-  const scores: Record<string, number> = {
-    food: 5, culture: 4, hidden_gem: 3, scenic: 3, hiking: 2, nature: 2, bars: 2, transport: 1,
-  };
-  if (all.some(s => s.includes("food") || s.includes("culinary") || s.includes("gastro"))) scores.food += 5;
-  if (all.some(s => s.includes("adventure") || s.includes("explorer") || s.includes("hik"))) { scores.hiking += 5; scores.nature += 3; }
-  if (all.some(s => s.includes("culture") || s.includes("history") || s.includes("museum") || s.includes("art"))) scores.culture += 5;
-  if (all.some(s => s.includes("nightlife") || s.includes("bar") || s.includes("party"))) scores.bars += 5;
-  if (all.some(s => s.includes("nature") || s.includes("outdoor"))) { scores.nature += 4; scores.scenic += 3; }
-  if (all.some(s => s.includes("hidden") || s.includes("off-beat") || s.includes("local"))) scores.hidden_gem += 5;
-  return Object.entries(scores).sort((a, b) => b[1] - a[1]).map(([k]) => k);
+const labelConfig: Record<string, { icon: typeof Star; color: string }> = {
+  Sponsored: { icon: BadgeCheck, color: "bg-primary/10 text-primary" },
+  Trending: { icon: Flame, color: "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400" },
+  Rising: { icon: TrendingUp, color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" },
+  Community: { icon: Users, color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" },
+  Verified: { icon: BadgeCheck, color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  Popular: { icon: Star, color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" },
 };
 
-const getMatchReason = (activity: Activity, interests: string[], personality: string): string | null => {
-  const all = [...interests, personality].map(s => s?.toLowerCase() || "");
-  if (activity.category === "food" && all.some(s => s.includes("food"))) return "Matches your foodie profile";
-  if (activity.category === "hiking" && all.some(s => s.includes("adventure") || s.includes("hik"))) return "Great for your adventurous side";
-  if (activity.category === "culture" && all.some(s => s.includes("culture") || s.includes("history"))) return "Perfect for culture lovers";
-  if (activity.category === "hidden_gem" && all.some(s => s.includes("hidden") || s.includes("local"))) return "A hidden gem just for you";
-  if (activity.category === "scenic") return "Top-rated scenic spot";
-  return null;
-};
+// --- Experience Card ---
+const ExperienceCard = ({
+  item,
+  idx,
+  onSaveToWishlist,
+  onSaveToVisited,
+  lists,
+  onAddToList,
+  isSaved: isExpSaved,
+  saving,
+}: {
+  item: UnifiedExperience;
+  idx: number;
+  onSaveToWishlist: () => void;
+  onSaveToVisited: () => void;
+  lists: { id: string; title: string; emoji: string }[];
+  onAddToList: (listId: string) => void;
+  isSaved: boolean;
+  saving: boolean;
+}) => {
+  const [showListPicker, setShowListPicker] = useState(false);
+  const conf = categoryConfig[item.category] || categoryConfig.general;
+  const Icon = conf?.icon || Camera;
+  const lbl = item.label ? labelConfig[item.label] : null;
+  const LblIcon = lbl?.icon || Star;
 
-const isPromotedQualified = (p: PromotedPlace): boolean => {
-  const rating = p.quality_score / 10;
-  return p.is_active && rating >= SPONSORED_MIN_RATING && p.impressions >= SPONSORED_MIN_SHIPMENTS;
-};
-
-const SponsoredCard = ({ place }: { place: PromotedPlace }) => {
-  const rating = (place.quality_score / 10).toFixed(1);
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-3 rounded-xl bg-primary/5 border border-primary/10 hover:border-primary/20 transition-colors"
+      transition={{ delay: idx * 0.03 }}
+      className={`group p-3 rounded-xl transition-colors ${
+        item.type === "sponsored"
+          ? "bg-primary/5 border border-primary/10 hover:border-primary/20"
+          : "bg-muted/30 hover:bg-muted/50"
+      }`}
     >
       <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <BadgeCheck className="w-4 h-4 text-primary" />
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${conf.color}`}>
+          <Icon className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h4 className="text-sm font-medium text-foreground truncate">{place.business_name}</h4>
-            <span className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-600">
-              <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-              {rating}
-            </span>
-          </div>
-          {place.description && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{place.description}</p>
-          )}
-          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium capitalize">
-              {place.business_type}
-            </span>
-            {place.impressions > 0 && (
-              <span className="text-[10px] text-muted-foreground">
-                {place.impressions.toLocaleString()} reviews
+            <h4 className="text-sm font-medium text-foreground truncate">{item.name}</h4>
+            {item.rating > 0 && (
+              <span className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-600 flex-shrink-0">
+                <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                {item.rating.toFixed(1)}
               </span>
             )}
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium uppercase tracking-wider">
-              Sponsored
-            </span>
+          </div>
+          {item.description && (
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{item.description}</p>
+          )}
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            {item.reviewCount > 0 && (
+              <span className="text-[10px] text-muted-foreground">
+                {item.reviewCount.toLocaleString()} reviews
+              </span>
+            )}
+            {item.label && lbl && (
+              <span className={`inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full font-medium ${lbl.color}`}>
+                <LblIcon className="w-2.5 h-2.5" />
+                {item.label}
+              </span>
+            )}
+          </div>
+          {/* Save actions */}
+          <div className="flex items-center gap-1.5 mt-2">
+            <button
+              onClick={onSaveToWishlist}
+              disabled={saving}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${
+                isExpSaved
+                  ? "bg-primary/15 text-primary"
+                  : "bg-accent/50 text-accent-foreground hover:bg-accent"
+              }`}
+            >
+              {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Heart className="w-3 h-3" />}
+              {isExpSaved ? "Saved" : "Wishlist"}
+            </button>
+            <button
+              onClick={onSaveToVisited}
+              disabled={saving}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-accent/50 text-accent-foreground hover:bg-accent transition-colors"
+            >
+              <Check className="w-3 h-3" />
+              Visited
+            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowListPicker(!showListPicker)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+              >
+                <Bookmark className="w-3 h-3" />
+                List
+              </button>
+              <AnimatePresence>
+                {showListPicker && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                    className="absolute bottom-full left-0 mb-1 w-[180px] bg-card border border-border rounded-xl shadow-xl z-30"
+                  >
+                    <div className="p-2 max-h-[140px] overflow-y-auto space-y-0.5">
+                      {lists.length === 0 ? (
+                        <p className="text-[11px] text-muted-foreground text-center py-2">No lists yet</p>
+                      ) : lists.map(list => (
+                        <button
+                          key={list.id}
+                          onClick={() => { onAddToList(list.id); setShowListPicker(false); }}
+                          className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
+                        >
+                          <span className="text-sm">{list.emoji}</span>
+                          <span className="text-[11px] font-medium text-foreground truncate flex-1">{list.title}</span>
+                          <Plus className="w-3 h-3 text-muted-foreground" />
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
     </motion.div>
   );
 };
+
+// --- Section Header ---
+const SectionHeader = ({ title, icon: SIcon }: { title: string; icon: typeof Star }) => (
+  <div className="flex items-center gap-2 pt-3 pb-1.5">
+    <SIcon className="w-3.5 h-3.5 text-muted-foreground" />
+    <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
+  </div>
+);
 
 const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) => {
   const { user } = useAuth();
@@ -173,19 +246,20 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const addList = useAddList();
   const addToList = useAddPlaceToList();
   const { data: profile } = useProfile();
-  const { activities, loading: activitiesLoading } = useActivities(city.name, city.country);
-  const { data: promotedPlaces = [] } = usePromotedPlaces();
+  const { sponsored, topPicks, trending, hiddenGems, allSeeded, loading: unifiedLoading } = useUnifiedExperiences(city.name, city.country);
+  const toggleSave = useToggleExperienceSave();
+  const { data: savedExpIds = new Set<string>() } = useExperienceSaves();
 
   const [showLists, setShowLists] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [showNewList, setShowNewList] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<"top" | "trending" | "hidden" | "recommended">("top");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string | boolean>>({});
   const filterRef = useRef<HTMLDivElement>(null);
-  const [activityListMenu, setActivityListMenu] = useState<string | null>(null);
-  const [savingActivity, setSavingActivity] = useState<string | null>(null);
+  const [savingItem, setSavingItem] = useState<string | null>(null);
+  const [showComposer, setShowComposer] = useState(false);
 
   const isVisited = savedPlace?.type === "visited";
   const isWishlist = savedPlace?.type === "wishlist";
@@ -198,7 +272,6 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  // Close filter dropdown on outside click
   useEffect(() => {
     if (!showFilters) return;
     const handler = (e: MouseEvent) => {
@@ -208,50 +281,45 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     return () => document.removeEventListener("mousedown", handler);
   }, [showFilters]);
 
-  // Reset search & filters when category changes
   useEffect(() => {
     setSearchQuery("");
     setActiveFilters({});
     setShowFilters(false);
-  }, [selectedCategory]);
+  }, [activeSection]);
 
-  // Category & activity logic
-  const orderedCategories = getPersonalizedOrder(
-    profile?.interests || [], profile?.personality || "", profile?.travel_style || []
-  );
-  const activityMap: Record<string, Activity[]> = {};
-  activities.forEach(a => {
-    if (!activityMap[a.category]) activityMap[a.category] = [];
-    activityMap[a.category].push(a);
-  });
-  const availableCategories = orderedCategories.filter(c => activityMap[c]?.length);
-  const activeCategory = selectedCategory && activityMap[selectedCategory] ? selectedCategory : availableCategories[0] || null;
-
-  // Filtered + searched activities
-  const displayedActivities = useMemo(() => {
-    const list = activeCategory ? activityMap[activeCategory] || [] : [];
-    if (!searchQuery.trim()) return list;
-    const q = searchQuery.toLowerCase();
-    return list.filter(a =>
-      a.name.toLowerCase().includes(q) || a.description?.toLowerCase().includes(q)
-    );
-  }, [activeCategory, activityMap, searchQuery]);
-
-  // Sponsored (max 2 for continuous list)
-  const qualifiedSponsored = useMemo(() => {
-    const qualified = promotedPlaces.filter(isPromotedQualified);
-    // Filter by active category relevance if possible
-    if (activeCategory) {
-      const relevant = qualified.filter(p => p.business_type.toLowerCase().includes(activeCategory));
-      if (relevant.length > 0) return relevant.slice(0, 2);
+  // Section data
+  const sectionItems = useMemo((): UnifiedExperience[] => {
+    switch (activeSection) {
+      case "top": return topPicks;
+      case "trending": return trending;
+      case "hidden": return hiddenGems;
+      case "recommended": return allSeeded;
+      default: return topPicks;
     }
-    return qualified.slice(0, 2);
-  }, [promotedPlaces, activeCategory]);
+  }, [activeSection, topPicks, trending, hiddenGems, allSeeded]);
+
+  // Filter + search
+  const displayedItems = useMemo(() => {
+    let items = sectionItems;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      items = items.filter(i => i.name.toLowerCase().includes(q) || i.description.toLowerCase().includes(q));
+    }
+    return items;
+  }, [sectionItems, searchQuery]);
+
+  // Detect active category for filters
+  const dominantCategory = useMemo(() => {
+    const cats: Record<string, number> = {};
+    displayedItems.forEach(i => { cats[i.category] = (cats[i.category] || 0) + 1; });
+    const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+    return sorted[0]?.[0] || "general";
+  }, [displayedItems]);
 
   const currentFilters = useMemo(() => {
-    const specific = activeCategory ? categoryFilters[activeCategory] || [] : [];
+    const specific = categoryFilters[dominantCategory] || [];
     return [...specific, ...genericFilters];
-  }, [activeCategory]);
+  }, [dominantCategory]);
 
   const activeFilterChips = useMemo(() => {
     return Object.entries(activeFilters)
@@ -273,10 +341,9 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     });
   };
 
-  const clearFilters = () => {
-    setActiveFilters({});
-    setSearchQuery("");
-  };
+  const clearFilters = () => { setActiveFilters({}); setSearchQuery(""); };
+
+  // --- Save handlers ---
   const handleSave = async (type: "visited" | "wishlist") => {
     if (!user) { toast.error("Sign in to save places"); return; }
     if (isSaved && savedPlace.type === type) {
@@ -317,7 +384,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
           await addToList.mutateAsync({ listId, placeId: result.id });
           toast.success("Saved & added to list!");
         }
-      } catch { toast.error("Failed to add to list. Please try again."); }
+      } catch { toast.error("Failed to add to list."); }
       return;
     }
     try {
@@ -340,47 +407,58 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     } catch { toast.error("Failed to create list"); }
   };
 
-  // Save an activity as a place, then optionally add to a list
-  const handleSaveActivity = async (activity: Activity, type: "wishlist" | "visited") => {
+  const handleItemSave = async (item: UnifiedExperience, type: "visited" | "wishlist") => {
     if (!user) { toast.error("Sign in to save"); return; }
-    setSavingActivity(activity.name);
+    setSavingItem(item.name);
     try {
       await addPlace.mutateAsync({
-        name: activity.name, country: city.country, lat: city.lat, lng: city.lng,
-        type, tags: [activity.category], rating: 0, notes: activity.description || "",
+        name: item.name, country: city.country, lat: city.lat, lng: city.lng,
+        type, tags: [item.category], rating: 0, notes: item.description || "",
         date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
       });
-      toast.success(`${activity.name} added to ${type}!`);
+      // If community experience, toggle save
+      if (item.type === "community" && item.experience && type === "wishlist") {
+        const alreadySaved = savedExpIds.has(item.experience.id);
+        if (!alreadySaved) {
+          await toggleSave.mutateAsync({ experienceId: item.experience.id, isSaved: false });
+        }
+      }
+      toast.success(`${item.name} added to ${type}!`);
     } catch (err: any) {
       if (err?.message?.includes("Already")) toast.info(err.message);
       else toast.error("Failed to save");
     } finally {
-      setSavingActivity(null);
+      setSavingItem(null);
     }
   };
 
-  const handleAddActivityToList = async (activity: Activity, listId: string) => {
+  const handleItemAddToList = async (item: UnifiedExperience, listId: string) => {
     if (!user) { toast.error("Sign in first"); return; }
-    setSavingActivity(activity.name);
+    setSavingItem(item.name);
     try {
-      // First save as a place
       const result = await addPlace.mutateAsync({
-        name: activity.name, country: city.country, lat: city.lat, lng: city.lng,
-        type: "wishlist", tags: [activity.category], rating: 0, notes: activity.description || "",
+        name: item.name, country: city.country, lat: city.lat, lng: city.lng,
+        type: "wishlist", tags: [item.category], rating: 0, notes: item.description || "",
         date_visited: null,
       });
       if (result?.id) {
         await addToList.mutateAsync({ listId, placeId: result.id });
-        toast.success(`${activity.name} added to list!`);
+        toast.success(`${item.name} added to list!`);
       }
     } catch (err: any) {
       if (err?.message?.includes("Already")) toast.info("Already saved");
       else toast.error("Failed to add to list");
     } finally {
-      setSavingActivity(null);
-      setActivityListMenu(null);
+      setSavingItem(null);
     }
   };
+
+  const sections = [
+    { id: "top" as const, label: `Top picks in ${city.name}`, icon: Star },
+    { id: "trending" as const, label: "Trending now", icon: Flame },
+    { id: "hidden" as const, label: "Hidden gems", icon: Gem },
+    { id: "recommended" as const, label: "Recommended for you", icon: Heart },
+  ];
 
   return (
     <>
@@ -530,39 +608,35 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
             )}
           </AnimatePresence>
 
-          {/* Recommendations – scrollable area */}
+          {/* Discovery – scrollable area */}
           <div className="flex-1 overflow-y-auto">
-            {/* Category chips */}
-            {activitiesLoading ? (
-              <div className="px-5 py-2 flex gap-2">
-                {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-7 w-20 rounded-full" />)}
-              </div>
-            ) : availableCategories.length > 0 ? (
-              <div className="px-5 pt-3 pb-1 flex gap-2 overflow-x-auto scrollbar-hide">
-                {availableCategories.map(cat => {
-                  const conf = categoryConfig[cat];
-                  if (!conf) return null;
-                  const Icon = conf.icon;
-                  const isActive = cat === activeCategory;
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 ${
-                        isActive
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : `${conf.color} hover:opacity-80`
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      {conf.label}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
+            {/* Section tabs */}
+            <div className="px-5 pt-3 pb-1 flex gap-1.5 overflow-x-auto scrollbar-hide">
+              {sections.map(sec => {
+                const SIcon = sec.icon;
+                const isActive = activeSection === sec.id;
+                const count = sec.id === "top" ? topPicks.length :
+                  sec.id === "trending" ? trending.length :
+                  sec.id === "hidden" ? hiddenGems.length : allSeeded.length;
+                return (
+                  <button
+                    key={sec.id}
+                    onClick={() => setActiveSection(sec.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <SIcon className="w-3 h-3" />
+                    {sec.id === "top" ? "Top picks" : sec.id === "trending" ? "Trending" : sec.id === "hidden" ? "Hidden gems" : "For you"}
+                    {count > 0 && <span className="text-[9px] opacity-70">({count})</span>}
+                  </button>
+                );
+              })}
+            </div>
 
-            {/* Search bar + filter menu */}
+            {/* Search + filters */}
             <div className="px-5 py-2 sticky top-0 z-10 bg-card">
               <div className="flex items-center gap-1.5">
                 <div className="flex-1 relative">
@@ -570,7 +644,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                   <input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={activeCategory ? searchPlaceholders[activeCategory] || "Search..." : "Search..."}
+                    placeholder={`Search in ${city.name}...`}
                     className="w-full pl-8 pr-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 transition-colors"
                   />
                   {searchQuery && (
@@ -582,7 +656,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     </button>
                   )}
                 </div>
-                {/* 3-dot filter button */}
+                {/* Filter button */}
                 <div className="relative" ref={filterRef}>
                   <button
                     onClick={() => setShowFilters(!showFilters)}
@@ -596,7 +670,6 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     <MoreVertical className="w-4 h-4" />
                   </button>
 
-                  {/* Filter dropdown */}
                   <AnimatePresence>
                     {showFilters && (
                       <motion.div
@@ -656,6 +729,15 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     )}
                   </AnimatePresence>
                 </div>
+
+                {/* Add experience button */}
+                <button
+                  onClick={() => setShowComposer(true)}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+                  aria-label="Share experience"
+                >
+                  <PenLine className="w-4 h-4" />
+                </button>
               </div>
 
               {/* Active filter chips */}
@@ -675,24 +757,36 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               )}
             </div>
 
-            {/* Continuous results: Sponsored → organic */}
+            {/* Results */}
             <div className="px-5 pb-5 space-y-2">
-              {/* Sponsored (max 2, only if qualified + category-relevant) */}
-              {qualifiedSponsored.map(p => (
-                <SponsoredCard key={p.id} place={p} />
-              ))}
-
-              {/* Subtle divider if we have both sponsored and organic */}
-              {qualifiedSponsored.length > 0 && displayedActivities.length > 0 && (
-                <div className="flex items-center gap-2 py-1">
-                  <div className="flex-1 h-px bg-border" />
-                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">Recommended for you</span>
-                  <div className="flex-1 h-px bg-border" />
-                </div>
+              {/* Sponsored (always at top, max 2) */}
+              {sponsored.length > 0 && (
+                <>
+                  {sponsored.map((item, idx) => (
+                    <ExperienceCard
+                      key={`sp-${idx}`}
+                      item={item}
+                      idx={idx}
+                      onSaveToWishlist={() => handleItemSave(item, "wishlist")}
+                      onSaveToVisited={() => handleItemSave(item, "visited")}
+                      lists={lists}
+                      onAddToList={(listId) => handleItemAddToList(item, listId)}
+                      isSaved={false}
+                      saving={savingItem === item.name}
+                    />
+                  ))}
+                  {displayedItems.length > 0 && (
+                    <div className="flex items-center gap-2 py-1">
+                      <div className="flex-1 h-px bg-border" />
+                      <span className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">Recommended for you</span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+                  )}
+                </>
               )}
 
-              {/* Organic activity cards */}
-              {activitiesLoading ? (
+              {/* Loading */}
+              {unifiedLoading ? (
                 [1, 2, 3].map(i => (
                   <div key={i} className="p-3 rounded-xl bg-muted/30 space-y-2">
                     <Skeleton className="h-4 w-3/4" />
@@ -700,117 +794,21 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     <Skeleton className="h-3 w-1/2" />
                   </div>
                 ))
-              ) : displayedActivities.length > 0 ? (
-                displayedActivities.map((activity, idx) => {
-                  const conf = categoryConfig[activity.category];
-                  const Icon = conf?.icon || Camera;
-                  const matchReason = getMatchReason(activity, profile?.interests || [], profile?.personality || "");
-                  const rating = (4.0 + (activity.name.length % 10) / 10).toFixed(1);
-                  const reviewCount = 50 + (activity.name.length * 17) % 2000;
-
-                  return (
-                    <motion.div
-                      key={`${activity.name}-${idx}`}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.04 }}
-                      className="group p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${conf?.color || "bg-muted text-muted-foreground"}`}>
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-medium text-foreground truncate">{activity.name}</h4>
-                            <span className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-600 flex-shrink-0">
-                              <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                              {rating}
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{activity.description}</p>
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <span className="text-[10px] text-muted-foreground">
-                              {reviewCount.toLocaleString()} reviews
-                            </span>
-                            {activity.duration && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-background text-muted-foreground">
-                                {activity.duration}
-                              </span>
-                            )}
-                            {matchReason && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                                ✨ {matchReason}
-                              </span>
-                            )}
-                          </div>
-                          {/* Save actions */}
-                          <div className="flex items-center gap-1.5 mt-2">
-                            <button
-                              onClick={() => handleSaveActivity(activity, "wishlist")}
-                              disabled={savingActivity === activity.name}
-                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-accent/50 text-accent-foreground hover:bg-accent transition-colors"
-                            >
-                              {savingActivity === activity.name ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <Heart className="w-3 h-3" />
-                              )}
-                              Wishlist
-                            </button>
-                            <button
-                              onClick={() => handleSaveActivity(activity, "visited")}
-                              disabled={savingActivity === activity.name}
-                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-accent/50 text-accent-foreground hover:bg-accent transition-colors"
-                            >
-                              <Check className="w-3 h-3" />
-                              Visited
-                            </button>
-                            <div className="relative">
-                              <button
-                                onClick={() => setActivityListMenu(activityListMenu === activity.name ? null : activity.name)}
-                                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
-                              >
-                                <Bookmark className="w-3 h-3" />
-                                List
-                              </button>
-                              {/* Mini list picker */}
-                              <AnimatePresence>
-                                {activityListMenu === activity.name && (
-                                  <motion.div
-                                    initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                                    className="absolute bottom-full left-0 mb-1 w-[180px] bg-card border border-border rounded-xl shadow-xl z-30 overflow-hidden"
-                                  >
-                                    <div className="p-2 max-h-[140px] overflow-y-auto space-y-0.5">
-                                      {lists.length === 0 ? (
-                                        <p className="text-[11px] text-muted-foreground text-center py-2">No lists yet</p>
-                                      ) : (
-                                        lists.map(list => (
-                                          <button
-                                            key={list.id}
-                                            onClick={() => handleAddActivityToList(activity, list.id)}
-                                            className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
-                                          >
-                                            <span className="text-sm">{list.emoji}</span>
-                                            <span className="text-[11px] font-medium text-foreground truncate flex-1">{list.title}</span>
-                                            <Plus className="w-3 h-3 text-muted-foreground" />
-                                          </button>
-                                        ))
-                                      )}
-                                    </div>
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })
-              ) : !activitiesLoading && (searchQuery || activeFilterChips.length > 0) ? (
+              ) : displayedItems.length > 0 ? (
+                displayedItems.map((item, idx) => (
+                  <ExperienceCard
+                    key={`${item.type}-${item.name}-${idx}`}
+                    item={item}
+                    idx={idx}
+                    onSaveToWishlist={() => handleItemSave(item, "wishlist")}
+                    onSaveToVisited={() => handleItemSave(item, "visited")}
+                    lists={lists}
+                    onAddToList={(listId) => handleItemAddToList(item, listId)}
+                    isSaved={item.type === "community" && item.experience ? savedExpIds.has(item.experience.id) : false}
+                    saving={savingItem === item.name}
+                  />
+                ))
+              ) : !unifiedLoading && (searchQuery || activeFilterChips.length > 0) ? (
                 <div className="text-center py-6">
                   <Search className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">No results match your filters</p>
@@ -818,16 +816,35 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     Clear filters
                   </button>
                 </div>
-              ) : !activitiesLoading && activities.length === 0 ? (
+              ) : !unifiedLoading ? (
                 <div className="text-center py-6">
                   <Camera className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Discovering activities...</p>
+                  <p className="text-sm text-muted-foreground">
+                    {activeSection === "trending" ? "No trending experiences yet" :
+                     activeSection === "hidden" ? "No community discoveries yet — be the first!" :
+                     "Discovering activities..."}
+                  </p>
+                  {(activeSection === "trending" || activeSection === "hidden") && (
+                    <button
+                      onClick={() => setShowComposer(true)}
+                      className="inline-flex items-center gap-1.5 mt-2 text-xs text-primary hover:underline"
+                    >
+                      <PenLine className="w-3 h-3" />
+                      Share your experience
+                    </button>
+                  )}
                 </div>
               ) : null}
             </div>
           </div>
         </motion.div>
       </AnimatePresence>
+
+      {/* Experience Composer */}
+      <ExperienceComposer
+        open={showComposer}
+        onClose={() => setShowComposer(false)}
+      />
     </>
   );
 };

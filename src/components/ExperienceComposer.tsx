@@ -28,6 +28,8 @@ const visibilityOptions = [
 interface ExperienceComposerProps {
   open: boolean;
   onClose: () => void;
+  defaultCity?: string;
+  defaultCountry?: string;
 }
 
 const ExperienceComposer = ({ open, onClose }: ExperienceComposerProps) => {

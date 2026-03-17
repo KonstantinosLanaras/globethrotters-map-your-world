@@ -10,6 +10,7 @@ import Places from "./pages/Places";
 import Wishlist from "./pages/Wishlist";
 import Lists from "./pages/Lists";
 import Profile from "./pages/Profile";
+import Experiences from "./pages/Experiences";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
             <Route path="/lists" element={<ProtectedRoute><Lists /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/experiences" element={<ProtectedRoute><Experiences /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

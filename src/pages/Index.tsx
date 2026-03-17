@@ -3,6 +3,7 @@ import WorldMap from "@/components/WorldMap";
 import Navbar from "@/components/Navbar";
 import MapControls from "@/components/MapControls";
 import CityDetailsCard from "@/components/CityDetailsCard";
+import RecommendationsSection from "@/components/RecommendationsSection";
 import { usePlaces, Place } from "@/hooks/usePlaces";
 import { worldCities, City } from "@/data/cities";
 
@@ -18,7 +19,6 @@ const Index = () => {
     countries: new Set(places.filter((p) => p.type === "visited").map((p) => p.country)).size,
   }), [places]);
 
-  // Find if selected city is already saved
   const savedPlace = useMemo(() => {
     if (!selectedCity) return null;
     return places.find(
@@ -33,7 +33,6 @@ const Index = () => {
   }, []);
 
   const handlePlaceClick = useCallback((place: Place) => {
-    // Find matching city or create a pseudo-city from the place
     const matchingCity = worldCities.find(
       (c) => c.name.toLowerCase() === place.name.toLowerCase()
     );
@@ -67,6 +66,7 @@ const Index = () => {
           onClose={() => setSelectedCity(null)}
         />
       )}
+      {!selectedCity && <RecommendationsSection />}
       <div className="absolute inset-0 pt-[60px]">
         <WorldMap
           cities={worldCities}

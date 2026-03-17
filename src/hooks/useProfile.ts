@@ -13,6 +13,13 @@ export interface Profile {
   is_verified: boolean;
   trust_score: number;
   verified_at: string | null;
+  bio: string;
+  home_base: string;
+  username: string;
+  dream_destinations: string[];
+  languages: string[];
+  travel_style: string[];
+  next_trip: string;
   created_at: string;
   updated_at: string;
 }

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MapPin, Check, Heart, Star, Bookmark, Plus, Loader2 } from "lucide-react";
+import { X, MapPin, Check, Heart, Star, Bookmark, Plus, Loader2, ArrowLeftRight } from "lucide-react";
 import { City } from "@/data/cities";
-import { Place, useAddPlace } from "@/hooks/usePlaces";
+import { Place, useAddPlace, useUpdatePlace } from "@/hooks/usePlaces";
 import { useLists, useAddList } from "@/hooks/useLists";
 import { useAddPlaceToList } from "@/hooks/useListPlaces";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,13 +10,14 @@ import { toast } from "sonner";
 
 interface CityDetailsCardProps {
   city: City;
-  savedPlace: Place | null; // null if not saved
+  savedPlace: Place | null;
   onClose: () => void;
 }
 
 const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) => {
   const { user } = useAuth();
   const addPlace = useAddPlace();
+  const updatePlace = useUpdatePlace();
   const { data: lists = [] } = useLists();
   const addList = useAddList();
   const addToList = useAddPlaceToList();
@@ -27,33 +28,58 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const isVisited = savedPlace?.type === "visited";
   const isWishlist = savedPlace?.type === "wishlist";
   const isSaved = !!savedPlace;
+  const isPending = addPlace.isPending || updatePlace.isPending;
 
   const handleSave = async (type: "visited" | "wishlist") => {
     if (!user) {
       toast.error("Sign in to save places");
       return;
     }
-    if (isSaved && savedPlace.type === type) return;
+
+    // Already this type
+    if (isSaved && savedPlace.type === type) {
+      toast.info(`Already ${type === "visited" ? "marked as visited" : "in your wishlist"}`);
+      return;
+    }
 
     try {
-      await addPlace.mutateAsync({
-        name: city.name,
-        country: city.country,
-        lat: city.lat,
-        lng: city.lng,
-        type,
-        tags: [],
-        rating: 0,
-        notes: "",
-        date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
-      });
-      toast.success(
-        type === "visited"
-          ? `${city.name} marked as visited! ✓`
-          : `${city.name} added to wishlist! ♡`
-      );
-    } catch {
-      toast.error("Failed to save");
+      if (isSaved && savedPlace.type !== type) {
+        // Switch type
+        await updatePlace.mutateAsync({
+          id: savedPlace.id,
+          type,
+          date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
+        });
+        toast.success(
+          type === "visited"
+            ? `${city.name} moved to visited! ✓`
+            : `${city.name} moved to wishlist! ♡`
+        );
+      } else {
+        await addPlace.mutateAsync({
+          name: city.name,
+          country: city.country,
+          lat: city.lat,
+          lng: city.lng,
+          type,
+          tags: [],
+          rating: 0,
+          notes: "",
+          date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
+        });
+        toast.success(
+          type === "visited"
+            ? `${city.name} marked as visited! ✓`
+            : `${city.name} added to wishlist! ♡`
+        );
+      }
+    } catch (err: any) {
+      const msg = err?.message || "Failed to save";
+      if (msg.includes("Already")) {
+        toast.info(msg);
+      } else {
+        toast.error(msg);
+      }
     }
   };
 
@@ -99,7 +125,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="fixed top-[72px] right-4 bottom-4 w-[360px] z-[1000] flex flex-col bg-card rounded-2xl border border-border shadow-2xl overflow-hidden"
       >
-        {/* Header with gradient */}
+        {/* Header */}
         <div className="relative px-5 pt-5 pb-4 bg-gradient-to-b from-muted/60 to-transparent">
           <button
             onClick={onClose}
@@ -125,7 +151,6 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
             </div>
           </div>
 
-          {/* Status badge */}
           {isSaved && (
             <div className="mt-3">
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
@@ -140,7 +165,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
           )}
         </div>
 
-        {/* Save Actions - the main CTA area */}
+        {/* Save Actions */}
         <div className="px-5 py-4 border-b border-border space-y-2">
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
             Save to collection
@@ -148,33 +173,37 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => handleSave("visited")}
-              disabled={addPlace.isPending || isVisited}
+              disabled={isPending}
               className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                 isVisited
                   ? "bg-visited text-visited-foreground cursor-default"
+                  : isSaved
+                  ? "bg-visited/10 text-visited hover:bg-visited/20 active:scale-[0.98] ring-1 ring-visited/20"
                   : "bg-visited/10 text-visited hover:bg-visited/20 active:scale-[0.98]"
               }`}
             >
-              {addPlace.isPending ? (
+              {isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  {isVisited ? <Check className="w-4 h-4" /> : <Star className="w-4 h-4" />}
-                  {isVisited ? "Visited ✓" : "Visited"}
+                  {isVisited ? <Check className="w-4 h-4" /> : isWishlist ? <ArrowLeftRight className="w-4 h-4" /> : <Star className="w-4 h-4" />}
+                  {isVisited ? "Visited ✓" : isWishlist ? "Move here" : "Visited"}
                 </>
               )}
             </button>
             <button
               onClick={() => handleSave("wishlist")}
-              disabled={addPlace.isPending || isWishlist}
+              disabled={isPending}
               className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                 isWishlist
                   ? "bg-wishlist text-wishlist-foreground cursor-default"
+                  : isSaved
+                  ? "bg-wishlist/10 text-wishlist hover:bg-wishlist/20 active:scale-[0.98] ring-1 ring-wishlist/20"
                   : "bg-wishlist/10 text-wishlist hover:bg-wishlist/20 active:scale-[0.98]"
               }`}
             >
-              {isWishlist ? <Check className="w-4 h-4" /> : <Heart className="w-4 h-4" />}
-              {isWishlist ? "Wishlist ✓" : "Wishlist"}
+              {isWishlist ? <Check className="w-4 h-4" /> : isVisited ? <ArrowLeftRight className="w-4 h-4" /> : <Heart className="w-4 h-4" />}
+              {isWishlist ? "Wishlist ✓" : isVisited ? "Move here" : "Wishlist"}
             </button>
           </div>
 
@@ -209,9 +238,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
             >
               <div className="px-5 py-3 max-h-[200px] overflow-y-auto space-y-1">
                 {lists.length === 0 && !showNewList ? (
-                  <p className="text-sm text-muted-foreground text-center py-3">
-                    No custom lists yet
-                  </p>
+                  <p className="text-sm text-muted-foreground text-center py-3">No custom lists yet</p>
                 ) : (
                   lists.map((list) => (
                     <button

@@ -14,6 +14,7 @@ export interface Place {
   rating: number;
   notes: string;
   date_visited: string | null;
+  visibility: string;
   created_at: string;
   updated_at: string;
 }
@@ -40,10 +41,40 @@ export const useAddPlace = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (place: Omit<Place, "id" | "user_id" | "created_at" | "updated_at">) => {
+    mutationFn: async (place: Omit<Place, "id" | "user_id" | "created_at" | "updated_at" | "visibility">) => {
+      if (!user) throw new Error("Not authenticated");
+
+      // Check for existing place by same user with same name+country
+      const { data: existing } = await supabase
+        .from("places")
+        .select("id, type")
+        .eq("user_id", user.id)
+        .ilike("name", place.name)
+        .ilike("country", place.country)
+        .maybeSingle();
+
+      if (existing) {
+        if (existing.type === place.type) {
+          throw new Error(`Already ${place.type === "visited" ? "marked as visited" : "in wishlist"}`);
+        }
+        // Update existing place type
+        const { data, error } = await supabase
+          .from("places")
+          .update({
+            type: place.type,
+            date_visited: place.date_visited,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+
       const { data, error } = await supabase
         .from("places")
-        .insert({ ...place, user_id: user!.id })
+        .insert({ ...place, user_id: user.id })
         .select()
         .single();
       if (error) throw error;

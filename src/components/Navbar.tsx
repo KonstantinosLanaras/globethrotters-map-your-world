@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Map, MapPin, Heart, Bookmark, User, Menu, X } from "lucide-react";
+import { Map, MapPin, Heart, Bookmark, User, Menu, X, Camera } from "lucide-react";
 import GlobethrottersLogo from "@/components/GlobethrottersLogo";
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -9,6 +9,7 @@ const navItems = [
   { icon: <MapPin className="w-4 h-4" />, label: "Visited", path: "/places" },
   { icon: <Heart className="w-4 h-4" />, label: "Wishlist", path: "/wishlist" },
   { icon: <Bookmark className="w-4 h-4" />, label: "Lists", path: "/lists" },
+  { icon: <Camera className="w-4 h-4" />, label: "Experiences", path: "/experiences" },
 ];
 
 const Navbar = () => {

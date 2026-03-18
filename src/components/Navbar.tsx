@@ -1,10 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Map, MapPin, Heart, User, Menu, X, LogOut } from "lucide-react";
+import { Map, MapPin, Heart, User, Menu, X, LogOut, Users, MessageSquare } from "lucide-react";
 import GlobethrottersLogo from "@/components/GlobethrottersLogo";
 import PeopleSearch from "@/components/PeopleSearch";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUnreadCount } from "@/hooks/useMessages";
 import type { SearchMode } from "@/components/CityExploreBar";
 
 interface NavbarProps {
@@ -24,6 +25,7 @@ const Navbar = ({ searchMode = "places", onSearchModeChange }: NavbarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useAuth();
+  const { data: unreadCount = 0 } = useUnreadCount();
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -110,9 +112,39 @@ const Navbar = ({ searchMode = "places", onSearchModeChange }: NavbarProps) => {
 
       </div>
 
-      {/* People search + Profile */}
+      {/* People search + Social + Profile */}
       <div className="hidden md:flex items-center gap-2">
         <PeopleSearch />
+
+        {/* Messages */}
+        <button
+          onClick={() => navigate("/messages")}
+          className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+            location.pathname.startsWith("/messages")
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
+
+        {/* Connections */}
+        <button
+          onClick={() => navigate("/connections")}
+          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+            location.pathname === "/connections"
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          <Users className="w-4 h-4" />
+        </button>
+
         <div className="relative" ref={profileRef}>
           <button
             onClick={() => setProfileOpen(!profileOpen)}
@@ -172,6 +204,8 @@ const Navbar = ({ searchMode = "places", onSearchModeChange }: NavbarProps) => {
             { icon: <Map className="w-4 h-4" />, label: "Explore", action: handleExploreClick },
             { icon: <MapPin className="w-4 h-4" />, label: "Visited", action: () => navigate("/visited") },
             { icon: <Heart className="w-4 h-4" />, label: "Wishlist", action: () => navigate("/wishlist") },
+            { icon: <MessageSquare className="w-4 h-4" />, label: "Messages", action: () => navigate("/messages") },
+            { icon: <Users className="w-4 h-4" />, label: "Connections", action: () => navigate("/connections") },
             { icon: <User className="w-4 h-4" />, label: "Profile", action: () => navigate("/profile") },
           ].map((item) => (
             <button

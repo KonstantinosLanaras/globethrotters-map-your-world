@@ -13,6 +13,8 @@ import UserProfile from "./pages/UserProfile";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Connections from "./pages/Connections";
+import Messages from "./pages/Messages";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +52,9 @@ const App = () => (
             <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+            <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />
+            <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+            <Route path="/messages/:conversationId" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             {/* Legacy redirects */}
             <Route path="/experiences" element={<Navigate to="/visited" replace />} />
             <Route path="/journeys" element={<Navigate to="/visited" replace />} />

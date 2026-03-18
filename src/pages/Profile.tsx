@@ -344,9 +344,29 @@ const Profile = () => {
                   </div>
                 </div>
 
+                <EditField label="Destinations" value={tripDestinations} onChange={setTripDestinations} placeholder="e.g. Athens, Santorini, Mykonos" />
                 <EditField label="Trip Title" value={tripTitle} onChange={setTripTitle} placeholder="e.g. Greece Summer 2024" />
                 <EditField label="Description" value={tripDescription} onChange={setTripDescription} multiline placeholder="What was this trip about?" />
                 
+                {/* Cover image */}
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Cover Image</p>
+                  {tripCoverPreview ? (
+                    <div className="relative rounded-xl overflow-hidden h-32">
+                      <img src={tripCoverPreview} alt="" className="w-full h-full object-cover" />
+                      <button onClick={() => { setTripCoverFile(null); setTripCoverPreview(""); }} className="absolute top-2 right-2 w-6 h-6 rounded-full bg-foreground/60 flex items-center justify-center">
+                        <X className="w-3 h-3 text-primary-foreground" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => tripCoverInputRef.current?.click()} className="w-full h-24 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 hover:border-primary/30 transition-colors">
+                      <Upload className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-[10px] text-muted-foreground">Add cover photo</span>
+                    </button>
+                  )}
+                  <input ref={tripCoverInputRef} type="file" accept="image/*" className="hidden" onChange={handleTripCover} />
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Start Date</p>
@@ -357,6 +377,25 @@ const Profile = () => {
                     <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">End Date</p>
                     <input type="date" value={tripEndDate} onChange={(e) => setTripEndDate(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary/40" />
+                  </div>
+                </div>
+
+                {/* Privacy */}
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Privacy</p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {privacyOptions.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setTripPrivacy(p.id)}
+                        className={`flex flex-col items-center gap-1 p-2.5 rounded-xl text-xs transition-all ${
+                          tripPrivacy === p.id ? "bg-primary/10 text-primary border border-primary/20" : "bg-muted text-muted-foreground border border-transparent"
+                        }`}
+                      >
+                        {p.icon}
+                        <span className="font-medium">{p.label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

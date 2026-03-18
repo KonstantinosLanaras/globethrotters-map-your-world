@@ -21,7 +21,7 @@ const MapControls = ({
       initial={{ opacity: 0, x: -16 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.2 }}
-      className="fixed top-[50%] -translate-y-1/2 left-3 z-[1000] flex flex-col gap-1.5 p-1.5 bg-card/90 backdrop-blur-xl rounded-2xl border border-border shadow-lg"
+      className="fixed top-[72px] left-3 z-[1000] flex flex-col gap-1.5 p-1.5 bg-card/90 backdrop-blur-xl rounded-2xl border border-border shadow-lg"
     >
       {/* Cities toggle */}
       <button

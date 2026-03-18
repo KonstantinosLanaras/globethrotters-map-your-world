@@ -255,17 +255,19 @@ const WorldMap = ({ cities, places, experiences = [], showCities, mapFilter, onC
 
     const filtered = mapFilter === "all" ? places : places.filter((p) => p.type === mapFilter);
 
-    // Deduplicate pins per destination (same name + country = one pin)
+    // Group pins by DESTINATION (city), not by individual place name
+    // This ensures multiple experiences in the same city produce one pin
     const destMap = new Map<string, Place[]>();
     filtered.forEach((place) => {
-      const key = `${place.name.toLowerCase()}||${place.country.toLowerCase()}`;
+      const destination = (place.city || place.name).toLowerCase();
+      const key = `${destination}||${place.country.toLowerCase()}`;
       if (!destMap.has(key)) destMap.set(key, []);
       destMap.get(key)!.push(place);
     });
 
     destMap.forEach((destPlaces) => {
-      // Use first place as the representative for the pin
       const representative = destPlaces[0];
+      const destinationName = representative.city || representative.name;
       // If any place in this destination is visited, show visited pin (priority)
       const hasVisited = destPlaces.some(p => p.type === "visited");
       const pinType = hasVisited ? "visited" : representative.type as "visited" | "wishlist";
@@ -275,17 +277,18 @@ const WorldMap = ({ cities, places, experiences = [], showCities, mapFilter, onC
         zIndexOffset: 1000,
       });
 
-      // Use representative for popup but count all places in this destination
-      marker.bindPopup(createPopupContent(representative, experiences), {
+      // Build destination-level popup showing all experiences
+      marker.bindPopup(createDestinationPopupContent(destinationName, representative.country, destPlaces, experiences, pinType), {
         className: "place-pin-popup",
         closeButton: true,
         maxWidth: 280,
       });
 
-      const count = destPlaces.length;
-      const countLabel = count > 1 ? ` (${count} items)` : "";
+      // Count sub-experiences (exclude city-level saves from label)
+      const subExperiences = destPlaces.filter(p => p.name.toLowerCase() !== destinationName.toLowerCase());
+      const countLabel = subExperiences.length > 0 ? ` · ${subExperiences.length} experience${subExperiences.length > 1 ? "s" : ""}` : "";
       marker.bindTooltip(
-        `<span style="font-weight:600;font-size:12px;">${representative.name}${countLabel}</span><br/><span style="font-size:10px;color:#888;">${representative.country}</span>`,
+        `<span style="font-weight:600;font-size:12px;">${destinationName}${countLabel}</span><br/><span style="font-size:10px;color:#888;">${representative.country}</span>`,
         { direction: "top", offset: [0, -36], className: "city-tooltip" }
       );
 

@@ -302,7 +302,7 @@ const Auth = () => {
                 onClick={() => setShowAuth(true)}
                 className="group inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-primary text-primary-foreground font-body font-medium text-sm shadow-[0_2px_12px_hsl(var(--primary)/0.15)] transition-all duration-300"
               >
-                Begin
+                Get Started
                 <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
               </motion.button>
             </motion.div>

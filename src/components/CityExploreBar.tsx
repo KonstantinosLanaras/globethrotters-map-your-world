@@ -397,7 +397,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                     style={{ maxHeight: "min(420px, 50vh)" }}
                   >
                     <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/50 flex-shrink-0">
-                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Filters</span>
+                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Place Filters</span>
                       <div className="flex items-center gap-3">
                         {hasActiveFilters && (
                           <button onClick={clearFilters} className="text-xs text-primary hover:underline font-medium">

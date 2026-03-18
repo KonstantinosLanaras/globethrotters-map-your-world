@@ -61,13 +61,29 @@ const climateGradeColor: Record<string, string> = {
 type CrowdFilter = "low" | "moderate" | "high";
 const crowdLabels: Record<CrowdFilter, string> = { low: "Quiet", moderate: "Moderate", high: "Busy" };
 
+interface ExpFilters {
+  categories: string[];
+  minRating: number | null;
+  withPhotos: boolean;
+  recent: boolean;
+  tags: string[];
+}
+
+const defaultExpFilters: ExpFilters = {
+  categories: [],
+  minRating: null,
+  withPhotos: false,
+  recent: false,
+  tags: [],
+};
+
 const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProps) => {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<ExploreFilters>({});
   const [crowdFilter, setCrowdFilter] = useState<CrowdFilter[]>([]);
-  const [activeExpCategory, setActiveExpCategory] = useState<string | null>(null);
+  const [expFilters, setExpFilters] = useState<ExpFilters>(defaultExpFilters);
   const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -75,7 +91,12 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
   useEffect(() => {
     setQuery("");
     setShowFilters(false);
-    setActiveExpCategory(null);
+    if (mode === "places") {
+      setExpFilters(defaultExpFilters);
+    } else {
+      setFilters({});
+      setCrowdFilter([]);
+    }
   }, [mode]);
 
   // Fetch community experiences for experience mode
@@ -94,13 +115,23 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
     enabled: mode === "experiences",
   });
 
+  const hasActiveExpFilters = useMemo(() => {
+    return expFilters.categories.length > 0 || expFilters.minRating !== null || expFilters.withPhotos || expFilters.recent;
+  }, [expFilters]);
+
   const hasActiveFilters = useMemo(() => {
-    if (mode === "experiences") return !!activeExpCategory;
+    if (mode === "experiences") return hasActiveExpFilters;
     return !!(filters.budget?.length || filters.safety?.length || filters.travelStyle?.length || filters.preferences?.length || filters.month || crowdFilter.length);
-  }, [filters, crowdFilter, mode, activeExpCategory]);
+  }, [filters, crowdFilter, mode, hasActiveExpFilters]);
 
   const activeFilterCount = useMemo(() => {
-    if (mode === "experiences") return activeExpCategory ? 1 : 0;
+    if (mode === "experiences") {
+      let count = expFilters.categories.length;
+      if (expFilters.minRating !== null) count++;
+      if (expFilters.withPhotos) count++;
+      if (expFilters.recent) count++;
+      return count;
+    }
     let count = 0;
     if (filters.budget?.length) count += filters.budget.length;
     if (filters.safety?.length) count += filters.safety.length;
@@ -109,7 +140,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
     if (filters.month) count += 1;
     if (crowdFilter.length) count += crowdFilter.length;
     return count;
-  }, [filters, crowdFilter, mode, activeExpCategory]);
+  }, [filters, crowdFilter, mode, expFilters]);
 
   // Close on outside click
   useEffect(() => {
@@ -148,7 +179,12 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
   const experienceResults = useMemo(() => {
     if (mode !== "experiences") return [];
     const q = query.toLowerCase().trim();
-    if (!q && !activeExpCategory) return [];
+    const hasCatFilter = expFilters.categories.length > 0;
+    if (!q && !hasCatFilter && !expFilters.minRating && !expFilters.withPhotos && !expFilters.recent) return [];
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
     return communityExperiences
       .filter(e => {
         const matchesSearch = !q ||
@@ -157,11 +193,12 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
           e.country?.toLowerCase().includes(q) ||
           e.caption?.toLowerCase().includes(q) ||
           e.tags?.some((t: string) => t.toLowerCase().includes(q));
-        const matchesCat = !activeExpCategory || e.category.toLowerCase() === activeExpCategory.toLowerCase();
-        return matchesSearch && matchesCat;
+        const matchesCat = !hasCatFilter || expFilters.categories.some(c => e.category.toLowerCase() === c.toLowerCase());
+        const matchesRating = !expFilters.minRating || (e.rating && e.rating >= expFilters.minRating);
+        return matchesSearch && matchesCat && matchesRating;
       })
       .slice(0, 15);
-  }, [query, mode, activeExpCategory, communityExperiences]);
+  }, [query, mode, expFilters, communityExperiences]);
 
   // Group experiences by location
   const groupedExperiences = useMemo(() => {
@@ -208,7 +245,16 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
   const clearFilters = () => {
     setFilters({});
     setCrowdFilter([]);
-    setActiveExpCategory(null);
+    setExpFilters(defaultExpFilters);
+  };
+
+  const toggleExpCategory = (cat: string) => {
+    setExpFilters(prev => ({
+      ...prev,
+      categories: prev.categories.includes(cat)
+        ? prev.categories.filter(c => c !== cat)
+        : [...prev.categories, cat],
+    }));
   };
 
   const FilterChip = ({
@@ -237,7 +283,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
 
   const showResults = mode === "places"
     ? isOpen
-    : (isOpen && (!!query || !!activeExpCategory));
+    : (isOpen && (!!query || hasActiveExpFilters));
 
   const currentResults = mode === "places" ? placeResults : experienceResults;
 
@@ -351,7 +397,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                     style={{ maxHeight: "min(420px, 50vh)" }}
                   >
                     <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/50 flex-shrink-0">
-                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Filters</span>
+                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Place Filters</span>
                       <div className="flex items-center gap-3">
                         {hasActiveFilters && (
                           <button onClick={clearFilters} className="text-xs text-primary hover:underline font-medium">
@@ -468,14 +514,15 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.25 }}
-                    className="overflow-hidden"
+                    className="overflow-hidden flex flex-col"
+                    style={{ maxHeight: "min(420px, 50vh)" }}
                   >
-                    <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/50">
-                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Category filters</span>
+                    <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/50 flex-shrink-0">
+                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Experience Filters</span>
                       <div className="flex items-center gap-3">
-                        {activeExpCategory && (
-                          <button onClick={() => setActiveExpCategory(null)} className="text-xs text-primary hover:underline font-medium">
-                            Clear
+                        {hasActiveExpFilters && (
+                          <button onClick={() => setExpFilters(defaultExpFilters)} className="text-xs text-primary hover:underline font-medium">
+                            Clear all
                           </button>
                         )}
                         <button onClick={() => setShowFilters(false)} className="text-muted-foreground hover:text-foreground">
@@ -483,23 +530,82 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                         </button>
                       </div>
                     </div>
-                    <div className="px-4 py-3 flex flex-wrap gap-1.5">
-                      {experienceCategories.map((cat) => (
+                    <div className="overflow-y-auto flex-1 overscroll-contain px-4 py-3 space-y-5">
+                      {/* Category */}
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground mb-2 block">Category</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {experienceCategories.map((cat) => (
+                            <FilterChip
+                              key={cat}
+                              active={expFilters.categories.includes(cat)}
+                              onClick={() => toggleExpCategory(cat)}
+                            >
+                              {categoryEmoji[cat]} {cat}
+                            </FilterChip>
+                          ))}
+                          <FilterChip
+                            active={expFilters.categories.includes("general")}
+                            onClick={() => toggleExpCategory("general")}
+                          >
+                            📍 General
+                          </FilterChip>
+                        </div>
+                      </div>
+                      {/* Minimum rating */}
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground mb-2 block">Minimum rating</span>
+                        <div className="flex gap-1.5">
+                          {[3, 4, 5].map((r) => (
+                            <FilterChip
+                              key={r}
+                              active={expFilters.minRating === r}
+                              onClick={() => setExpFilters(prev => ({ ...prev, minRating: prev.minRating === r ? null : r }))}
+                              icon={Star}
+                            >
+                              {r}+
+                            </FilterChip>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Content filters */}
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground mb-2 block">Content</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          <FilterChip
+                            active={expFilters.withPhotos}
+                            onClick={() => setExpFilters(prev => ({ ...prev, withPhotos: !prev.withPhotos }))}
+                            icon={Camera}
+                          >
+                            With photos
+                          </FilterChip>
+                          <FilterChip
+                            active={expFilters.recent}
+                            onClick={() => setExpFilters(prev => ({ ...prev, recent: !prev.recent }))}
+                            icon={Sparkles}
+                          >
+                            Recent (30 days)
+                          </FilterChip>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50 bg-muted/20 flex-shrink-0">
+                      <p className="text-[10px] text-muted-foreground/60 leading-tight max-w-[200px]">
+                        Experiences are user-generated community content.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {hasActiveExpFilters && (
+                          <button onClick={() => setExpFilters(defaultExpFilters)} className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                            Clear all
+                          </button>
+                        )}
                         <button
-                          key={cat}
-                          onClick={() => {
-                            setActiveExpCategory(activeExpCategory === cat ? null : cat);
-                            setIsOpen(true);
-                          }}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                            activeExpCategory === cat
-                              ? "bg-primary text-primary-foreground shadow-sm"
-                              : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
-                          }`}
+                          onClick={() => setShowFilters(false)}
+                          className="px-4 py-1.5 bg-primary text-primary-foreground text-xs font-semibold rounded-lg shadow-sm hover:opacity-90 transition-opacity"
                         >
-                          {categoryEmoji[cat]} {cat}
+                          Apply{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
                         </button>
-                      ))}
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -513,11 +619,11 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                   <button
                     key={cat}
                     onClick={() => {
-                      setActiveExpCategory(activeExpCategory === cat ? null : cat);
+                      toggleExpCategory(cat);
                       setIsOpen(true);
                     }}
                     className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
-                      activeExpCategory === cat
+                      expFilters.categories.includes(cat)
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:text-foreground"
                     }`}
@@ -578,7 +684,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                     <div className="py-8 text-center">
                       <Camera className="w-6 h-6 text-muted-foreground/30 mx-auto mb-2" />
                       <p className="text-xs text-muted-foreground">
-                        {query || activeExpCategory ? "No experiences found" : "Type to search or pick a category"}
+                        {query || hasActiveExpFilters ? "No experiences found" : "Type to search or pick a category"}
                       </p>
                     </div>
                   ) : (

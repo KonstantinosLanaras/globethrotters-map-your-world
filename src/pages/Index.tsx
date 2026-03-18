@@ -34,7 +34,6 @@ const Index = () => {
 
   const handleCityClick = useCallback((city: City) => {
     setSelectedCity(city);
-    setIsRecommendationsOpen(false);
   }, []);
 
   const handlePlaceClick = useCallback((place: Place) => {

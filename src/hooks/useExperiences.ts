@@ -32,6 +32,10 @@ export interface ExperienceAttachment {
 
 export interface ExperienceWithPhotos extends Experience {
   photos: string[];
+  saves_count: number;
+  review_count: number;
+  rating_avg: number;
+  engagement_score: number;
 }
 
 export const useExperiences = () => {

@@ -59,24 +59,31 @@ const createSavedPinIcon = (type: "visited" | "wishlist") => {
   });
 };
 
-const createPopupContent = (place: Place, experiences: ExperienceWithPhotos[]) => {
-  const statusLabel = place.type === "visited" ? "Visited" : "Wishlist";
-  const statusColor = place.type === "visited" ? VISITED_COLOR : WISHLIST_COLOR;
-  const toggleLabel = place.type === "visited" ? "Move to Wishlist" : "Mark as Visited";
+const createDestinationPopupContent = (
+  destinationName: string,
+  country: string,
+  destPlaces: Place[],
+  experiences: ExperienceWithPhotos[],
+  pinType: "visited" | "wishlist"
+) => {
+  const statusLabel = pinType === "visited" ? "Visited" : "Wishlist";
+  const statusColor = pinType === "visited" ? VISITED_COLOR : WISHLIST_COLOR;
 
-  // Find experiences for this place
+  // Find experiences for this destination
   const placeExps = experiences.filter(
-    e => e.city?.toLowerCase() === place.name.toLowerCase() ||
-         (e.city?.toLowerCase() === place.name.toLowerCase() && e.country?.toLowerCase() === place.country.toLowerCase())
+    e => e.city?.toLowerCase() === destinationName.toLowerCase() &&
+         e.country?.toLowerCase() === country.toLowerCase()
   );
 
-  const expCount = placeExps.length;
   const firstPhoto = placeExps.find(e => e.photos.length > 0)?.photos[0];
   const avgRating = placeExps.filter(e => e.rating > 0).length > 0
     ? (placeExps.reduce((s, e) => s + (e.rating || 0), 0) / placeExps.filter(e => e.rating > 0).length).toFixed(1)
     : null;
   const topTags = [...new Set(placeExps.flatMap(e => e.tags))].slice(0, 3);
-  const categories = [...new Set(placeExps.map(e => e.category))].slice(0, 3);
+
+  // Sub-experiences (places that aren't the city itself)
+  const subPlaces = destPlaces.filter(p => p.name.toLowerCase() !== destinationName.toLowerCase());
+  const totalItems = subPlaces.length + placeExps.length;
 
   const photoHtml = firstPhoto
     ? `<img src="${firstPhoto}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;" />`
@@ -95,35 +102,37 @@ const createPopupContent = (place: Place, experiences: ExperienceWithPhotos[]) =
        </div>`
     : "";
 
-  const expSummary = expCount > 0
+  const itemsHtml = subPlaces.length > 0
     ? `<div style="font-size:10px;color:#666;margin-bottom:6px;">
-        ${expCount} experience${expCount > 1 ? "s" : ""}${categories.length > 0 ? " · " + categories.join(", ") : ""}
+        ${subPlaces.map(p => `<div style="padding:2px 0;">• ${p.name}</div>`).join("")}
        </div>`
     : "";
 
-  // Show latest experience caption
-  const latestCaption = placeExps.find(e => e.caption)?.caption;
-  const captionHtml = latestCaption
-    ? `<div style="font-size:11px;color:#444;margin-bottom:8px;line-height:1.4;font-style:italic;">"${latestCaption.slice(0, 80)}${latestCaption.length > 80 ? "…" : ""}"</div>`
-    : "";
+  const summaryHtml = totalItems > 0
+    ? `<div style="font-size:10px;color:#666;margin-bottom:6px;">${totalItems} experience${totalItems > 1 ? "s" : ""}</div>`
+    : `<div style="font-size:10px;color:#666;margin-bottom:6px;">destination saved</div>`;
+
+  // Use the first place for toggle/remove actions
+  const representative = destPlaces[0];
+  const toggleLabel = pinType === "visited" ? "Move to Wishlist" : "Mark as Visited";
 
   return `
     <div style="font-family:Inter,system-ui,sans-serif;min-width:200px;max-width:260px;padding:4px 0;">
       ${photoHtml}
-      <div style="font-weight:600;font-size:14px;margin-bottom:2px;">${place.name}</div>
-      <div style="font-size:11px;color:#888;margin-bottom:6px;">${place.country}</div>
+      <div style="font-weight:600;font-size:14px;margin-bottom:2px;">${destinationName}</div>
+      <div style="font-size:11px;color:#888;margin-bottom:6px;">${country}</div>
       ${starsHtml}
-      ${expSummary}
-      ${captionHtml}
+      ${summaryHtml}
+      ${itemsHtml}
       ${tagsHtml}
       <div style="display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:9999px;background:${statusColor}20;color:${statusColor};margin-bottom:10px;">
         ${statusLabel}
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">
-        <button data-action="toggle" data-place-id="${place.id}" style="cursor:pointer;font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:white;color:#333;font-weight:500;">
+        <button data-action="toggle" data-place-id="${representative.id}" style="cursor:pointer;font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid #ddd;background:white;color:#333;font-weight:500;">
           ${toggleLabel}
         </button>
-        <button data-action="remove" data-place-id="${place.id}" style="cursor:pointer;font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid #fee;background:#fff5f5;color:hsl(0,72%,51%);font-weight:500;">
+        <button data-action="remove" data-place-id="${representative.id}" style="cursor:pointer;font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid #fee;background:#fff5f5;color:hsl(0,72%,51%);font-weight:500;">
           Remove
         </button>
       </div>

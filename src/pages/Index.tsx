@@ -5,6 +5,7 @@ import MapControls from "@/components/MapControls";
 import CityDetailsCard from "@/components/CityDetailsCard";
 import CityExploreBar from "@/components/CityExploreBar";
 import { usePlaces, useUpdatePlace, useDeletePlace, Place } from "@/hooks/usePlaces";
+import { useExperiencesWithPhotos } from "@/hooks/useExperiences";
 import { worldCities, City } from "@/data/cities";
 import { toast } from "sonner";
 
@@ -14,6 +15,7 @@ const Index = () => {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   
   const { data: places = [] } = usePlaces();
+  const { data: experiences = [] } = useExperiencesWithPhotos();
   const updatePlace = useUpdatePlace();
   const deletePlace = useDeletePlace();
 
@@ -94,6 +96,7 @@ const Index = () => {
         <WorldMap
           cities={worldCities}
           places={places}
+          experiences={experiences}
           showCities={showCities}
           mapFilter={mapFilter}
           onCityClick={handleCityClick}

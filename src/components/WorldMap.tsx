@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { City } from "@/data/cities";
 import { Place } from "@/hooks/usePlaces";
+import { ExperienceWithPhotos } from "@/hooks/useExperiences";
 
 const VISITED_COLOR = "hsl(0, 72%, 51%)";
 const WISHLIST_COLOR = "hsl(217, 91%, 60%)";
@@ -44,11 +45,8 @@ const createSavedPinIcon = (type: "visited" | "wishlist") => {
           <stop offset="100%" stop-color="${pinColor}"/>
         </radialGradient>
       </defs>
-      <!-- Pin needle -->
       <line x1="13" y1="22" x2="13" y2="37" stroke="#888" stroke-width="2.2" stroke-linecap="round"/>
-      <!-- Pin head (sphere) -->
       <circle cx="13" cy="13" r="11" fill="url(#${headGradientId})" stroke="white" stroke-width="1.5"/>
-      <!-- Highlight -->
       <ellipse cx="10" cy="10" rx="4" ry="3.5" fill="white" opacity="0.35"/>
     </svg>
   `;
@@ -61,15 +59,63 @@ const createSavedPinIcon = (type: "visited" | "wishlist") => {
   });
 };
 
-const createPopupContent = (place: Place) => {
+const createPopupContent = (place: Place, experiences: ExperienceWithPhotos[]) => {
   const statusLabel = place.type === "visited" ? "Visited" : "Wishlist";
   const statusColor = place.type === "visited" ? VISITED_COLOR : WISHLIST_COLOR;
   const toggleLabel = place.type === "visited" ? "Move to Wishlist" : "Mark as Visited";
 
+  // Find experiences for this place
+  const placeExps = experiences.filter(
+    e => e.city?.toLowerCase() === place.name.toLowerCase() ||
+         (e.city?.toLowerCase() === place.name.toLowerCase() && e.country?.toLowerCase() === place.country.toLowerCase())
+  );
+
+  const expCount = placeExps.length;
+  const firstPhoto = placeExps.find(e => e.photos.length > 0)?.photos[0];
+  const avgRating = placeExps.filter(e => e.rating > 0).length > 0
+    ? (placeExps.reduce((s, e) => s + (e.rating || 0), 0) / placeExps.filter(e => e.rating > 0).length).toFixed(1)
+    : null;
+  const topTags = [...new Set(placeExps.flatMap(e => e.tags))].slice(0, 3);
+  const categories = [...new Set(placeExps.map(e => e.category))].slice(0, 3);
+
+  const photoHtml = firstPhoto
+    ? `<img src="${firstPhoto}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;" />`
+    : "";
+
+  const starsHtml = avgRating
+    ? `<div style="display:flex;align-items:center;gap:2px;margin-bottom:6px;">
+        ${[1,2,3,4,5].map(n => `<span style="color:${n <= Math.round(Number(avgRating)) ? '#F59E0B' : '#ddd'};font-size:12px;">★</span>`).join("")}
+        <span style="font-size:10px;color:#666;margin-left:4px;">${avgRating}</span>
+       </div>`
+    : "";
+
+  const tagsHtml = topTags.length > 0
+    ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px;">
+        ${topTags.map(t => `<span style="font-size:9px;padding:2px 6px;border-radius:999px;background:#f0f0f0;color:#555;">${t}</span>`).join("")}
+       </div>`
+    : "";
+
+  const expSummary = expCount > 0
+    ? `<div style="font-size:10px;color:#666;margin-bottom:6px;">
+        ${expCount} experience${expCount > 1 ? "s" : ""}${categories.length > 0 ? " · " + categories.join(", ") : ""}
+       </div>`
+    : "";
+
+  // Show latest experience caption
+  const latestCaption = placeExps.find(e => e.caption)?.caption;
+  const captionHtml = latestCaption
+    ? `<div style="font-size:11px;color:#444;margin-bottom:8px;line-height:1.4;font-style:italic;">"${latestCaption.slice(0, 80)}${latestCaption.length > 80 ? "…" : ""}"</div>`
+    : "";
+
   return `
-    <div style="font-family:Inter,system-ui,sans-serif;min-width:180px;padding:4px 0;">
+    <div style="font-family:Inter,system-ui,sans-serif;min-width:200px;max-width:260px;padding:4px 0;">
+      ${photoHtml}
       <div style="font-weight:600;font-size:14px;margin-bottom:2px;">${place.name}</div>
-      <div style="font-size:11px;color:#888;margin-bottom:8px;">${place.country}</div>
+      <div style="font-size:11px;color:#888;margin-bottom:6px;">${place.country}</div>
+      ${starsHtml}
+      ${expSummary}
+      ${captionHtml}
+      ${tagsHtml}
       <div style="display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:9999px;background:${statusColor}20;color:${statusColor};margin-bottom:10px;">
         ${statusLabel}
       </div>
@@ -88,6 +134,7 @@ const createPopupContent = (place: Place) => {
 interface WorldMapProps {
   cities: City[];
   places: Place[];
+  experiences?: ExperienceWithPhotos[];
   showCities: boolean;
   mapFilter: "all" | "visited" | "wishlist";
   onCityClick: (city: City) => void;
@@ -96,14 +143,13 @@ interface WorldMapProps {
   onRemovePlace?: (placeId: string) => void;
 }
 
-const WorldMap = ({ cities, places, showCities, mapFilter, onCityClick, onPlaceClick, onTogglePlace, onRemovePlace }: WorldMapProps) => {
+const WorldMap = ({ cities, places, experiences = [], showCities, mapFilter, onCityClick, onPlaceClick, onTogglePlace, onRemovePlace }: WorldMapProps) => {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cityLayerRef = useRef<L.LayerGroup | null>(null);
   const placeLayerRef = useRef<L.LayerGroup | null>(null);
   const hasFittedRef = useRef(false);
 
-  // Initialize map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -121,7 +167,6 @@ const WorldMap = ({ cities, places, showCities, mapFilter, onCityClick, onPlaceC
     });
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
-
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png").addTo(map);
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
       pane: "tooltipPane",
@@ -129,17 +174,13 @@ const WorldMap = ({ cities, places, showCities, mapFilter, onCityClick, onPlaceC
 
     cityLayerRef.current = L.layerGroup().addTo(map);
     placeLayerRef.current = L.layerGroup().addTo(map);
-
     mapRef.current = map;
 
-    // Global click handler for popup buttons
     map.getContainer().addEventListener("click", (e) => {
       const target = e.target as HTMLElement;
       if (!target.dataset.action || !target.dataset.placeId) return;
-      
       const placeId = target.dataset.placeId;
       const action = target.dataset.action;
-      
       if (action === "remove" && onRemovePlace) {
         onRemovePlace(placeId);
         map.closePopup();
@@ -160,13 +201,10 @@ const WorldMap = ({ cities, places, showCities, mapFilter, onCityClick, onPlaceC
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-fit map to user's pins on first load
   useEffect(() => {
     if (!mapRef.current || hasFittedRef.current || places.length === 0) return;
-    
     hasFittedRef.current = true;
     const bounds = L.latLngBounds(places.map(p => [p.lat, p.lng] as [number, number]));
-    
     if (places.length === 1) {
       mapRef.current.setView([places[0].lat, places[0].lng], 8, { animate: true });
     } else {
@@ -174,13 +212,10 @@ const WorldMap = ({ cities, places, showCities, mapFilter, onCityClick, onPlaceC
     }
   }, [places]);
 
-  // Helper: find saved status for a city
   const getCityStatus = useCallback(
     (city: City): "none" | "visited" | "wishlist" => {
       const match = places.find(
-        (p) =>
-          p.name.toLowerCase() === city.name.toLowerCase() &&
-          p.country.toLowerCase() === city.country.toLowerCase()
+        (p) => p.name.toLowerCase() === city.name.toLowerCase() && p.country.toLowerCase() === city.country.toLowerCase()
       );
       if (match) return match.type as "visited" | "wishlist";
       return "none";
@@ -188,48 +223,37 @@ const WorldMap = ({ cities, places, showCities, mapFilter, onCityClick, onPlaceC
     [places]
   );
 
-  // Update city markers
   useEffect(() => {
     const layer = cityLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
-
     if (!showCities) return;
 
     cities.forEach((city) => {
       const status = getCityStatus(city);
-
-      // Apply filter — but skip saved cities (they get pins instead)
       if (mapFilter === "visited" && status !== "visited") return;
       if (mapFilter === "wishlist" && status !== "wishlist") return;
-
-      // Don't show city dot for saved places (pin layer handles them)
       if (status !== "none") return;
 
       const marker = L.marker([city.lat, city.lng], {
         icon: createCityIcon(status),
         zIndexOffset: 0,
       });
-
       marker.bindTooltip(
         `<span style="font-weight:600;font-size:12px;">${city.name}</span><br/><span style="font-size:10px;color:#888;">${city.country}</span>`,
         { direction: "top", offset: [0, -8], className: "city-tooltip" }
       );
-
       marker.on("click", () => onCityClick(city));
       layer.addLayer(marker);
     });
   }, [cities, showCities, mapFilter, getCityStatus, onCityClick]);
 
-  // Update saved place pins (ALWAYS visible regardless of cities toggle)
   useEffect(() => {
     const layer = placeLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
 
-    const filtered = mapFilter === "all"
-      ? places
-      : places.filter((p) => p.type === mapFilter);
+    const filtered = mapFilter === "all" ? places : places.filter((p) => p.type === mapFilter);
 
     filtered.forEach((place) => {
       const marker = L.marker([place.lat, place.lng], {
@@ -237,10 +261,10 @@ const WorldMap = ({ cities, places, showCities, mapFilter, onCityClick, onPlaceC
         zIndexOffset: 1000,
       });
 
-      marker.bindPopup(createPopupContent(place), {
+      marker.bindPopup(createPopupContent(place, experiences), {
         className: "place-pin-popup",
         closeButton: true,
-        maxWidth: 240,
+        maxWidth: 280,
       });
 
       marker.bindTooltip(
@@ -251,7 +275,7 @@ const WorldMap = ({ cities, places, showCities, mapFilter, onCityClick, onPlaceC
       marker.on("click", () => onPlaceClick(place));
       layer.addLayer(marker);
     });
-  }, [places, mapFilter, onPlaceClick]);
+  }, [places, experiences, mapFilter, onPlaceClick]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 };

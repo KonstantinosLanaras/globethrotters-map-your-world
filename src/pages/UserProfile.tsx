@@ -383,20 +383,27 @@ const UserMapView = ({ places }: { places: Place[] }) => {
     if (places.length === 0) return;
 
     places.forEach((place) => {
-      const color = place.type === "visited" ? VISITED_COLOR : WISHLIST_COLOR;
+      const pinColor = place.type === "visited" ? "#E53935" : "#1E88E5";
+      const headGradientId = place.type === "visited" ? `headGradV${place.id}` : `headGradW${place.id}`;
       const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 28 36">
-          <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.268 21.732 0 14 0z" fill="${color}"/>
-          <circle cx="14" cy="13" r="5" fill="white" opacity="0.9"/>
-          <circle cx="14" cy="13" r="2.5" fill="${color}"/>
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="32" viewBox="0 0 26 38">
+          <defs>
+            <radialGradient id="${headGradientId}" cx="40%" cy="35%" r="55%">
+              <stop offset="0%" stop-color="${place.type === 'visited' ? '#FF7043' : '#64B5F6'}"/>
+              <stop offset="100%" stop-color="${pinColor}"/>
+            </radialGradient>
+          </defs>
+          <line x1="13" y1="22" x2="13" y2="37" stroke="#888" stroke-width="2.2" stroke-linecap="round"/>
+          <circle cx="13" cy="13" r="11" fill="url(#${headGradientId})" stroke="white" stroke-width="1.5"/>
+          <ellipse cx="10" cy="10" rx="4" ry="3.5" fill="white" opacity="0.35"/>
         </svg>
       `;
 
       const icon = L.divIcon({
         html: svg,
         className: place.type === "visited" ? "saved-pin-visited" : "saved-pin-wishlist",
-        iconSize: [24, 32],
-        iconAnchor: [12, 32],
+        iconSize: [22, 32],
+        iconAnchor: [11, 32],
         popupAnchor: [0, -32],
       });
 

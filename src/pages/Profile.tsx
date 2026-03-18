@@ -363,8 +363,8 @@ const Profile = () => {
                 <StatBlock label="Places visited" value={visitedCount} />
                 <StatBlock label="Experiences shared" value={experiences.length} />
                 <StatBlock label="Photos uploaded" value={photosCount} />
-                <StatBlock label="Contribution score" value={contributionScore} />
-                <StatBlock label="On wishlist" value={wishlistCount} />
+                <StatBlock label="Validated impact" value={reputation?.validated_score ?? 0} />
+                <StatBlock label="Travelers helped" value={reputation?.travelers_helped ?? 0} />
               </div>
             </motion.div>
 

@@ -482,13 +482,21 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
           date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
         });
         toast.success(type === "visited" ? `${city.name} moved to visited! ✓` : `${city.name} moved to wishlist! ♡`);
+        if (type === "visited") {
+          setRatingPlaceId(savedPlace.id);
+          setShowRating(true);
+        }
       } else {
-        await addPlace.mutateAsync({
+        const result = await addPlace.mutateAsync({
           name: city.name, country: city.country, lat: city.lat, lng: city.lng,
           type, tags: [], rating: 0, notes: "",
           date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
         });
         toast.success(type === "visited" ? `${city.name} marked as visited! ✓` : `${city.name} added to wishlist! ♡`);
+        if (type === "visited" && result?.id) {
+          setRatingPlaceId(result.id);
+          setShowRating(true);
+        }
       }
     } catch (err: any) {
       const msg = err?.message || "Failed to save";

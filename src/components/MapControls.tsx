@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Building2, Eye, EyeOff, MapPin, Heart, Star, Layers } from "lucide-react";
+import { Building2, Eye, EyeOff, Star, Layers, Heart } from "lucide-react";
 
 interface MapControlsProps {
   showCities: boolean;
@@ -18,15 +18,15 @@ const MapControls = ({
 }: MapControlsProps) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, x: -16 }}
+      animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.2 }}
-      className="fixed top-[124px] left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 px-2 py-1.5 bg-card/90 backdrop-blur-xl rounded-full border border-border shadow-lg"
+      className="fixed top-[50%] -translate-y-1/2 left-3 z-[1000] flex flex-col gap-1.5 p-1.5 bg-card/90 backdrop-blur-xl rounded-2xl border border-border shadow-lg"
     >
-      {/* Cities toggle - prominent */}
+      {/* Cities toggle */}
       <button
         onClick={onToggleCities}
-        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium transition-all ${
+        className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
           showCities
             ? "bg-primary text-primary-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -41,29 +41,29 @@ const MapControls = ({
         )}
       </button>
 
-      <div className="w-px h-5 bg-border" />
+      <div className="h-px bg-border mx-1" />
 
       {/* Filter pills */}
       <button
         onClick={() => onFilterChange("all")}
-        className={`px-3 py-2 rounded-full text-xs font-medium transition-all ${
+        className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
           mapFilter === "all"
             ? "bg-foreground/10 text-foreground"
             : "text-muted-foreground hover:text-foreground"
         }`}
       >
-        <Layers className="w-3.5 h-3.5 inline mr-1" />
+        <Layers className="w-3.5 h-3.5" />
         All
       </button>
       <button
         onClick={() => onFilterChange("visited")}
-        className={`flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+        className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
           mapFilter === "visited"
             ? "bg-visited/15 text-visited"
             : "text-muted-foreground hover:text-foreground"
         }`}
       >
-        <Star className="w-3 h-3" />
+        <span className="w-2.5 h-2.5 rounded-full bg-visited flex-shrink-0" />
         Visited
         {stats.visited > 0 && (
           <span className="text-[10px] opacity-60">{stats.visited}</span>
@@ -71,13 +71,13 @@ const MapControls = ({
       </button>
       <button
         onClick={() => onFilterChange("wishlist")}
-        className={`flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+        className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
           mapFilter === "wishlist"
             ? "bg-wishlist/15 text-wishlist"
             : "text-muted-foreground hover:text-foreground"
         }`}
       >
-        <Heart className="w-3 h-3" />
+        <span className="w-2.5 h-2.5 rounded-full bg-wishlist flex-shrink-0" />
         Wishlist
         {stats.wishlist > 0 && (
           <span className="text-[10px] opacity-60">{stats.wishlist}</span>

@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo } from "react";
 import WorldMap from "@/components/WorldMap";
 import Navbar from "@/components/Navbar";
 import MapControls from "@/components/MapControls";
-import MapLegend from "@/components/MapLegend";
 import CityDetailsCard from "@/components/CityDetailsCard";
 import CityExploreBar from "@/components/CityExploreBar";
 import { usePlaces, useUpdatePlace, useDeletePlace, Place } from "@/hooks/usePlaces";
@@ -90,7 +89,7 @@ const Index = () => {
           onClose={() => setSelectedCity(null)}
         />
       )}
-      <MapLegend />
+      
       <div className="absolute inset-0 pt-[60px]">
         <WorldMap
           cities={worldCities}

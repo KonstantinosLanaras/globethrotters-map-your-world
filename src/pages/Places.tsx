@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import {
   Star, MapPin, Globe, Trash2, ChevronDown, ChevronRight, Filter,
-  Plus, Calendar, Plane, X, Camera, Loader2
+  Plus, Calendar, Plane, X, Camera, Loader2, Compass
 } from "lucide-react";
 import { usePlaces, useDeletePlace } from "@/hooks/usePlaces";
+import type { Place } from "@/hooks/usePlaces";
 import { useExperiencesWithPhotos, useDeleteExperience, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { useJourneys, useAddJourney, useDeleteJourney, useJourneyWithExperiences, useAddExperienceToJourney, useRemoveExperienceFromJourney, Journey } from "@/hooks/useJourneys";
 import ExperienceComposer from "@/components/ExperienceComposer";
@@ -15,6 +16,15 @@ const categoryEmoji: Record<string, string> = {
   Food: "🍽️", Culture: "🏛️", Nature: "🌿", Hiking: "🥾", Nightlife: "🌙", general: "📍",
 };
 const categoryFilters = ["All", "Food", "Culture", "Nature", "Hiking", "Nightlife"] as const;
+
+interface VisitedDestinationNode {
+  city: string;
+  country: string;
+  lat: number;
+  lng: number;
+  places: Place[];
+  experiences: ExperienceWithPhotos[];
+}
 
 const Visited = () => {
   const { data: places = [] } = usePlaces();
@@ -27,6 +37,7 @@ const Visited = () => {
 
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [expandedCountries, setExpandedCountries] = useState<Set<string>>(new Set());
+  const [expandedDestinations, setExpandedDestinations] = useState<Set<string>>(new Set());
   const [showComposer, setShowComposer] = useState(false);
   const [showJourneyCreate, setShowJourneyCreate] = useState(false);
   const [selectedJourney, setSelectedJourney] = useState<string | null>(null);
@@ -39,42 +50,123 @@ const Visited = () => {
   const [newStartDate, setNewStartDate] = useState("");
   const [newEndDate, setNewEndDate] = useState("");
 
-  const visitedPlaces = places.filter((p) => p.type === "visited");
+  const visitedPlaces = useMemo(() => places.filter((p) => p.type === "visited"), [places]);
 
-  // Filter experiences by category (tag-based filtering)
-  const filteredExperiences = useMemo(() => {
-    let items = experiences;
-    if (activeFilter !== "All") {
-      items = items.filter(e => e.category.toLowerCase() === activeFilter.toLowerCase());
-    }
-    return items;
-  }, [experiences, activeFilter]);
+  // Build destination hierarchy: Country → Destination (city) → places + experiences
+  const hierarchy = useMemo(() => {
+    const destMap = new Map<string, VisitedDestinationNode>();
 
-  // Group experiences by country → city
-  const grouped = useMemo(() => {
-    const g: Record<string, Record<string, ExperienceWithPhotos[]>> = {};
-    filteredExperiences.forEach((e) => {
-      const country = e.country || "Unknown";
-      const city = e.city || "Unknown";
-      if (!g[country]) g[country] = {};
-      if (!g[country][city]) g[country][city] = [];
-      g[country][city].push(e);
+    // Add visited places
+    visitedPlaces.forEach((p) => {
+      const destinationName = p.city || p.name;
+      const key = `${p.country}||${destinationName}`;
+      if (!destMap.has(key)) {
+        destMap.set(key, {
+          city: destinationName,
+          country: p.country || "Unknown",
+          lat: p.lat,
+          lng: p.lng,
+          places: [],
+          experiences: [],
+        });
+      }
+      destMap.get(key)!.places.push(p);
     });
-    return Object.entries(g).sort(([a], [b]) => a.localeCompare(b));
-  }, [filteredExperiences]);
 
-  // Auto-expand countries
+    // Add experiences (they may or may not have a matching place)
+    experiences.forEach((e) => {
+      const destinationName = e.city || "Unknown";
+      const country = e.country || "Unknown";
+      const key = `${country}||${destinationName}`;
+      if (!destMap.has(key)) {
+        destMap.set(key, {
+          city: destinationName,
+          country,
+          lat: e.lat || 0,
+          lng: e.lng || 0,
+          places: [],
+          experiences: [],
+        });
+      }
+      destMap.get(key)!.experiences.push(e);
+    });
+
+    // Group by country
+    const countryMap = new Map<string, VisitedDestinationNode[]>();
+    destMap.forEach((dest) => {
+      if (!countryMap.has(dest.country)) countryMap.set(dest.country, []);
+      countryMap.get(dest.country)!.push(dest);
+    });
+
+    return Array.from(countryMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([country, dests]) => ({
+        country,
+        destinations: dests.sort((a, b) => a.city.localeCompare(b.city)),
+      }));
+  }, [visitedPlaces, experiences]);
+
+  // Apply category filter
+  const filteredHierarchy = useMemo(() => {
+    if (activeFilter === "All") return hierarchy;
+    return hierarchy
+      .map(({ country, destinations }) => ({
+        country,
+        destinations: destinations
+          .map((dest) => ({
+            ...dest,
+            places: dest.places.filter((p) =>
+              p.tags?.some((t) => t.toLowerCase() === activeFilter.toLowerCase())
+            ),
+            experiences: dest.experiences.filter(
+              (e) => e.category.toLowerCase() === activeFilter.toLowerCase() ||
+                e.tags?.some((t) => t.toLowerCase() === activeFilter.toLowerCase())
+            ),
+          }))
+          .filter((d) => d.places.length > 0 || d.experiences.length > 0),
+      }))
+      .filter((c) => c.destinations.length > 0);
+  }, [hierarchy, activeFilter]);
+
+  // Counts
+  const totalItems = useMemo(() => {
+    return filteredHierarchy.reduce((sum, c) =>
+      sum + c.destinations.reduce((s, d) => {
+        const subPlaces = d.places.filter(p => p.name.toLowerCase() !== d.city.toLowerCase());
+        return s + subPlaces.length + d.experiences.length;
+      }, 0), 0);
+  }, [filteredHierarchy]);
+
+  const totalDestinations = useMemo(() => {
+    return filteredHierarchy.reduce((sum, c) => sum + c.destinations.length, 0);
+  }, [filteredHierarchy]);
+
+  // Auto-expand on load
   useMemo(() => {
-    if (expandedCountries.size === 0 && grouped.length > 0) {
-      setExpandedCountries(new Set(grouped.map(([c]) => c)));
+    if (expandedCountries.size === 0 && filteredHierarchy.length > 0) {
+      setExpandedCountries(new Set(filteredHierarchy.map((c) => c.country)));
+      const allDests = new Set<string>();
+      filteredHierarchy.forEach((c) =>
+        c.destinations.forEach((d) => allDests.add(`${c.country}||${d.city}`))
+      );
+      setExpandedDestinations(allDests);
     }
-  }, [grouped.length]);
+  }, [filteredHierarchy.length]);
 
   const toggleCountry = (country: string) => {
     setExpandedCountries((prev) => {
       const next = new Set(prev);
       if (next.has(country)) next.delete(country);
       else next.add(country);
+      return next;
+    });
+  };
+
+  const toggleDestination = (key: string) => {
+    setExpandedDestinations((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };

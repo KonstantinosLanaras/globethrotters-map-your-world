@@ -488,6 +488,10 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
           setRatingPlaceId(savedPlace.id);
           setShowRating(true);
         }
+        if (type === "wishlist" && lists.length > 0) {
+          setCollectionPlaceId(savedPlace.id);
+          setShowCollectionPrompt(true);
+        }
       } else {
         const result = await addPlace.mutateAsync({
           name: city.name, country: city.country, lat: city.lat, lng: city.lng,

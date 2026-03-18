@@ -637,6 +637,7 @@ export type Database = {
       }
       places: {
         Row: {
+          city: string | null
           country: string
           created_at: string
           date_visited: string | null
@@ -653,6 +654,7 @@ export type Database = {
           visibility: string
         }
         Insert: {
+          city?: string | null
           country?: string
           created_at?: string
           date_visited?: string | null
@@ -669,6 +671,7 @@ export type Database = {
           visibility?: string
         }
         Update: {
+          city?: string | null
           country?: string
           created_at?: string
           date_visited?: string | null

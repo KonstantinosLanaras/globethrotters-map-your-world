@@ -25,6 +25,8 @@ const Index = () => {
     countries: new Set(places.filter((p) => p.type === "visited").map((p) => p.country)).size,
   }), [places]);
 
+  const { user } = usePlaces().data ? { user: null } : { user: null };
+  
   const savedPlace = useMemo(() => {
     if (!selectedCity) return null;
     return places.find(

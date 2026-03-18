@@ -556,7 +556,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     setSavingItem(item.name);
     try {
       await addPlace.mutateAsync({
-        name: item.name, country: city.country, lat: city.lat, lng: city.lng,
+        name: item.name, country: city.country, city: city.name, lat: city.lat, lng: city.lng,
         type, tags: [item.category], rating: 0, notes: item.description || "",
         date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
       });

@@ -37,7 +37,6 @@ const Index = () => {
   }, []);
 
   const handlePlaceClick = useCallback((place: Place) => {
-    setIsRecommendationsOpen(false);
     const matchingCity = worldCities.find(
       (c) => c.name.toLowerCase() === place.name.toLowerCase()
     );

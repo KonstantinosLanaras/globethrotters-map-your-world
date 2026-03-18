@@ -370,7 +370,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const [savingItem, setSavingItem] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
   const [showMyLists, setShowMyLists] = useState(false);
-
+  const [showRating, setShowRating] = useState(false);
+  const [ratingPlaceId, setRatingPlaceId] = useState<string | null>(null);
   const isVisited = savedPlace?.type === "visited";
   const isWishlist = savedPlace?.type === "wishlist";
   const isSaved = !!savedPlace;

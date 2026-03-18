@@ -1002,6 +1002,16 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
         defaultCity={city.name}
         defaultCountry={city.country}
       />
+
+      {/* Rating Modal */}
+      {ratingPlaceId && (
+        <RatingModal
+          open={showRating}
+          onClose={() => { setShowRating(false); setRatingPlaceId(null); }}
+          placeId={ratingPlaceId}
+          placeName={city.name}
+        />
+      )}
     </>
   );
 };

@@ -89,7 +89,7 @@ const Index = () => {
           onClose={() => setSelectedCity(null)}
         />
       )}
-      <MapLegend />
+      
       <div className="absolute inset-0 pt-[60px]">
         <WorldMap
           cities={worldCities}

@@ -108,18 +108,6 @@ const Navbar = ({ searchMode = "places", onSearchModeChange }: NavbarProps) => {
           Wishlist
         </button>
 
-        {/* Experiences mode switch */}
-        <button
-          onClick={handleExperiencesClick}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
-            location.pathname === "/" && searchMode === "experiences"
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          }`}
-        >
-          <Camera className="w-4 h-4" />
-          Experiences
-        </button>
       </div>
 
       {/* People search + Profile */}

@@ -1,12 +1,14 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import { Compass, Search, TrendingUp, MapPin, Star, Bookmark, Eye, MessageSquare, Filter, X } from "lucide-react";
+import { Compass, Search, TrendingUp, MapPin, Star, Bookmark, Eye, MessageSquare, Filter, X, ThumbsUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useToggleHelpful, useUserHelpfulMarks } from "@/hooks/useReputation";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const categories = ["All", "Food", "Culture", "Nature", "Hiking", "Nightlife"] as const;
 type Category = typeof categories[number];

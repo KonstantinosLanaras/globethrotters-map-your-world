@@ -119,10 +119,13 @@ const Wishlist = () => {
       .filter((c) => c.destinations.length > 0);
   }, [hierarchy, activeFilter]);
 
-  // Counts
+  // Counts — exclude city-level saves from experience count
   const totalExperiences = useMemo(() => {
     return filteredHierarchy.reduce(
-      (sum, c) => sum + c.destinations.reduce((s, d) => s + d.places.length + d.experiences.length, 0),
+      (sum, c) => sum + c.destinations.reduce((s, d) => {
+        const subPlaces = d.places.filter(p => p.name.toLowerCase() !== d.city.toLowerCase());
+        return s + subPlaces.length + d.experiences.length;
+      }, 0),
       0
     );
   }, [filteredHierarchy]);

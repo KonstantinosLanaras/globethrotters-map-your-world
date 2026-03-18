@@ -252,7 +252,14 @@ const Wishlist = () => {
                     >
                       {destinations.map((dest, di) => {
                         const destKey = `${country}||${dest.city}`;
-                        const itemCount = dest.places.length + dest.experiences.length;
+                        // Separate city-level saves from sub-experience saves
+                        const subPlaces = dest.places.filter(
+                          (p) => p.name.toLowerCase() !== dest.city.toLowerCase()
+                        );
+                        const cityLevelPlace = dest.places.find(
+                          (p) => p.name.toLowerCase() === dest.city.toLowerCase()
+                        );
+                        const itemCount = subPlaces.length + dest.experiences.length;
                         const isExpanded = expandedDestinations.has(destKey);
 
                         return (
@@ -263,35 +270,53 @@ const Wishlist = () => {
                             transition={{ delay: di * 0.02 }}
                           >
                             {/* Destination node */}
-                            <button
-                              onClick={() => toggleDestination(destKey)}
-                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-wishlist/20 transition-all"
-                            >
-                              {isExpanded ? (
-                                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                            <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-wishlist/20 transition-all">
+                              {itemCount > 0 ? (
+                                <button onClick={() => toggleDestination(destKey)} className="flex items-center">
+                                  {isExpanded ? (
+                                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                                  )}
+                                </button>
                               ) : (
-                                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                                <div className="w-3.5" />
                               )}
-                              <div className="w-7 h-7 rounded-md flex items-center justify-center bg-wishlist/10 text-wishlist flex-shrink-0">
-                                <Compass className="w-3.5 h-3.5" />
-                              </div>
-                              <span className="text-sm font-medium text-foreground">{dest.city}</span>
-                              <span className="text-[11px] text-muted-foreground ml-auto">
-                                {itemCount} {itemCount === 1 ? "item" : "items"}
-                              </span>
-                            </button>
+                              <button
+                                onClick={() => itemCount > 0 ? toggleDestination(destKey) : undefined}
+                                className="flex items-center gap-2 flex-1 min-w-0"
+                              >
+                                <div className="w-7 h-7 rounded-md flex items-center justify-center bg-wishlist/10 text-wishlist flex-shrink-0">
+                                  <Compass className="w-3.5 h-3.5" />
+                                </div>
+                                <span className="text-sm font-medium text-foreground">{dest.city}</span>
+                                <span className="text-[11px] text-muted-foreground ml-auto">
+                                  {itemCount > 0
+                                    ? `${itemCount} ${itemCount === 1 ? "experience" : "experiences"}`
+                                    : "destination saved"}
+                                </span>
+                              </button>
+                              {cityLevelPlace && (
+                                <button
+                                  onClick={() => handleDelete(cityLevelPlace.id, cityLevelPlace.name)}
+                                  className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
 
-                            {/* Nested experiences/places */}
+                            {/* Nested experiences/places (only sub-experiences, NOT duplicated city) */}
                             <AnimatePresence>
-                              {isExpanded && (
+                              {isExpanded && itemCount > 0 && (
                                 <motion.div
                                   initial={{ opacity: 0, height: 0 }}
                                   animate={{ opacity: 1, height: "auto" }}
                                   exit={{ opacity: 0, height: 0 }}
                                   className="pl-8 space-y-1 mt-1 overflow-hidden"
                                 >
-                                  {/* Saved places */}
-                                  {dest.places.map((place, pi) => (
+                                  {/* Sub-place experiences */}
+                                  {subPlaces.map((place, pi) => (
                                     <motion.div
                                       key={place.id}
                                       initial={{ opacity: 0, x: -4 }}

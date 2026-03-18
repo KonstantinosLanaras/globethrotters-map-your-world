@@ -194,7 +194,21 @@ const Visited = () => {
     } catch { toast.error("Failed to create journey"); }
   };
 
-  const totalCountries = new Set(filteredExperiences.map(e => e.country).filter(Boolean)).size;
+  const handleDeletePlace = async (id: string, name: string) => {
+    try {
+      await deletePlace.mutateAsync(id);
+      toast.success(`Removed ${name}`);
+    } catch {
+      toast.error("Failed to remove");
+    }
+  };
+
+  const handleDeleteExp = (id: string) => {
+    deleteExperience.mutate(id, {
+      onSuccess: () => toast.success("Experience removed"),
+      onError: () => toast.error("Failed to delete"),
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -209,7 +223,9 @@ const Visited = () => {
                 <h1 className="font-display text-2xl font-semibold text-foreground">Visited</h1>
               </div>
               <p className="text-sm text-muted-foreground">
-                {filteredExperiences.length} experiences across {totalCountries} {totalCountries === 1 ? "country" : "countries"}
+                {totalItems > 0
+                  ? `${totalItems} ${totalItems === 1 ? "experience" : "experiences"} across ${totalDestinations} ${totalDestinations === 1 ? "destination" : "destinations"} in ${filteredHierarchy.length} ${filteredHierarchy.length === 1 ? "country" : "countries"}`
+                  : `${totalDestinations} ${totalDestinations === 1 ? "destination" : "destinations"} in ${filteredHierarchy.length} ${filteredHierarchy.length === 1 ? "country" : "countries"}`}
               </p>
             </div>
             <button
@@ -262,26 +278,27 @@ const Visited = () => {
               ))}
             </div>
 
-            {/* Geography-grouped experiences */}
-            {grouped.length === 0 ? (
+            {/* Destination hierarchy */}
+            {filteredHierarchy.length === 0 ? (
               <div className="text-center py-20">
                 <MapPin className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-muted-foreground text-sm">
-                  {activeFilter !== "All" ? `No ${activeFilter} experiences yet.` : "No visited experiences yet."}
+                  {activeFilter !== "All" ? `No ${activeFilter} visited items yet.` : "No visited places yet."}
                 </p>
                 <p className="text-muted-foreground/60 text-xs mt-1">
-                  Mark places as visited on the map to add experiences!
+                  Mark places as visited on the map to start building your travel memory!
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {grouped.map(([country, cities], ci) => (
+                {filteredHierarchy.map(({ country, destinations }, ci) => (
                   <motion.div
                     key={country}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: ci * 0.04 }}
                   >
+                    {/* Country row */}
                     <button
                       onClick={() => toggleCountry(country)}
                       className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors mb-1"
@@ -294,69 +311,151 @@ const Visited = () => {
                       <Globe className="w-3.5 h-3.5 text-primary" />
                       <span className="text-sm font-semibold text-foreground">{country}</span>
                       <span className="text-xs text-muted-foreground ml-auto">
-                        {Object.values(cities).flat().length} exp
+                        {destinations.length} {destinations.length === 1 ? "destination" : "destinations"}
                       </span>
                     </button>
 
+                    {/* Destinations */}
                     <AnimatePresence>
                       {expandedCountries.has(country) && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="pl-4 space-y-2 overflow-hidden"
+                          className="pl-4 space-y-1.5 overflow-hidden"
                         >
-                          {Object.entries(cities).sort(([a], [b]) => a.localeCompare(b)).map(([city, exps]) => (
-                            <div key={city}>
-                              <p className="text-xs font-medium text-muted-foreground px-2 py-1 flex items-center gap-1">
-                                <MapPin className="w-3 h-3" /> {city}
-                              </p>
-                              <div className="space-y-1.5 pl-2">
-                                {exps.map((exp, i) => (
-                                  <motion.div
-                                    key={exp.id}
-                                    initial={{ opacity: 0, x: -6 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: i * 0.02 }}
-                                    className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-visited/20 transition-all group"
-                                  >
-                                    {exp.photos[0] ? (
-                                      <img src={exp.photos[0]} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                                    ) : (
-                                      <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-visited/10 text-visited flex-shrink-0">
-                                        <span className="text-sm">{categoryEmoji[exp.category] || "📍"}</span>
-                                      </div>
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-medium text-foreground truncate">{exp.title}</p>
-                                      <div className="flex items-center gap-2 mt-0.5">
-                                        <span className="text-[10px] text-muted-foreground capitalize">{exp.category}</span>
-                                        {exp.rating > 0 && (
-                                          <span className="flex items-center gap-0.5">
-                                            <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                                            <span className="text-[10px] text-foreground">{exp.rating}</span>
-                                          </span>
-                                        )}
-                                      </div>
-                                      {exp.tags.length > 0 && (
-                                        <div className="flex gap-1 mt-0.5">
-                                          {exp.tags.slice(0, 3).map(tag => (
-                                            <span key={tag} className="px-1.5 py-0.5 rounded-full bg-primary/10 text-[9px] font-medium text-primary">{tag}</span>
-                                          ))}
-                                        </div>
+                          {destinations.map((dest, di) => {
+                            const destKey = `${country}||${dest.city}`;
+                            const subPlaces = dest.places.filter(
+                              (p) => p.name.toLowerCase() !== dest.city.toLowerCase()
+                            );
+                            const cityLevelPlace = dest.places.find(
+                              (p) => p.name.toLowerCase() === dest.city.toLowerCase()
+                            );
+                            const itemCount = subPlaces.length + dest.experiences.length;
+                            const isExpanded = expandedDestinations.has(destKey);
+
+                            return (
+                              <motion.div
+                                key={destKey}
+                                initial={{ opacity: 0, x: -4 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: di * 0.02 }}
+                              >
+                                {/* Destination node */}
+                                <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-visited/20 transition-all">
+                                  {itemCount > 0 ? (
+                                    <button onClick={() => toggleDestination(destKey)} className="flex items-center">
+                                      {isExpanded ? (
+                                        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                                      ) : (
+                                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                                       )}
-                                    </div>
-                                    <button
-                                      onClick={() => handleDeleteExp(exp.id)}
-                                      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
                                     </button>
-                                  </motion.div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
+                                  ) : (
+                                    <div className="w-3.5" />
+                                  )}
+                                  <button
+                                    onClick={() => itemCount > 0 ? toggleDestination(destKey) : undefined}
+                                    className="flex items-center gap-2 flex-1 min-w-0"
+                                  >
+                                    <div className="w-7 h-7 rounded-md flex items-center justify-center bg-visited/10 text-visited flex-shrink-0">
+                                      <Compass className="w-3.5 h-3.5" />
+                                    </div>
+                                    <span className="text-sm font-medium text-foreground">{dest.city}</span>
+                                    <span className="text-[11px] text-muted-foreground ml-auto">
+                                      {itemCount > 0
+                                        ? `${itemCount} ${itemCount === 1 ? "experience" : "experiences"}`
+                                        : "destination visited"}
+                                    </span>
+                                  </button>
+                                  {cityLevelPlace && (
+                                    <button
+                                      onClick={() => handleDeletePlace(cityLevelPlace.id, cityLevelPlace.name)}
+                                      className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* Nested items */}
+                                <AnimatePresence>
+                                  {isExpanded && itemCount > 0 && (
+                                    <motion.div
+                                      initial={{ opacity: 0, height: 0 }}
+                                      animate={{ opacity: 1, height: "auto" }}
+                                      exit={{ opacity: 0, height: 0 }}
+                                      className="pl-8 space-y-1 mt-1 overflow-hidden"
+                                    >
+                                      {/* Sub-places */}
+                                      {subPlaces.map((place, pi) => (
+                                        <motion.div
+                                          key={place.id}
+                                          initial={{ opacity: 0, x: -4 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          transition={{ delay: pi * 0.02 }}
+                                          className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
+                                        >
+                                          <MapPin className="w-3.5 h-3.5 text-visited flex-shrink-0" />
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-medium text-foreground truncate">{place.name}</p>
+                                            {place.tags && place.tags.length > 0 && (
+                                              <div className="flex gap-1 mt-0.5">
+                                                {place.tags.slice(0, 3).map((tag) => (
+                                                  <span key={tag} className="px-1.5 py-0.5 rounded-full bg-muted text-[9px] text-muted-foreground">{tag}</span>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+                                          <button
+                                            onClick={() => handleDeletePlace(place.id, place.name)}
+                                            className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </button>
+                                        </motion.div>
+                                      ))}
+
+                                      {/* Experiences */}
+                                      {dest.experiences.map((exp, ei) => (
+                                        <motion.div
+                                          key={exp.id}
+                                          initial={{ opacity: 0, x: -4 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          transition={{ delay: (subPlaces.length + ei) * 0.02 }}
+                                          className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors group"
+                                        >
+                                          {exp.photos[0] ? (
+                                            <img src={exp.photos[0]} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                                          ) : (
+                                            <span className="text-xs flex-shrink-0">{categoryEmoji[exp.category] || "📍"}</span>
+                                          )}
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-medium text-foreground truncate">{exp.title}</p>
+                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                              <span className="text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{exp.category}</span>
+                                              {exp.rating > 0 && (
+                                                <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
+                                                  <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" /> {exp.rating}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <button
+                                            onClick={() => handleDeleteExp(exp.id)}
+                                            className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </button>
+                                        </motion.div>
+                                      ))}
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </motion.div>
+                            );
+                          })}
                         </motion.div>
                       )}
                     </AnimatePresence>

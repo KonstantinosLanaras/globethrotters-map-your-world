@@ -521,7 +521,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     if (!savedPlace) {
       try {
         const result = await addPlace.mutateAsync({
-          name: city.name, country: city.country, lat: city.lat, lng: city.lng,
+          name: city.name, country: city.country, city: city.name, lat: city.lat, lng: city.lng,
           type: "wishlist", tags: [], rating: 0, notes: "", date_visited: null,
         });
         if (result?.id) {

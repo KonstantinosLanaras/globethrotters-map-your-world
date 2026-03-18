@@ -279,10 +279,14 @@ const Profile = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-5 gap-1 mt-4 pt-4 border-t border-border">
-              <HeroStat value={followerCount} label="Followers" />
-              <HeroStat value={followingCount} label="Following" />
+            <div className="grid grid-cols-6 gap-1 mt-4 pt-4 border-t border-border">
+              <button onClick={() => navigate("/connections")} className="text-center hover:bg-muted/50 rounded-lg py-1 transition-colors">
+                <p className="font-display text-lg font-semibold text-foreground">{followerCount}</p>
+                <p className="text-[10px] text-muted-foreground">Connections</p>
+              </button>
               <HeroStat value={countries} label="Countries" />
+              <HeroStat value={visitedCount} label="Visited" />
+              <HeroStat value={wishlistCount} label="Wishlist" />
               <HeroStat value={experiences.length} label="Experiences" />
               <HeroStat value={photosCount} label="Photos" />
             </div>

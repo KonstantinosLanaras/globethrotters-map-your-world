@@ -2,22 +2,25 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Map, MapPin, Heart, User, Menu, X, LogOut, Camera } from "lucide-react";
 import GlobethrottersLogo from "@/components/GlobethrottersLogo";
 import PeopleSearch from "@/components/PeopleSearch";
-import GlobalSearch from "@/components/GlobalSearch";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import type { SearchMode } from "@/components/CityExploreBar";
+
+interface NavbarProps {
+  searchMode?: SearchMode;
+  onSearchModeChange?: (mode: SearchMode) => void;
+}
 
 const navItems = [
-  { icon: <Map className="w-4 h-4" />, label: "Explore", path: "/" },
+  { icon: <Map className="w-4 h-4" />, label: "Explore", path: "/", mode: "places" as SearchMode },
   { icon: <MapPin className="w-4 h-4" />, label: "Visited", path: "/visited" },
   { icon: <Heart className="w-4 h-4" />, label: "Wishlist", path: "/wishlist" },
 ];
 
-const Navbar = () => {
+const Navbar = ({ searchMode = "places", onSearchModeChange }: NavbarProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [searchMode, setSearchMode] = useState<"places" | "experiences">("places");
-  const [experiencesTrigger, setExperiencesTrigger] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useAuth();
@@ -41,9 +44,17 @@ const Navbar = () => {
   };
 
   const handleExperiencesClick = useCallback(() => {
-    setSearchMode("experiences");
-    setExperiencesTrigger(prev => !prev);
-  }, []);
+    // If not on home page, navigate there first
+    if (location.pathname !== "/") {
+      navigate("/");
+    }
+    onSearchModeChange?.("experiences");
+  }, [onSearchModeChange, location.pathname, navigate]);
+
+  const handleExploreClick = useCallback(() => {
+    navigate("/");
+    onSearchModeChange?.("places");
+  }, [onSearchModeChange, navigate]);
 
   return (
     <motion.nav
@@ -52,35 +63,56 @@ const Navbar = () => {
       transition={{ duration: 0.3 }}
       className="fixed top-0 left-0 right-0 z-[1001] flex items-center justify-between px-4 h-[60px] bg-card/85 backdrop-blur-xl border-b border-border gap-2"
     >
-      <button onClick={() => navigate("/")} className="flex items-center gap-2 flex-shrink-0">
+      <button onClick={() => { navigate("/"); onSearchModeChange?.("places"); }} className="flex items-center gap-2 flex-shrink-0">
         <GlobethrottersLogo variant="full" size={26} animate={false} className="text-foreground" />
       </button>
 
       {/* Desktop nav */}
       <div className="hidden md:flex items-center gap-1">
-        {navItems.map((item) => {
-          const active = location.pathname === item.path ||
-            (item.path === "/visited" && location.pathname === "/places");
-          return (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
-                active
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-            >
-              {item.icon}
-              {item.label}
-            </button>
-          );
-        })}
-        {/* Experiences mode switch button */}
+        {/* Explore */}
+        <button
+          onClick={handleExploreClick}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+            location.pathname === "/" && searchMode === "places"
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          <Map className="w-4 h-4" />
+          Explore
+        </button>
+
+        {/* Visited */}
+        <button
+          onClick={() => navigate("/visited")}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+            location.pathname === "/visited" || location.pathname === "/places"
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          <MapPin className="w-4 h-4" />
+          Visited
+        </button>
+
+        {/* Wishlist */}
+        <button
+          onClick={() => navigate("/wishlist")}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+            location.pathname === "/wishlist"
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          <Heart className="w-4 h-4" />
+          Wishlist
+        </button>
+
+        {/* Experiences mode switch */}
         <button
           onClick={handleExperiencesClick}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
-            searchMode === "experiences"
+            location.pathname === "/" && searchMode === "experiences"
               ? "bg-primary/10 text-primary"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           }`}
@@ -90,13 +122,8 @@ const Navbar = () => {
         </button>
       </div>
 
-      {/* Search + People search + Profile */}
+      {/* People search + Profile */}
       <div className="hidden md:flex items-center gap-2">
-        <GlobalSearch
-          initialMode={searchMode}
-          onModeChange={setSearchMode}
-          externalOpen={experiencesTrigger}
-        />
         <PeopleSearch />
         <div className="relative" ref={profileRef}>
           <button
@@ -150,35 +177,25 @@ const Navbar = () => {
           className="absolute top-full left-0 right-0 bg-card/95 backdrop-blur-xl border-b border-border p-3 md:hidden"
         >
           <div className="mb-3 px-1 space-y-2">
-            <GlobalSearch initialMode={searchMode} onModeChange={setSearchMode} />
             <PeopleSearch />
           </div>
 
-          {[...navItems,
-            { icon: <Camera className="w-4 h-4" />, label: "Experiences", path: "#experiences" },
-            { icon: <User className="w-4 h-4" />, label: "Profile", path: "/profile" },
-          ].map((item) => {
-            const active = location.pathname === item.path;
-            return (
-              <button
-                key={item.path}
-                onClick={() => {
-                  if (item.path === "#experiences") {
-                    handleExperiencesClick();
-                  } else {
-                    navigate(item.path);
-                  }
-                  setMenuOpen(false);
-                }}
-                className={`flex items-center gap-2 w-full px-4 py-3 rounded-xl text-sm transition-colors ${
-                  active ? "text-primary bg-primary/8" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {item.icon}
-                {item.label}
-              </button>
-            );
-          })}
+          {[
+            { icon: <Map className="w-4 h-4" />, label: "Explore", action: handleExploreClick },
+            { icon: <MapPin className="w-4 h-4" />, label: "Visited", action: () => navigate("/visited") },
+            { icon: <Heart className="w-4 h-4" />, label: "Wishlist", action: () => navigate("/wishlist") },
+            { icon: <Camera className="w-4 h-4" />, label: "Experiences", action: handleExperiencesClick },
+            { icon: <User className="w-4 h-4" />, label: "Profile", action: () => navigate("/profile") },
+          ].map((item) => (
+            <button
+              key={item.label}
+              onClick={() => { item.action(); setMenuOpen(false); }}
+              className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
 
           <div className="h-px bg-border my-1" />
           <button

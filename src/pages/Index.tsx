@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import MapControls from "@/components/MapControls";
 import CityDetailsCard from "@/components/CityDetailsCard";
 import CityExploreBar from "@/components/CityExploreBar";
+import type { SearchMode } from "@/components/CityExploreBar";
 import { usePlaces, useUpdatePlace, useDeletePlace, Place } from "@/hooks/usePlaces";
 import { useExperiencesWithPhotos } from "@/hooks/useExperiences";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +15,7 @@ const Index = () => {
   const [showCities, setShowCities] = useState(true);
   const [mapFilter, setMapFilter] = useState<"all" | "visited" | "wishlist">("all");
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [searchMode, setSearchMode] = useState<SearchMode>("places");
   const { user } = useAuth();
   const { data: places = [] } = usePlaces();
   const { data: experiences = [] } = useExperiencesWithPhotos();
@@ -77,8 +79,12 @@ const Index = () => {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      <Navbar />
-      <CityExploreBar onCitySelect={handleCityClick} />
+      <Navbar searchMode={searchMode} onSearchModeChange={setSearchMode} />
+      <CityExploreBar
+        onCitySelect={handleCityClick}
+        mode={searchMode}
+        onModeChange={setSearchMode}
+      />
       <MapControls
         showCities={showCities}
         onToggleCities={() => setShowCities(!showCities)}

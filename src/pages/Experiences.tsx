@@ -84,7 +84,26 @@ const ExperienceCard = ({ exp, onDelete }: { exp: ExperienceWithPhotos; onDelete
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-3">
+        {/* Engagement indicators */}
+        <div className="flex items-center gap-3 mt-3 flex-wrap">
+          {(exp as any).saves_count > 0 && (
+            <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <Heart className="w-3 h-3" /> Saved by {(exp as any).saves_count} traveler{(exp as any).saves_count !== 1 ? "s" : ""}
+            </span>
+          )}
+          {(exp as any).rating_avg >= 4 && (
+            <span className="flex items-center gap-1 text-[10px] text-amber-600 font-medium">
+              <Award className="w-3 h-3" /> Highly rated
+            </span>
+          )}
+          {(exp as any).engagement_score >= 50 && (
+            <span className="flex items-center gap-1 text-[10px] text-primary font-medium">
+              <TrendingUp className="w-3 h-3" /> Popular
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between mt-2">
           {exp.experience_date && (
             <p className="text-[10px] text-muted-foreground">{new Date(exp.experience_date).toLocaleDateString()}</p>
           )}

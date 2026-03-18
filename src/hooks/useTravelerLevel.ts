@@ -155,27 +155,27 @@ export function computeTravelerLevel(places: Place[], contributionScore: number 
       icon: "🗺️",
       earned: visited.length >= 25,
     },
-    // Contribution achievements
+    // Contribution achievements — validation-based, not creation-based
     {
       id: "contributor",
-      title: "Contributor",
-      description: "Share 3 community experiences",
+      title: "Trusted Voice",
+      description: "Have contributions validated by 3+ travelers",
       icon: "✍️",
-      earned: contributionScore >= 3,
+      earned: contributionScore >= 6,
     },
     {
       id: "local_guide",
-      title: "Local Guide",
-      description: "Get 10 saves on your experiences",
+      title: "Community Guide",
+      description: "Help 10 travelers with your experiences",
       icon: "🧭",
-      earned: contributionScore >= 10,
+      earned: contributionScore >= 20,
     },
     {
       id: "top_explorer",
-      title: "Top Explorer",
-      description: "Reach 25 contribution points",
+      title: "Top Contributor",
+      description: "Reach 40 validated impact points",
       icon: "🏆",
-      earned: contributionScore >= 25,
+      earned: contributionScore >= 40,
     },
   ];
 
@@ -189,7 +189,7 @@ export function computeTravelerLevel(places: Place[], contributionScore: number 
   };
 }
 
-// Hook to compute contribution score from user's experiences
+// Validation-based contribution score — only counts community-validated impact
 export const useContributionScore = (userId: string | undefined) => {
   return useQuery({
     queryKey: ["contribution-score", userId],
@@ -197,15 +197,25 @@ export const useContributionScore = (userId: string | undefined) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("experiences")
-        .select("saves_count, review_count, rating_avg, engagement_score")
+        .select("saves_count, review_count, rating_avg, helpful_count")
         .eq("user_id", userId!);
       if (error) throw error;
       if (!data || data.length === 0) return 0;
-      // Score: 1 per experience + 1 per save received + 2 per review received
-      let score = data.length; // 1 point per experience shared
+
+      // Validation-based: no instant rewards for creating content
+      // Points only from community interaction
+      let score = 0;
       for (const exp of data) {
-        score += (exp.saves_count || 0);
-        score += (exp.review_count || 0) * 2;
+        let expScore = 0;
+        expScore += (exp.saves_count || 0) * 2;      // saves = strong signal
+        expScore += (exp.helpful_count || 0) * 3;     // explicit helpful marks
+        expScore += (exp.review_count || 0) * 4;      // reviews = strongest
+        // High rating bonus
+        if ((exp.rating_avg || 0) >= 4.0 && (exp.review_count || 0) >= 2) {
+          expScore += 5;
+        }
+        // Diminishing returns cap per experience
+        score += Math.min(expScore, 50);
       }
       return score;
     },

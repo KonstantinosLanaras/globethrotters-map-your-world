@@ -1,12 +1,14 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import { Compass, Search, TrendingUp, MapPin, Star, Bookmark, Eye, MessageSquare, Filter, X } from "lucide-react";
+import { Compass, Search, TrendingUp, MapPin, Star, Bookmark, Eye, MessageSquare, Filter, X, ThumbsUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useToggleHelpful, useUserHelpfulMarks } from "@/hooks/useReputation";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const categories = ["All", "Food", "Culture", "Nature", "Hiking", "Nightlife"] as const;
 type Category = typeof categories[number];
@@ -126,7 +128,7 @@ const categoryEmoji: Record<string, string> = {
   general: "📍",
 };
 
-const ExperienceCard = ({ exp, index }: { exp: DiscoverExperience; index: number }) => {
+const ExperienceCard = ({ exp, index, isHelpful, onToggleHelpful }: { exp: DiscoverExperience; index: number; isHelpful: boolean; onToggleHelpful: (id: string, current: boolean) => void }) => {
   const photo = exp.photos[0];
 
   return (
@@ -218,6 +220,23 @@ const ExperienceCard = ({ exp, index }: { exp: DiscoverExperience; index: number
                 <span className="text-[11px] text-muted-foreground">{exp.review_count}</span>
               </div>
             )}
+
+            {/* Helpful button — validation signal */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleHelpful(exp.id, isHelpful);
+              }}
+              className={`flex items-center gap-0.5 transition-colors ${
+                isHelpful
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-primary"
+              }`}
+              title={isHelpful ? "Marked as helpful" : "Mark as helpful"}
+            >
+              <ThumbsUp className={`w-3 h-3 ${isHelpful ? "fill-primary" : ""}`} />
+              <span className="text-[11px]">Helpful</span>
+            </button>
           </div>
 
           {/* Author */}
@@ -250,6 +269,17 @@ const Discover = () => {
 
   const { data: experiences = [], isLoading } = useDiscoverExperiences();
   const { data: trendingCities = [] } = useTrendingCities();
+  const { data: helpfulSet = new Set<string>() } = useUserHelpfulMarks();
+  const toggleHelpful = useToggleHelpful();
+
+  const handleToggleHelpful = (experienceId: string, isHelpful: boolean) => {
+    toggleHelpful.mutate(
+      { experienceId, isHelpful },
+      {
+        onError: () => toast.error("Could not update"),
+      }
+    );
+  };
 
   const filtered = useMemo(() => {
     let result = experiences;
@@ -395,7 +425,7 @@ const Discover = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((exp, i) => (
-              <ExperienceCard key={exp.id} exp={exp} index={i} />
+              <ExperienceCard key={exp.id} exp={exp} index={i} isHelpful={helpfulSet.has(exp.id)} onToggleHelpful={handleToggleHelpful} />
             ))}
           </div>
         )}

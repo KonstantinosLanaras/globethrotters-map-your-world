@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      contribution_impacts: {
+        Row: {
+          created_at: string
+          experience_id: string | null
+          id: string
+          impact_type: string
+          place_id: string | null
+          points: number
+          source_user_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          experience_id?: string | null
+          id?: string
+          impact_type: string
+          place_id?: string | null
+          points?: number
+          source_user_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          experience_id?: string | null
+          id?: string
+          impact_type?: string
+          place_id?: string | null
+          points?: number
+          source_user_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contribution_impacts_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_impacts_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_transactions: {
         Row: {
           amount: number
@@ -180,6 +228,7 @@ export type Database = {
           created_at: string
           engagement_score: number
           experience_date: string | null
+          helpful_count: number
           id: string
           is_seeded: boolean
           is_sponsored: boolean
@@ -204,6 +253,7 @@ export type Database = {
           created_at?: string
           engagement_score?: number
           experience_date?: string | null
+          helpful_count?: number
           id?: string
           is_seeded?: boolean
           is_sponsored?: boolean
@@ -228,6 +278,7 @@ export type Database = {
           created_at?: string
           engagement_score?: number
           experience_date?: string | null
+          helpful_count?: number
           id?: string
           is_seeded?: boolean
           is_sponsored?: boolean
@@ -271,6 +322,38 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      helpful_marks: {
+        Row: {
+          created_at: string
+          experience_id: string
+          id: string
+          mark_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          experience_id: string
+          id?: string
+          mark_type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          experience_id?: string
+          id?: string
+          mark_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "helpful_marks_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       journey_experiences: {
         Row: {
@@ -556,6 +639,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          contribution_count: number
           created_at: string
           display_name: string | null
           dream_destinations: string[] | null
@@ -568,15 +652,18 @@ export type Database = {
           personality: string | null
           privacy: string
           travel_style: string[] | null
+          travelers_helped: number
           trust_score: number
           updated_at: string
           user_id: string
           username: string | null
+          validated_score: number
           verified_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          contribution_count?: number
           created_at?: string
           display_name?: string | null
           dream_destinations?: string[] | null
@@ -589,15 +676,18 @@ export type Database = {
           personality?: string | null
           privacy?: string
           travel_style?: string[] | null
+          travelers_helped?: number
           trust_score?: number
           updated_at?: string
           user_id: string
           username?: string | null
+          validated_score?: number
           verified_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          contribution_count?: number
           created_at?: string
           display_name?: string | null
           dream_destinations?: string[] | null
@@ -610,10 +700,12 @@ export type Database = {
           personality?: string | null
           privacy?: string
           travel_style?: string[] | null
+          travelers_helped?: number
           trust_score?: number
           updated_at?: string
           user_id?: string
           username?: string | null
+          validated_score?: number
           verified_at?: string | null
         }
         Relationships: []

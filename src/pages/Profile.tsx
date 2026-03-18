@@ -11,6 +11,7 @@ import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
 import { usePlaces } from "@/hooks/usePlaces";
 import { useExperiencesWithPhotos, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { useTravelerLevel, useContributionScore } from "@/hooks/useTravelerLevel";
+import { useReputation } from "@/hooks/useReputation";
 import { useFollowerCount, useFollowingCount } from "@/hooks/useFollowers";
 import { useNavigate } from "react-router-dom";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -35,6 +36,7 @@ const Profile = () => {
   const { data: followerCount = 0 } = useFollowerCount(user?.id);
   const { data: followingCount = 0 } = useFollowingCount(user?.id);
   const { data: contributionScore = 0 } = useContributionScore(user?.id);
+  const { data: reputation } = useReputation();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
@@ -361,14 +363,20 @@ const Profile = () => {
                 <StatBlock label="Places visited" value={visitedCount} />
                 <StatBlock label="Experiences shared" value={experiences.length} />
                 <StatBlock label="Photos uploaded" value={photosCount} />
-                <StatBlock label="Contribution score" value={contributionScore} />
-                <StatBlock label="On wishlist" value={wishlistCount} />
+                <StatBlock label="Validated impact" value={reputation?.validated_score ?? 0} />
+                <StatBlock label="Travelers helped" value={reputation?.travelers_helped ?? 0} />
               </div>
             </motion.div>
 
             {/* Level & Trust */}
             <TravelerLevelCard level={level} />
-            <TrustScoreCard trustScore={profile?.trust_score ?? 0} isVerified={profile?.is_verified ?? false} />
+            <TrustScoreCard
+              trustScore={profile?.trust_score ?? 0}
+              isVerified={profile?.is_verified ?? false}
+              validatedScore={reputation?.validated_score ?? 0}
+              travelersHelped={reputation?.travelers_helped ?? 0}
+              contributionCount={reputation?.contribution_count ?? 0}
+            />
           </div>
         )}
 

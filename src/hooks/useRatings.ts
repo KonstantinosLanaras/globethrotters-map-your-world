@@ -7,12 +7,19 @@ export interface PlaceRating {
   place_id: string;
   user_id: string;
   overall_rating: number;
+  category: string;
   tags: string[];
   safety_rating: number | null;
   value_rating: number | null;
   accessibility_rating: number | null;
   crowd_rating: number | null;
   family_rating: number | null;
+  food_quality_rating: number | null;
+  atmosphere_rating: number | null;
+  authenticity_rating: number | null;
+  scenery_rating: number | null;
+  difficulty_rating: number | null;
+  worth_it_rating: number | null;
   comment: string;
   created_at: string;
   updated_at: string;
@@ -21,12 +28,19 @@ export interface PlaceRating {
 export interface RatingInput {
   place_id: string;
   overall_rating: number;
+  category?: string;
   tags: string[];
   safety_rating?: number | null;
   value_rating?: number | null;
   accessibility_rating?: number | null;
   crowd_rating?: number | null;
   family_rating?: number | null;
+  food_quality_rating?: number | null;
+  atmosphere_rating?: number | null;
+  authenticity_rating?: number | null;
+  scenery_rating?: number | null;
+  difficulty_rating?: number | null;
+  worth_it_rating?: number | null;
   comment?: string;
 }
 
@@ -39,6 +53,12 @@ export interface AggregatedRating {
     accessibility: number | null;
     crowd: number | null;
     family: number | null;
+    food_quality: number | null;
+    atmosphere: number | null;
+    authenticity: number | null;
+    scenery: number | null;
+    difficulty: number | null;
+    worth_it: number | null;
   };
   tagFrequency: Record<string, number>;
   topTags: string[];
@@ -85,24 +105,30 @@ export const useSubmitRating = () => {
     mutationFn: async (input: RatingInput) => {
       if (!user) throw new Error("Not authenticated");
 
-      const row = {
+      const row: Record<string, any> = {
         place_id: input.place_id,
         user_id: user.id,
         overall_rating: input.overall_rating,
+        category: input.category || "general",
         tags: input.tags,
         safety_rating: input.safety_rating ?? null,
         value_rating: input.value_rating ?? null,
         accessibility_rating: input.accessibility_rating ?? null,
         crowd_rating: input.crowd_rating ?? null,
         family_rating: input.family_rating ?? null,
+        food_quality_rating: input.food_quality_rating ?? null,
+        atmosphere_rating: input.atmosphere_rating ?? null,
+        authenticity_rating: input.authenticity_rating ?? null,
+        scenery_rating: input.scenery_rating ?? null,
+        difficulty_rating: input.difficulty_rating ?? null,
+        worth_it_rating: input.worth_it_rating ?? null,
         comment: (input.comment || "").slice(0, 200),
         updated_at: new Date().toISOString(),
       };
 
-      // Upsert: insert or update
       const { data, error } = await supabase
         .from("place_ratings")
-        .upsert(row, { onConflict: "place_id,user_id" })
+        .upsert(row as any, { onConflict: "place_id,user_id" })
         .select()
         .single();
       if (error) throw error;
@@ -111,8 +137,15 @@ export const useSubmitRating = () => {
     onSuccess: (_, input) => {
       qc.invalidateQueries({ queryKey: ["place-ratings", input.place_id] });
       qc.invalidateQueries({ queryKey: ["my-rating", input.place_id] });
+      qc.invalidateQueries({ queryKey: ["places"] });
     },
   });
+};
+
+// Check if user has reviewed a place
+export const useHasReviewed = (placeId: string | undefined) => {
+  const { data } = useMyRating(placeId);
+  return !!data;
 };
 
 export function aggregateRatings(ratings: PlaceRating[]): AggregatedRating {
@@ -120,7 +153,7 @@ export function aggregateRatings(ratings: PlaceRating[]): AggregatedRating {
     return {
       avgRating: 0,
       totalReviews: 0,
-      dimensions: { safety: null, value: null, accessibility: null, crowd: null, family: null },
+      dimensions: { safety: null, value: null, accessibility: null, crowd: null, family: null, food_quality: null, atmosphere: null, authenticity: null, scenery: null, difficulty: null, worth_it: null },
       tagFrequency: {},
       topTags: [],
     };
@@ -157,6 +190,12 @@ export function aggregateRatings(ratings: PlaceRating[]): AggregatedRating {
       accessibility: avg(ratings.map((r) => r.accessibility_rating)),
       crowd: avg(ratings.map((r) => r.crowd_rating)),
       family: avg(ratings.map((r) => r.family_rating)),
+      food_quality: avg(ratings.map((r) => r.food_quality_rating)),
+      atmosphere: avg(ratings.map((r) => r.atmosphere_rating)),
+      authenticity: avg(ratings.map((r) => r.authenticity_rating)),
+      scenery: avg(ratings.map((r) => r.scenery_rating)),
+      difficulty: avg(ratings.map((r) => r.difficulty_rating)),
+      worth_it: avg(ratings.map((r) => r.worth_it_rating)),
     },
     tagFrequency,
     topTags,

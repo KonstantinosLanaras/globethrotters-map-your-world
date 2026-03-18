@@ -12,7 +12,7 @@ const Index = () => {
   const [showCities, setShowCities] = useState(true);
   const [mapFilter, setMapFilter] = useState<"all" | "visited" | "wishlist">("all");
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(true);
+  
   const { data: places = [] } = usePlaces();
   const updatePlace = useUpdatePlace();
   const deletePlace = useDeletePlace();

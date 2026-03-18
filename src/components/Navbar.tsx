@@ -1,9 +1,9 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Map, MapPin, Heart, User, Menu, X, LogOut, Search } from "lucide-react";
+import { Map, MapPin, Heart, User, Menu, X, LogOut, Camera } from "lucide-react";
 import GlobethrottersLogo from "@/components/GlobethrottersLogo";
 import PeopleSearch from "@/components/PeopleSearch";
 import GlobalSearch from "@/components/GlobalSearch";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -16,6 +16,8 @@ const navItems = [
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [searchMode, setSearchMode] = useState<"places" | "experiences">("places");
+  const [experiencesTrigger, setExperiencesTrigger] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useAuth();
@@ -38,6 +40,11 @@ const Navbar = () => {
     navigate("/auth");
   };
 
+  const handleExperiencesClick = useCallback(() => {
+    setSearchMode("experiences");
+    setExperiencesTrigger(prev => !prev);
+  }, []);
+
   return (
     <motion.nav
       initial={{ opacity: 0, y: -10 }}
@@ -52,7 +59,7 @@ const Navbar = () => {
       {/* Desktop nav */}
       <div className="hidden md:flex items-center gap-1">
         {navItems.map((item) => {
-          const active = location.pathname === item.path || 
+          const active = location.pathname === item.path ||
             (item.path === "/visited" && location.pathname === "/places");
           return (
             <button
@@ -69,11 +76,27 @@ const Navbar = () => {
             </button>
           );
         })}
+        {/* Experiences mode switch button */}
+        <button
+          onClick={handleExperiencesClick}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+            searchMode === "experiences"
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          <Camera className="w-4 h-4" />
+          Experiences
+        </button>
       </div>
 
       {/* Search + People search + Profile */}
       <div className="hidden md:flex items-center gap-2">
-        <GlobalSearch />
+        <GlobalSearch
+          initialMode={searchMode}
+          onModeChange={setSearchMode}
+          externalOpen={experiencesTrigger}
+        />
         <PeopleSearch />
         <div className="relative" ref={profileRef}>
           <button
@@ -127,16 +150,26 @@ const Navbar = () => {
           className="absolute top-full left-0 right-0 bg-card/95 backdrop-blur-xl border-b border-border p-3 md:hidden"
         >
           <div className="mb-3 px-1 space-y-2">
-            <GlobalSearch />
+            <GlobalSearch initialMode={searchMode} onModeChange={setSearchMode} />
             <PeopleSearch />
           </div>
 
-          {[...navItems, { icon: <User className="w-4 h-4" />, label: "Profile", path: "/profile" }].map((item) => {
+          {[...navItems,
+            { icon: <Camera className="w-4 h-4" />, label: "Experiences", path: "#experiences" },
+            { icon: <User className="w-4 h-4" />, label: "Profile", path: "/profile" },
+          ].map((item) => {
             const active = location.pathname === item.path;
             return (
               <button
                 key={item.path}
-                onClick={() => { navigate(item.path); setMenuOpen(false); }}
+                onClick={() => {
+                  if (item.path === "#experiences") {
+                    handleExperiencesClick();
+                  } else {
+                    navigate(item.path);
+                  }
+                  setMenuOpen(false);
+                }}
                 className={`flex items-center gap-2 w-full px-4 py-3 rounded-xl text-sm transition-colors ${
                   active ? "text-primary bg-primary/8" : "text-muted-foreground hover:text-foreground"
                 }`}

@@ -61,13 +61,29 @@ const climateGradeColor: Record<string, string> = {
 type CrowdFilter = "low" | "moderate" | "high";
 const crowdLabels: Record<CrowdFilter, string> = { low: "Quiet", moderate: "Moderate", high: "Busy" };
 
+interface ExpFilters {
+  categories: string[];
+  minRating: number | null;
+  withPhotos: boolean;
+  recent: boolean;
+  tags: string[];
+}
+
+const defaultExpFilters: ExpFilters = {
+  categories: [],
+  minRating: null,
+  withPhotos: false,
+  recent: false,
+  tags: [],
+};
+
 const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProps) => {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<ExploreFilters>({});
   const [crowdFilter, setCrowdFilter] = useState<CrowdFilter[]>([]);
-  const [activeExpCategory, setActiveExpCategory] = useState<string | null>(null);
+  const [expFilters, setExpFilters] = useState<ExpFilters>(defaultExpFilters);
   const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -75,7 +91,12 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
   useEffect(() => {
     setQuery("");
     setShowFilters(false);
-    setActiveExpCategory(null);
+    if (mode === "places") {
+      setExpFilters(defaultExpFilters);
+    } else {
+      setFilters({});
+      setCrowdFilter([]);
+    }
   }, [mode]);
 
   // Fetch community experiences for experience mode

@@ -280,6 +280,8 @@ const Discover = () => {
       }
     );
   };
+
+  const filtered = useMemo(() => {
     let result = experiences;
 
     // Sponsored first (max 2), then organic

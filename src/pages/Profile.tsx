@@ -159,21 +159,47 @@ const Profile = () => {
     }
   };
 
+  const handleTripCover = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Max 5MB"); return; }
+    setTripCoverFile(file);
+    setTripCoverPreview(URL.createObjectURL(file));
+  };
+
   const handleCreateTrip = async () => {
     if (!tripTitle.trim()) { toast.error("Add a trip title"); return; }
+    setUploadingCover(true);
     try {
+      let coverUrl: string | undefined;
+      if (tripCoverFile && user) {
+        const ext = tripCoverFile.name.split(".").pop();
+        const path = `${user.id}/trips/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("experience-photos").upload(path, tripCoverFile, { contentType: tripCoverFile.type });
+        if (!upErr) {
+          const { data: urlData } = supabase.storage.from("experience-photos").getPublicUrl(path);
+          coverUrl = urlData.publicUrl;
+        }
+      }
+
       await addJourney.mutateAsync({
         title: tripTitle.trim(),
         description: tripDescription.trim() || undefined,
         emoji: tripEmoji,
         start_date: tripStartDate || undefined,
         end_date: tripEndDate || undefined,
+        destinations: tripDestinations.split(",").map(s => s.trim()).filter(Boolean),
+        cover_image_url: coverUrl,
+        privacy: tripPrivacy,
       });
       toast.success("Trip created!");
       setShowTripCreate(false);
-      setTripTitle(""); setTripDescription(""); setTripEmoji("✈️"); setTripStartDate(""); setTripEndDate("");
+      setTripTitle(""); setTripDescription(""); setTripEmoji("✈️");
+      setTripStartDate(""); setTripEndDate(""); setTripDestinations("");
+      setTripPrivacy("public"); setTripCoverFile(null); setTripCoverPreview("");
       setTab("trips");
     } catch { toast.error("Failed to create trip"); }
+    finally { setUploadingCover(false); }
   };
 
   const handleSignOut = async () => {

@@ -45,12 +45,13 @@ export const useJourneyWithExperiences = (journeyId: string | null) => {
     enabled: !!user && !!journeyId,
     queryFn: async () => {
       // Get journey
-      const { data: journey, error: jErr } = await supabase
+      const { data: journeyData, error: jErr } = await supabase
         .from("journeys" as any)
         .select("*")
         .eq("id", journeyId!)
         .single();
       if (jErr) throw jErr;
+      const journey = journeyData as unknown as Journey;
 
       // Get linked experience IDs
       const { data: links, error: lErr } = await supabase

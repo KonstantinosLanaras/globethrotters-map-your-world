@@ -370,7 +370,13 @@ const Profile = () => {
 
             {/* Level & Trust */}
             <TravelerLevelCard level={level} />
-            <TrustScoreCard trustScore={profile?.trust_score ?? 0} isVerified={profile?.is_verified ?? false} />
+            <TrustScoreCard
+              trustScore={profile?.trust_score ?? 0}
+              isVerified={profile?.is_verified ?? false}
+              validatedScore={reputation?.validated_score ?? 0}
+              travelersHelped={reputation?.travelers_helped ?? 0}
+              contributionCount={reputation?.contribution_count ?? 0}
+            />
           </div>
         )}
 

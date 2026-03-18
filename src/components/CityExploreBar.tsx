@@ -179,7 +179,12 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
   const experienceResults = useMemo(() => {
     if (mode !== "experiences") return [];
     const q = query.toLowerCase().trim();
-    if (!q && !activeExpCategory) return [];
+    const hasCatFilter = expFilters.categories.length > 0;
+    if (!q && !hasCatFilter && !expFilters.minRating && !expFilters.withPhotos && !expFilters.recent) return [];
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
     return communityExperiences
       .filter(e => {
         const matchesSearch = !q ||
@@ -188,11 +193,12 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
           e.country?.toLowerCase().includes(q) ||
           e.caption?.toLowerCase().includes(q) ||
           e.tags?.some((t: string) => t.toLowerCase().includes(q));
-        const matchesCat = !activeExpCategory || e.category.toLowerCase() === activeExpCategory.toLowerCase();
-        return matchesSearch && matchesCat;
+        const matchesCat = !hasCatFilter || expFilters.categories.some(c => e.category.toLowerCase() === c.toLowerCase());
+        const matchesRating = !expFilters.minRating || (e.rating && e.rating >= expFilters.minRating);
+        return matchesSearch && matchesCat && matchesRating;
       })
       .slice(0, 15);
-  }, [query, mode, activeExpCategory, communityExperiences]);
+  }, [query, mode, expFilters, communityExperiences]);
 
   // Group experiences by location
   const groupedExperiences = useMemo(() => {

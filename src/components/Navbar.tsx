@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Map, MapPin, Heart, Bookmark, User, Menu, X, Camera } from "lucide-react";
 import GlobethrottersLogo from "@/components/GlobethrottersLogo";
+import PeopleSearch from "@/components/PeopleSearch";
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -22,9 +23,9 @@ const Navbar = () => {
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="fixed top-0 left-0 right-0 z-[1001] flex items-center justify-between px-5 h-[60px] bg-card/85 backdrop-blur-xl border-b border-border"
+      className="fixed top-0 left-0 right-0 z-[1001] flex items-center justify-between px-4 h-[60px] bg-card/85 backdrop-blur-xl border-b border-border gap-2"
     >
-      <button onClick={() => navigate("/")} className="flex items-center gap-2">
+      <button onClick={() => navigate("/")} className="flex items-center gap-2 flex-shrink-0">
         <GlobethrottersLogo variant="full" size={26} animate={false} className="text-foreground" />
       </button>
 
@@ -36,7 +37,7 @@ const Navbar = () => {
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
                 active
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -49,11 +50,12 @@ const Navbar = () => {
         })}
       </div>
 
-      {/* Desktop profile */}
-      <div className="hidden md:block">
+      {/* People search + profile */}
+      <div className="hidden md:flex items-center gap-2">
+        <PeopleSearch />
         <button
           onClick={() => navigate("/profile")}
-          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${
             location.pathname === "/profile"
               ? "bg-primary/10 text-primary"
               : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -74,6 +76,11 @@ const Navbar = () => {
           animate={{ opacity: 1, y: 0 }}
           className="absolute top-full left-0 right-0 bg-card/95 backdrop-blur-xl border-b border-border p-3 md:hidden"
         >
+          {/* Mobile people search */}
+          <div className="mb-3 px-1">
+            <PeopleSearch />
+          </div>
+
           {[...navItems, { icon: <User className="w-4 h-4" />, label: "Profile", path: "/profile" }].map((item) => {
             const active = location.pathname === item.path;
             return (

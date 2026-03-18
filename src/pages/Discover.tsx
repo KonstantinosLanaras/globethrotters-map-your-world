@@ -269,8 +269,17 @@ const Discover = () => {
 
   const { data: experiences = [], isLoading } = useDiscoverExperiences();
   const { data: trendingCities = [] } = useTrendingCities();
+  const { data: helpfulSet = new Set<string>() } = useUserHelpfulMarks();
+  const toggleHelpful = useToggleHelpful();
 
-  const filtered = useMemo(() => {
+  const handleToggleHelpful = (experienceId: string, isHelpful: boolean) => {
+    toggleHelpful.mutate(
+      { experienceId, isHelpful },
+      {
+        onError: () => toast.error("Could not update"),
+      }
+    );
+  };
     let result = experiences;
 
     // Sponsored first (max 2), then organic

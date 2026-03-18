@@ -273,13 +273,22 @@ const UserProfilePage = () => {
                 </div>
               )}
               {connectionStatus === "connected" && (
-                <button
-                  onClick={handleRemove}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted text-foreground text-xs font-medium hover:bg-destructive/10 hover:text-destructive transition-colors"
-                >
-                  <UserCheck className="w-3.5 h-3.5" />
-                  Connected
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleMessage}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    Message
+                  </button>
+                  <button
+                    onClick={handleRemove}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted text-foreground text-xs font-medium hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    Connected
+                  </button>
+                </div>
               )}
             </div>
           )}

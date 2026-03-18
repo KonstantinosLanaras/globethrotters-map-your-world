@@ -36,6 +36,7 @@ const Profile = () => {
   const { data: followerCount = 0 } = useFollowerCount(user?.id);
   const { data: followingCount = 0 } = useFollowingCount(user?.id);
   const { data: contributionScore = 0 } = useContributionScore(user?.id);
+  const { data: reputation } = useReputation();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [showComposer, setShowComposer] = useState(false);

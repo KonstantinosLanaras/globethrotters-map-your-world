@@ -533,19 +533,29 @@ export type Database = {
           accessibility_rating: number | null
           atmosphere_rating: number | null
           authenticity_rating: number | null
+          best_months: string[] | null
           category: string
           comment: string | null
           created_at: string
+          crowd_level: string | null
           crowd_rating: number | null
+          culture_score: number | null
           difficulty_rating: number | null
+          english_rating: number | null
           family_rating: number | null
           food_quality_rating: number | null
+          food_score: number | null
+          hiking_score: number | null
           id: string
+          nature_score: number | null
+          nightlife_score: number | null
           overall_rating: number
           place_id: string
           safety_rating: number | null
           scenery_rating: number | null
+          selected_interests: string[] | null
           tags: string[] | null
+          transport_rating: number | null
           updated_at: string
           user_id: string
           value_rating: number | null
@@ -555,19 +565,29 @@ export type Database = {
           accessibility_rating?: number | null
           atmosphere_rating?: number | null
           authenticity_rating?: number | null
+          best_months?: string[] | null
           category?: string
           comment?: string | null
           created_at?: string
+          crowd_level?: string | null
           crowd_rating?: number | null
+          culture_score?: number | null
           difficulty_rating?: number | null
+          english_rating?: number | null
           family_rating?: number | null
           food_quality_rating?: number | null
+          food_score?: number | null
+          hiking_score?: number | null
           id?: string
+          nature_score?: number | null
+          nightlife_score?: number | null
           overall_rating: number
           place_id: string
           safety_rating?: number | null
           scenery_rating?: number | null
+          selected_interests?: string[] | null
           tags?: string[] | null
+          transport_rating?: number | null
           updated_at?: string
           user_id: string
           value_rating?: number | null
@@ -577,19 +597,29 @@ export type Database = {
           accessibility_rating?: number | null
           atmosphere_rating?: number | null
           authenticity_rating?: number | null
+          best_months?: string[] | null
           category?: string
           comment?: string | null
           created_at?: string
+          crowd_level?: string | null
           crowd_rating?: number | null
+          culture_score?: number | null
           difficulty_rating?: number | null
+          english_rating?: number | null
           family_rating?: number | null
           food_quality_rating?: number | null
+          food_score?: number | null
+          hiking_score?: number | null
           id?: string
+          nature_score?: number | null
+          nightlife_score?: number | null
           overall_rating?: number
           place_id?: string
           safety_rating?: number | null
           scenery_rating?: number | null
+          selected_interests?: string[] | null
           tags?: string[] | null
+          transport_rating?: number | null
           updated_at?: string
           user_id?: string
           value_rating?: number | null

@@ -20,6 +20,16 @@ export interface PlaceRating {
   scenery_rating: number | null;
   difficulty_rating: number | null;
   worth_it_rating: number | null;
+  english_rating: number | null;
+  transport_rating: number | null;
+  food_score: number | null;
+  culture_score: number | null;
+  nature_score: number | null;
+  hiking_score: number | null;
+  nightlife_score: number | null;
+  crowd_level: string | null;
+  best_months: string[];
+  selected_interests: string[];
   comment: string;
   created_at: string;
   updated_at: string;
@@ -41,6 +51,16 @@ export interface RatingInput {
   scenery_rating?: number | null;
   difficulty_rating?: number | null;
   worth_it_rating?: number | null;
+  english_rating?: number | null;
+  transport_rating?: number | null;
+  food_score?: number | null;
+  culture_score?: number | null;
+  nature_score?: number | null;
+  hiking_score?: number | null;
+  nightlife_score?: number | null;
+  crowd_level?: string | null;
+  best_months?: string[];
+  selected_interests?: string[];
   comment?: string;
 }
 
@@ -59,9 +79,18 @@ export interface AggregatedRating {
     scenery: number | null;
     difficulty: number | null;
     worth_it: number | null;
+    english: number | null;
+    transport: number | null;
+    food: number | null;
+    culture: number | null;
+    nature: number | null;
+    hiking: number | null;
+    nightlife: number | null;
   };
   tagFrequency: Record<string, number>;
   topTags: string[];
+  crowdLevel: string | null;
+  bestMonths: string[];
 }
 
 export const usePlaceRatings = (placeId: string | undefined) => {
@@ -122,6 +151,16 @@ export const useSubmitRating = () => {
         scenery_rating: input.scenery_rating ?? null,
         difficulty_rating: input.difficulty_rating ?? null,
         worth_it_rating: input.worth_it_rating ?? null,
+        english_rating: input.english_rating ?? null,
+        transport_rating: input.transport_rating ?? null,
+        food_score: input.food_score ?? null,
+        culture_score: input.culture_score ?? null,
+        nature_score: input.nature_score ?? null,
+        hiking_score: input.hiking_score ?? null,
+        nightlife_score: input.nightlife_score ?? null,
+        crowd_level: input.crowd_level ?? null,
+        best_months: input.best_months ?? [],
+        selected_interests: input.selected_interests ?? [],
         comment: (input.comment || "").slice(0, 200),
         updated_at: new Date().toISOString(),
       };
@@ -142,7 +181,6 @@ export const useSubmitRating = () => {
   });
 };
 
-// Check if user has reviewed a place
 export const useHasReviewed = (placeId: string | undefined) => {
   const { data } = useMyRating(placeId);
   return !!data;
@@ -153,9 +191,16 @@ export function aggregateRatings(ratings: PlaceRating[]): AggregatedRating {
     return {
       avgRating: 0,
       totalReviews: 0,
-      dimensions: { safety: null, value: null, accessibility: null, crowd: null, family: null, food_quality: null, atmosphere: null, authenticity: null, scenery: null, difficulty: null, worth_it: null },
+      dimensions: {
+        safety: null, value: null, accessibility: null, crowd: null, family: null,
+        food_quality: null, atmosphere: null, authenticity: null, scenery: null,
+        difficulty: null, worth_it: null, english: null, transport: null,
+        food: null, culture: null, nature: null, hiking: null, nightlife: null,
+      },
       tagFrequency: {},
       topTags: [],
+      crowdLevel: null,
+      bestMonths: [],
     };
   }
 
@@ -181,6 +226,25 @@ export function aggregateRatings(ratings: PlaceRating[]): AggregatedRating {
     .slice(0, 3)
     .map(([tag]) => tag);
 
+  // Crowd level mode
+  const crowdCounts: Record<string, number> = {};
+  ratings.forEach((r) => {
+    if (r.crowd_level) crowdCounts[r.crowd_level] = (crowdCounts[r.crowd_level] || 0) + 1;
+  });
+  const crowdLevel = Object.entries(crowdCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+  // Best months aggregation
+  const monthCounts: Record<string, number> = {};
+  ratings.forEach((r) => {
+    (r.best_months || []).forEach((m) => {
+      monthCounts[m] = (monthCounts[m] || 0) + 1;
+    });
+  });
+  const bestMonths = Object.entries(monthCounts)
+    .filter(([, c]) => c >= Math.ceil(ratings.length * 0.3))
+    .sort((a, b) => b[1] - a[1])
+    .map(([m]) => m);
+
   return {
     avgRating: Math.round(avgRating * 10) / 10,
     totalReviews: ratings.length,
@@ -196,8 +260,17 @@ export function aggregateRatings(ratings: PlaceRating[]): AggregatedRating {
       scenery: avg(ratings.map((r) => r.scenery_rating)),
       difficulty: avg(ratings.map((r) => r.difficulty_rating)),
       worth_it: avg(ratings.map((r) => r.worth_it_rating)),
+      english: avg(ratings.map((r) => r.english_rating)),
+      transport: avg(ratings.map((r) => r.transport_rating)),
+      food: avg(ratings.map((r) => r.food_score)),
+      culture: avg(ratings.map((r) => r.culture_score)),
+      nature: avg(ratings.map((r) => r.nature_score)),
+      hiking: avg(ratings.map((r) => r.hiking_score)),
+      nightlife: avg(ratings.map((r) => r.nightlife_score)),
     },
     tagFrequency,
     topTags,
+    crowdLevel,
+    bestMonths,
   };
 }

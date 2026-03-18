@@ -6,6 +6,7 @@ import CityDetailsCard from "@/components/CityDetailsCard";
 import CityExploreBar from "@/components/CityExploreBar";
 import { usePlaces, useUpdatePlace, useDeletePlace, Place } from "@/hooks/usePlaces";
 import { useExperiencesWithPhotos } from "@/hooks/useExperiences";
+import { useAuth } from "@/hooks/useAuth";
 import { worldCities, City } from "@/data/cities";
 import { toast } from "sonner";
 
@@ -13,7 +14,7 @@ const Index = () => {
   const [showCities, setShowCities] = useState(true);
   const [mapFilter, setMapFilter] = useState<"all" | "visited" | "wishlist">("all");
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  
+  const { user } = useAuth();
   const { data: places = [] } = usePlaces();
   const { data: experiences = [] } = useExperiencesWithPhotos();
   const updatePlace = useUpdatePlace();
@@ -26,13 +27,14 @@ const Index = () => {
   }), [places]);
 
   const savedPlace = useMemo(() => {
-    if (!selectedCity) return null;
+    if (!selectedCity || !user) return null;
     return places.find(
       (p) =>
+        p.user_id === user.id &&
         p.name.toLowerCase() === selectedCity.name.toLowerCase() &&
         p.country.toLowerCase() === selectedCity.country.toLowerCase()
     ) ?? null;
-  }, [selectedCity, places]);
+  }, [selectedCity, places, user]);
 
   const handleCityClick = useCallback((city: City) => {
     setSelectedCity(city);

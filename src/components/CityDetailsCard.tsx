@@ -499,6 +499,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
         }
       }
     } catch (err: any) {
+      console.error("Save city error:", err);
       const msg = err?.message || "Failed to save";
       if (msg.includes("Already")) toast.info(msg);
       else toast.error("Couldn't save city. Please try again.");

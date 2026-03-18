@@ -25,6 +25,7 @@ const Navbar = ({ searchMode = "places", onSearchModeChange }: NavbarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useAuth();
+  const { data: unreadCount = 0 } = useUnreadCount();
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

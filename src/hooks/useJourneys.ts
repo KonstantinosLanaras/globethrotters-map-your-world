@@ -11,6 +11,9 @@ export interface Journey {
   emoji: string;
   start_date: string | null;
   end_date: string | null;
+  destinations: string[];
+  cover_image_url: string | null;
+  privacy: string;
   created_at: string;
   updated_at: string;
 }

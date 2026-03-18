@@ -372,6 +372,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const [showMyLists, setShowMyLists] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [ratingPlaceId, setRatingPlaceId] = useState<string | null>(null);
+  const [showCollectionPrompt, setShowCollectionPrompt] = useState(false);
+  const [collectionPlaceId, setCollectionPlaceId] = useState<string | null>(null);
   const isVisited = savedPlace?.type === "visited";
   const isWishlist = savedPlace?.type === "wishlist";
   const isSaved = !!savedPlace;
@@ -486,6 +488,10 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
           setRatingPlaceId(savedPlace.id);
           setShowRating(true);
         }
+        if (type === "wishlist" && lists.length > 0) {
+          setCollectionPlaceId(savedPlace.id);
+          setShowCollectionPrompt(true);
+        }
       } else {
         const result = await addPlace.mutateAsync({
           name: city.name, country: city.country, lat: city.lat, lng: city.lng,
@@ -496,6 +502,10 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
         if (type === "visited" && result?.id) {
           setRatingPlaceId(result.id);
           setShowRating(true);
+        }
+        if (type === "wishlist" && result?.id && lists.length > 0) {
+          setCollectionPlaceId(result.id);
+          setShowCollectionPrompt(true);
         }
       }
     } catch (err: any) {
@@ -1013,6 +1023,54 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
           placeName={city.name}
         />
       )}
+
+      {/* Collection prompt after wishlist save */}
+      <AnimatePresence>
+        {showCollectionPrompt && collectionPlaceId && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center">
+            <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" onClick={() => setShowCollectionPrompt(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-xs mx-4 bg-card rounded-2xl border border-border shadow-2xl overflow-hidden"
+            >
+              <div className="p-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <Bookmark className="w-4 h-4 text-primary" />
+                  <h3 className="font-display text-sm font-semibold text-foreground">Add to a collection?</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mb-4">{city.name} saved to wishlist</p>
+                <div className="space-y-1.5 max-h-[200px] overflow-y-auto mb-3">
+                  {lists.map((list) => (
+                    <button
+                      key={list.id}
+                      onClick={async () => {
+                        try {
+                          await addToList.mutateAsync({ listId: list.id, placeId: collectionPlaceId });
+                          toast.success(`Added to "${list.title}"`);
+                          setShowCollectionPrompt(false);
+                        } catch { toast.error("Failed to add"); }
+                      }}
+                      className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-muted/60 transition-colors text-left"
+                    >
+                      <span className="text-lg">{list.emoji}</span>
+                      <span className="text-sm font-medium text-foreground truncate flex-1">{list.title}</span>
+                      <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setShowCollectionPrompt(false)}
+                  className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Skip
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

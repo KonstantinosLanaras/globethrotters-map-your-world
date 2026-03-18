@@ -1,5 +1,11 @@
 import { motion } from "framer-motion";
-import { Building2, Eye, EyeOff, Star, Layers, Heart } from "lucide-react";
+import { Building2, Eye, EyeOff, Layers, Bookmark } from "lucide-react";
+
+interface ListOption {
+  id: string;
+  title: string;
+  emoji: string;
+}
 
 interface MapControlsProps {
   showCities: boolean;
@@ -7,6 +13,9 @@ interface MapControlsProps {
   mapFilter: "all" | "visited" | "wishlist";
   onFilterChange: (f: "all" | "visited" | "wishlist") => void;
   stats: { visited: number; wishlist: number; countries: number };
+  lists?: ListOption[];
+  selectedListId?: string | null;
+  onListSelect?: (id: string | null) => void;
 }
 
 const MapControls = ({
@@ -15,6 +24,9 @@ const MapControls = ({
   mapFilter,
   onFilterChange,
   stats,
+  lists = [],
+  selectedListId,
+  onListSelect,
 }: MapControlsProps) => {
   return (
     <motion.div
@@ -45,9 +57,9 @@ const MapControls = ({
 
       {/* Filter pills */}
       <button
-        onClick={() => onFilterChange("all")}
+        onClick={() => { onFilterChange("all"); onListSelect?.(null); }}
         className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
-          mapFilter === "all"
+          mapFilter === "all" && !selectedListId
             ? "bg-foreground/10 text-foreground"
             : "text-muted-foreground hover:text-foreground"
         }`}
@@ -56,9 +68,9 @@ const MapControls = ({
         All
       </button>
       <button
-        onClick={() => onFilterChange("visited")}
+        onClick={() => { onFilterChange("visited"); onListSelect?.(null); }}
         className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
-          mapFilter === "visited"
+          mapFilter === "visited" && !selectedListId
             ? "bg-visited/15 text-visited"
             : "text-muted-foreground hover:text-foreground"
         }`}
@@ -70,9 +82,9 @@ const MapControls = ({
         )}
       </button>
       <button
-        onClick={() => onFilterChange("wishlist")}
+        onClick={() => { onFilterChange("wishlist"); onListSelect?.(null); }}
         className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
-          mapFilter === "wishlist"
+          mapFilter === "wishlist" && !selectedListId
             ? "bg-wishlist/15 text-wishlist"
             : "text-muted-foreground hover:text-foreground"
         }`}
@@ -83,6 +95,35 @@ const MapControls = ({
           <span className="text-[10px] opacity-60">{stats.wishlist}</span>
         )}
       </button>
+
+      {/* Collection filters */}
+      {lists.length > 0 && (
+        <>
+          <div className="h-px bg-border mx-1" />
+          <div className="px-1 pt-0.5">
+            <p className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/60 px-2 mb-1">
+              Collections
+            </p>
+            {lists.map((list) => (
+              <button
+                key={list.id}
+                onClick={() => {
+                  onListSelect?.(selectedListId === list.id ? null : list.id);
+                  onFilterChange("all");
+                }}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap w-full ${
+                  selectedListId === list.id
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <span className="text-xs">{list.emoji}</span>
+                <span className="truncate max-w-[80px]">{list.title}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </motion.div>
   );
 };

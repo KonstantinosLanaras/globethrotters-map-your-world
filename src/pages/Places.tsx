@@ -1,107 +1,544 @@
-import { motion } from "framer-motion";
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import { MapPin, Star, Globe, Trash2 } from "lucide-react";
+import {
+  Star, MapPin, Globe, Trash2, ChevronDown, ChevronRight, Filter,
+  Plus, Calendar, Plane, X, Camera, Loader2
+} from "lucide-react";
 import { usePlaces, useDeletePlace } from "@/hooks/usePlaces";
+import { useExperiencesWithPhotos, useDeleteExperience, ExperienceWithPhotos } from "@/hooks/useExperiences";
+import { useJourneys, useAddJourney, useDeleteJourney, useJourneyWithExperiences, useAddExperienceToJourney, useRemoveExperienceFromJourney, Journey } from "@/hooks/useJourneys";
+import ExperienceComposer from "@/components/ExperienceComposer";
 import { toast } from "sonner";
 
-const Places = () => {
+const categoryEmoji: Record<string, string> = {
+  Food: "🍽️", Culture: "🏛️", Nature: "🌿", Hiking: "🥾", Nightlife: "🌙", general: "📍",
+};
+const categoryFilters = ["All", "Food", "Culture", "Nature", "Hiking", "Nightlife"] as const;
+
+const Visited = () => {
   const { data: places = [] } = usePlaces();
   const deletePlace = useDeletePlace();
-  const visitedPlaces = places.filter((p) => p.type === "visited");
-  const countries = [...new Set(visitedPlaces.map((p) => p.country))];
+  const { data: experiences = [] } = useExperiencesWithPhotos();
+  const deleteExperience = useDeleteExperience();
+  const { data: journeys = [] } = useJourneys();
+  const addJourney = useAddJourney();
+  const deleteJourney = useDeleteJourney();
 
-  const handleDelete = async (id: string, name: string) => {
-    try {
-      await deletePlace.mutateAsync(id);
-      toast.success(`Removed ${name}`);
-    } catch {
-      toast.error("Failed to remove");
+  const [activeFilter, setActiveFilter] = useState<string>("All");
+  const [expandedCountries, setExpandedCountries] = useState<Set<string>>(new Set());
+  const [showComposer, setShowComposer] = useState(false);
+  const [showJourneyCreate, setShowJourneyCreate] = useState(false);
+  const [selectedJourney, setSelectedJourney] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"experiences" | "journeys">("experiences");
+
+  // Journey create state
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newEmoji, setNewEmoji] = useState("✈️");
+  const [newStartDate, setNewStartDate] = useState("");
+  const [newEndDate, setNewEndDate] = useState("");
+
+  const visitedPlaces = places.filter((p) => p.type === "visited");
+
+  // Filter experiences by category (tag-based filtering)
+  const filteredExperiences = useMemo(() => {
+    let items = experiences;
+    if (activeFilter !== "All") {
+      items = items.filter(e => e.category.toLowerCase() === activeFilter.toLowerCase());
     }
+    return items;
+  }, [experiences, activeFilter]);
+
+  // Group experiences by country → city
+  const grouped = useMemo(() => {
+    const g: Record<string, Record<string, ExperienceWithPhotos[]>> = {};
+    filteredExperiences.forEach((e) => {
+      const country = e.country || "Unknown";
+      const city = e.city || "Unknown";
+      if (!g[country]) g[country] = {};
+      if (!g[country][city]) g[country][city] = [];
+      g[country][city].push(e);
+    });
+    return Object.entries(g).sort(([a], [b]) => a.localeCompare(b));
+  }, [filteredExperiences]);
+
+  // Auto-expand countries
+  useMemo(() => {
+    if (expandedCountries.size === 0 && grouped.length > 0) {
+      setExpandedCountries(new Set(grouped.map(([c]) => c)));
+    }
+  }, [grouped.length]);
+
+  const toggleCountry = (country: string) => {
+    setExpandedCountries((prev) => {
+      const next = new Set(prev);
+      if (next.has(country)) next.delete(country);
+      else next.add(country);
+      return next;
+    });
   };
+
+  const handleDeleteExp = (id: string) => {
+    deleteExperience.mutate(id, {
+      onSuccess: () => toast.success("Experience removed"),
+      onError: () => toast.error("Failed to delete"),
+    });
+  };
+
+  const handleCreateJourney = async () => {
+    if (!newTitle.trim()) { toast.error("Add a title"); return; }
+    try {
+      await addJourney.mutateAsync({
+        title: newTitle.trim(),
+        description: newDescription.trim(),
+        emoji: newEmoji,
+        start_date: newStartDate || undefined,
+        end_date: newEndDate || undefined,
+      });
+      toast.success("Journey created!");
+      setShowJourneyCreate(false);
+      setNewTitle(""); setNewDescription(""); setNewEmoji("✈️"); setNewStartDate(""); setNewEndDate("");
+    } catch { toast.error("Failed to create journey"); }
+  };
+
+  const totalCountries = new Set(filteredExperiences.map(e => e.country).filter(Boolean)).size;
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="pt-[76px] px-6 pb-12 max-w-3xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6"
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <Star className="w-5 h-5 text-visited" />
-            <h1 className="font-display text-2xl font-semibold text-foreground">Visited</h1>
+      <div className="pt-[76px] px-4 sm:px-6 pb-12 max-w-3xl mx-auto">
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Star className="w-5 h-5 text-visited" />
+                <h1 className="font-display text-2xl font-semibold text-foreground">Visited</h1>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {filteredExperiences.length} experiences across {totalCountries} {totalCountries === 1 ? "country" : "countries"}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowComposer(true)}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90"
+            >
+              <Plus className="w-4 h-4" /> Add
+            </button>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {visitedPlaces.length} places across {countries.length} countries
-          </p>
         </motion.div>
 
-        {/* Country tags */}
-        {countries.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="flex items-center gap-2 flex-wrap mb-6"
+        {/* View toggle: Experiences / Journeys */}
+        <div className="flex items-center gap-2 mb-4">
+          <button
+            onClick={() => { setViewMode("experiences"); setSelectedJourney(null); }}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              viewMode === "experiences" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
           >
-            <Globe className="w-3.5 h-3.5 text-primary" />
-            {countries.slice(0, 12).map((c) => (
-              <span key={c} className="px-2.5 py-1 rounded-full bg-muted text-xs text-muted-foreground">{c}</span>
-            ))}
-            {countries.length > 12 && (
-              <span className="text-xs text-muted-foreground">+{countries.length - 12}</span>
-            )}
-          </motion.div>
-        )}
+            <Camera className="w-3 h-3 inline mr-1" /> Experiences
+          </button>
+          <button
+            onClick={() => setViewMode("journeys")}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              viewMode === "journeys" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Plane className="w-3 h-3 inline mr-1" /> Journeys
+          </button>
+        </div>
 
-        {visitedPlaces.length === 0 ? (
-          <div className="text-center py-20">
-            <MapPin className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-muted-foreground text-sm">No visited places yet.</p>
-            <p className="text-muted-foreground/60 text-xs mt-1">Open the map, toggle "Cities", and mark places as visited!</p>
-          </div>
+        {viewMode === "experiences" ? (
+          <>
+            {/* Category tag filters */}
+            <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1 scrollbar-hide">
+              <Filter className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+              {categoryFilters.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveFilter(cat)}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                    activeFilter === cat
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {cat !== "All" && <span className="text-xs">{categoryEmoji[cat]}</span>}
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Geography-grouped experiences */}
+            {grouped.length === 0 ? (
+              <div className="text-center py-20">
+                <MapPin className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm">
+                  {activeFilter !== "All" ? `No ${activeFilter} experiences yet.` : "No visited experiences yet."}
+                </p>
+                <p className="text-muted-foreground/60 text-xs mt-1">
+                  Mark places as visited on the map to add experiences!
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {grouped.map(([country, cities], ci) => (
+                  <motion.div
+                    key={country}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: ci * 0.04 }}
+                  >
+                    <button
+                      onClick={() => toggleCountry(country)}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors mb-1"
+                    >
+                      {expandedCountries.has(country) ? (
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      )}
+                      <Globe className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-sm font-semibold text-foreground">{country}</span>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        {Object.values(cities).flat().length} exp
+                      </span>
+                    </button>
+
+                    <AnimatePresence>
+                      {expandedCountries.has(country) && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="pl-4 space-y-2 overflow-hidden"
+                        >
+                          {Object.entries(cities).sort(([a], [b]) => a.localeCompare(b)).map(([city, exps]) => (
+                            <div key={city}>
+                              <p className="text-xs font-medium text-muted-foreground px-2 py-1 flex items-center gap-1">
+                                <MapPin className="w-3 h-3" /> {city}
+                              </p>
+                              <div className="space-y-1.5 pl-2">
+                                {exps.map((exp, i) => (
+                                  <motion.div
+                                    key={exp.id}
+                                    initial={{ opacity: 0, x: -6 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: i * 0.02 }}
+                                    className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-visited/20 transition-all group"
+                                  >
+                                    {exp.photos[0] ? (
+                                      <img src={exp.photos[0]} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                                    ) : (
+                                      <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-visited/10 text-visited flex-shrink-0">
+                                        <span className="text-sm">{categoryEmoji[exp.category] || "📍"}</span>
+                                      </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-foreground truncate">{exp.title}</p>
+                                      <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="text-[10px] text-muted-foreground capitalize">{exp.category}</span>
+                                        {exp.rating > 0 && (
+                                          <span className="flex items-center gap-0.5">
+                                            <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                                            <span className="text-[10px] text-foreground">{exp.rating}</span>
+                                          </span>
+                                        )}
+                                      </div>
+                                      {exp.tags.length > 0 && (
+                                        <div className="flex gap-1 mt-0.5">
+                                          {exp.tags.slice(0, 3).map(tag => (
+                                            <span key={tag} className="px-1.5 py-0.5 rounded-full bg-primary/10 text-[9px] font-medium text-primary">{tag}</span>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <button
+                                      onClick={() => handleDeleteExp(exp.id)}
+                                      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </motion.div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </>
         ) : (
-          <div className="space-y-2">
-            {visitedPlaces.map((place, i) => (
-              <motion.div
-                key={place.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:border-visited/20 transition-all group"
-              >
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-visited/10 text-visited flex-shrink-0">
-                  <MapPin className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{place.name}</p>
-                  <p className="text-xs text-muted-foreground">{place.country}</p>
-                </div>
-                {place.rating && place.rating > 0 && (
-                  <div className="flex items-center gap-1">
-                    <Star className="w-3 h-3 text-gold fill-gold" />
-                    <span className="text-xs font-medium text-foreground">{place.rating}</span>
+          /* Journeys view - embedded inside Visited */
+          <>
+            {selectedJourney ? (
+              <JourneyDetail
+                journeyId={selectedJourney}
+                allExperiences={experiences}
+                onBack={() => setSelectedJourney(null)}
+                onDelete={(id) => {
+                  deleteJourney.mutate(id, {
+                    onSuccess: () => { toast.success("Journey deleted"); setSelectedJourney(null); },
+                    onError: () => toast.error("Failed to delete"),
+                  });
+                }}
+              />
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowJourneyCreate(!showJourneyCreate)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/15 transition-colors mb-4"
+                >
+                  <Plus className="w-4 h-4" /> New Journey
+                </button>
+
+                <AnimatePresence>
+                  {showJourneyCreate && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden mb-4"
+                    >
+                      <div className="p-5 rounded-2xl bg-card border border-border space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-display text-base font-semibold text-foreground">New Journey</h3>
+                          <button onClick={() => setShowJourneyCreate(false)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <div className="flex gap-2">
+                          <input value={newEmoji} onChange={e => setNewEmoji(e.target.value.slice(0, 2))}
+                            className="w-12 text-center px-2 py-2.5 rounded-xl border border-border bg-background text-lg focus:outline-none focus:border-primary/40" />
+                          <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="e.g. Greece Trip 2024"
+                            className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40" autoFocus />
+                        </div>
+                        <textarea value={newDescription} onChange={e => setNewDescription(e.target.value)} placeholder="Description (optional)" rows={2}
+                          className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 resize-none" />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <p className="text-[10px] text-muted-foreground mb-1">Start date</p>
+                            <input type="date" value={newStartDate} onChange={e => setNewStartDate(e.target.value)}
+                              className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary/40" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground mb-1">End date</p>
+                            <input type="date" value={newEndDate} onChange={e => setNewEndDate(e.target.value)}
+                              className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary/40" />
+                          </div>
+                        </div>
+                        <button onClick={handleCreateJourney} disabled={!newTitle.trim() || addJourney.isPending}
+                          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-40 hover:opacity-90">
+                          {addJourney.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Create Journey"}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {journeys.length === 0 ? (
+                  <div className="text-center py-16">
+                    <Plane className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-muted-foreground text-sm">No journeys yet</p>
+                    <p className="text-muted-foreground/60 text-xs mt-1">Group your visited experiences into trips</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {journeys.map((j, i) => (
+                      <motion.button
+                        key={j.id}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        onClick={() => setSelectedJourney(j.id)}
+                        className="w-full p-4 rounded-2xl bg-card border border-border hover:border-primary/10 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{j.emoji}</span>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-semibold text-foreground truncate">{j.title}</h3>
+                            {j.description && <p className="text-xs text-muted-foreground truncate mt-0.5">{j.description}</p>}
+                            {(j.start_date || j.end_date) && (
+                              <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {j.start_date ? new Date(j.start_date).toLocaleDateString() : ""}
+                                {j.start_date && j.end_date ? " – " : ""}
+                                {j.end_date ? new Date(j.end_date).toLocaleDateString() : ""}
+                              </p>
+                            )}
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      </motion.button>
+                    ))}
                   </div>
                 )}
-                {place.date_visited && (
-                  <span className="text-[10px] text-muted-foreground hidden sm:block">
-                    {new Date(place.date_visited).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-                  </span>
-                )}
-                <button
-                  onClick={() => handleDelete(place.id, place.name)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </motion.div>
-            ))}
-          </div>
+              </>
+            )}
+          </>
         )}
       </div>
+
+      <ExperienceComposer open={showComposer} onClose={() => setShowComposer(false)} />
     </div>
   );
 };
 
-export default Places;
+/* Journey detail with timeline — reused from old Journeys page */
+const JourneyDetail = ({
+  journeyId, allExperiences, onBack, onDelete,
+}: {
+  journeyId: string;
+  allExperiences: ExperienceWithPhotos[];
+  onBack: () => void;
+  onDelete: (id: string) => void;
+}) => {
+  const { data: journey, isLoading } = useJourneyWithExperiences(journeyId);
+  const addExpToJourney = useAddExperienceToJourney();
+  const removeExpFromJourney = useRemoveExperienceFromJourney();
+  const [showAddExp, setShowAddExp] = useState(false);
+
+  if (isLoading || !journey) {
+    return <div className="text-center py-12"><div className="w-8 h-8 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin mx-auto" /></div>;
+  }
+
+  const linkedIds = new Set(journey.experiences.map(e => e.id));
+  const available = allExperiences.filter(e => !linkedIds.has(e.id));
+
+  const handleAdd = (expId: string) => {
+    addExpToJourney.mutate({ journeyId, experienceId: expId }, {
+      onSuccess: () => toast.success("Experience added to journey"),
+      onError: () => toast.error("Failed to add"),
+    });
+  };
+
+  const handleRemove = (expId: string) => {
+    removeExpFromJourney.mutate({ journeyId, experienceId: expId }, {
+      onSuccess: () => toast.success("Removed from journey"),
+      onError: () => toast.error("Failed to remove"),
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <button onClick={onBack} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">← Back</button>
+        <button onClick={() => onDelete(journeyId)} className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1">
+          <Trash2 className="w-3 h-3" /> Delete
+        </button>
+      </div>
+
+      <div className="p-5 rounded-2xl bg-card border border-border">
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-3xl">{journey.emoji}</span>
+          <div>
+            <h2 className="font-display text-xl font-semibold text-foreground">{journey.title}</h2>
+            {journey.description && <p className="text-sm text-muted-foreground">{journey.description}</p>}
+          </div>
+        </div>
+        {(journey.start_date || journey.end_date) && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+            <Calendar className="w-3 h-3" />
+            {journey.start_date ? new Date(journey.start_date).toLocaleDateString() : ""}
+            {journey.start_date && journey.end_date ? " – " : ""}
+            {journey.end_date ? new Date(journey.end_date).toLocaleDateString() : ""}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground mt-2">{journey.experiences.length} experience{journey.experiences.length !== 1 ? "s" : ""}</p>
+      </div>
+
+      <button onClick={() => setShowAddExp(!showAddExp)}
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/15 transition-colors">
+        <Plus className="w-4 h-4" /> Add Experience
+      </button>
+
+      <AnimatePresence>
+        {showAddExp && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <div className="p-3 rounded-2xl bg-muted/30 border border-border space-y-2 max-h-[300px] overflow-y-auto">
+              <p className="text-xs font-medium text-muted-foreground px-1">Select experiences to add:</p>
+              {available.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">All experiences already added</p>
+              ) : (
+                available.map(exp => (
+                  <button key={exp.id} onClick={() => handleAdd(exp.id)}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl bg-card hover:bg-card/80 transition-colors text-left">
+                    {exp.photos[0] ? (
+                      <img src={exp.photos[0]} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                        <MapPin className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{exp.title}</p>
+                      <p className="text-[10px] text-muted-foreground">{exp.city}{exp.country ? `, ${exp.country}` : ""} · {exp.category}</p>
+                    </div>
+                    <Plus className="w-4 h-4 text-primary flex-shrink-0" />
+                  </button>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {journey.experiences.length === 0 ? (
+        <div className="text-center py-8"><p className="text-sm text-muted-foreground">No experiences in this journey yet</p></div>
+      ) : (
+        <div className="relative">
+          <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-border" />
+          {journey.experiences.map((exp, i) => (
+            <motion.div key={exp.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="relative pl-12 pb-6">
+              <div className="absolute left-[14px] top-1 w-3 h-3 rounded-full bg-primary border-2 border-background" />
+              <div className="rounded-2xl bg-card border border-border overflow-hidden">
+                {exp.photos.length > 0 && <img src={exp.photos[0]} alt="" className="w-full h-32 object-cover" />}
+                <div className="p-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground">{exp.title}</h4>
+                      {exp.city && (
+                        <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 mt-0.5">
+                          <MapPin className="w-2.5 h-2.5" /> {exp.city}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {exp.rating > 0 && (
+                        <span className="flex items-center gap-0.5">
+                          {[...Array(exp.rating)].map((_, i) => (
+                            <Star key={i} className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                          ))}
+                        </span>
+                      )}
+                      <button onClick={() => handleRemove(exp.id)}
+                        className="ml-1 w-5 h-5 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
+                        <X className="w-3 h-3 text-muted-foreground" />
+                      </button>
+                    </div>
+                  </div>
+                  {exp.caption && <p className="text-xs text-foreground/70 mt-1 line-clamp-2">{exp.caption}</p>}
+                  {exp.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {exp.tags.slice(0, 3).map(tag => (
+                        <span key={tag} className="px-1.5 py-0.5 rounded-full bg-primary/10 text-[9px] font-medium text-primary">{tag}</span>
+                      ))}
+                    </div>
+                  )}
+                  {exp.experience_date && <p className="text-[9px] text-muted-foreground mt-1.5">{new Date(exp.experience_date).toLocaleDateString()}</p>}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Visited;

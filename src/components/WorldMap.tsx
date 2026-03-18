@@ -223,10 +223,24 @@ const WorldMap = ({ cities, places, experiences = [], showCities, mapFilter, onC
 
   const getCityStatus = useCallback(
     (city: City): "none" | "visited" | "wishlist" => {
+      // Check if any saved place belongs to this city (by name match or city field)
       const match = places.find(
-        (p) => p.name.toLowerCase() === city.name.toLowerCase() && p.country.toLowerCase() === city.country.toLowerCase()
+        (p) =>
+          p.country.toLowerCase() === city.country.toLowerCase() &&
+          (p.name.toLowerCase() === city.name.toLowerCase() ||
+           p.city?.toLowerCase() === city.name.toLowerCase())
       );
-      if (match) return match.type as "visited" | "wishlist";
+      if (match) {
+        // Prioritize visited over wishlist
+        const hasVisited = places.some(
+          (p) =>
+            p.country.toLowerCase() === city.country.toLowerCase() &&
+            (p.name.toLowerCase() === city.name.toLowerCase() ||
+             p.city?.toLowerCase() === city.name.toLowerCase()) &&
+            p.type === "visited"
+        );
+        return hasVisited ? "visited" : match.type as "visited" | "wishlist";
+      }
       return "none";
     },
     [places]

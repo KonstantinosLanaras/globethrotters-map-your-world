@@ -417,33 +417,42 @@ export type Database = {
       }
       journeys: {
         Row: {
+          cover_image_url: string | null
           created_at: string
           description: string | null
+          destinations: string[]
           emoji: string | null
           end_date: string | null
           id: string
+          privacy: string
           start_date: string | null
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
+          destinations?: string[]
           emoji?: string | null
           end_date?: string | null
           id?: string
+          privacy?: string
           start_date?: string | null
           title: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
+          destinations?: string[]
           emoji?: string | null
           end_date?: string | null
           id?: string
+          privacy?: string
           start_date?: string | null
           title?: string
           updated_at?: string

@@ -66,7 +66,12 @@ const Profile = () => {
   const [tripEmoji, setTripEmoji] = useState("✈️");
   const [tripStartDate, setTripStartDate] = useState("");
   const [tripEndDate, setTripEndDate] = useState("");
-
+  const [tripDestinations, setTripDestinations] = useState("");
+  const [tripPrivacy, setTripPrivacy] = useState("public");
+  const [tripCoverFile, setTripCoverFile] = useState<File | null>(null);
+  const [tripCoverPreview, setTripCoverPreview] = useState("");
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const tripCoverInputRef = useRef<HTMLInputElement>(null);
   const visitedCount = places.filter((p) => p.type === "visited").length;
   const wishlistCount = places.filter((p) => p.type === "wishlist").length;
   const countries = new Set(places.filter((p) => p.type === "visited").map((p) => p.country)).size;
@@ -154,21 +159,47 @@ const Profile = () => {
     }
   };
 
+  const handleTripCover = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Max 5MB"); return; }
+    setTripCoverFile(file);
+    setTripCoverPreview(URL.createObjectURL(file));
+  };
+
   const handleCreateTrip = async () => {
     if (!tripTitle.trim()) { toast.error("Add a trip title"); return; }
+    setUploadingCover(true);
     try {
+      let coverUrl: string | undefined;
+      if (tripCoverFile && user) {
+        const ext = tripCoverFile.name.split(".").pop();
+        const path = `${user.id}/trips/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("experience-photos").upload(path, tripCoverFile, { contentType: tripCoverFile.type });
+        if (!upErr) {
+          const { data: urlData } = supabase.storage.from("experience-photos").getPublicUrl(path);
+          coverUrl = urlData.publicUrl;
+        }
+      }
+
       await addJourney.mutateAsync({
         title: tripTitle.trim(),
         description: tripDescription.trim() || undefined,
         emoji: tripEmoji,
         start_date: tripStartDate || undefined,
         end_date: tripEndDate || undefined,
+        destinations: tripDestinations.split(",").map(s => s.trim()).filter(Boolean),
+        cover_image_url: coverUrl,
+        privacy: tripPrivacy,
       });
       toast.success("Trip created!");
       setShowTripCreate(false);
-      setTripTitle(""); setTripDescription(""); setTripEmoji("✈️"); setTripStartDate(""); setTripEndDate("");
+      setTripTitle(""); setTripDescription(""); setTripEmoji("✈️");
+      setTripStartDate(""); setTripEndDate(""); setTripDestinations("");
+      setTripPrivacy("public"); setTripCoverFile(null); setTripCoverPreview("");
       setTab("trips");
     } catch { toast.error("Failed to create trip"); }
+    finally { setUploadingCover(false); }
   };
 
   const handleSignOut = async () => {
@@ -313,9 +344,29 @@ const Profile = () => {
                   </div>
                 </div>
 
+                <EditField label="Destinations" value={tripDestinations} onChange={setTripDestinations} placeholder="e.g. Athens, Santorini, Mykonos" />
                 <EditField label="Trip Title" value={tripTitle} onChange={setTripTitle} placeholder="e.g. Greece Summer 2024" />
                 <EditField label="Description" value={tripDescription} onChange={setTripDescription} multiline placeholder="What was this trip about?" />
                 
+                {/* Cover image */}
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Cover Image</p>
+                  {tripCoverPreview ? (
+                    <div className="relative rounded-xl overflow-hidden h-32">
+                      <img src={tripCoverPreview} alt="" className="w-full h-full object-cover" />
+                      <button onClick={() => { setTripCoverFile(null); setTripCoverPreview(""); }} className="absolute top-2 right-2 w-6 h-6 rounded-full bg-foreground/60 flex items-center justify-center">
+                        <X className="w-3 h-3 text-primary-foreground" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => tripCoverInputRef.current?.click()} className="w-full h-24 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 hover:border-primary/30 transition-colors">
+                      <Upload className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-[10px] text-muted-foreground">Add cover photo</span>
+                    </button>
+                  )}
+                  <input ref={tripCoverInputRef} type="file" accept="image/*" className="hidden" onChange={handleTripCover} />
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Start Date</p>
@@ -326,6 +377,25 @@ const Profile = () => {
                     <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">End Date</p>
                     <input type="date" value={tripEndDate} onChange={(e) => setTripEndDate(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary/40" />
+                  </div>
+                </div>
+
+                {/* Privacy */}
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Privacy</p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {privacyOptions.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setTripPrivacy(p.id)}
+                        className={`flex flex-col items-center gap-1 p-2.5 rounded-xl text-xs transition-all ${
+                          tripPrivacy === p.id ? "bg-primary/10 text-primary border border-primary/20" : "bg-muted text-muted-foreground border border-transparent"
+                        }`}
+                      >
+                        {p.icon}
+                        <span className="font-medium">{p.label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -490,25 +560,40 @@ const Profile = () => {
                   key={journey.id}
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-2xl bg-card border border-border hover:border-primary/20 transition-all cursor-pointer"
+                  className="rounded-2xl bg-card border border-border hover:border-primary/20 transition-all cursor-pointer overflow-hidden"
                   onClick={() => navigate("/visited")}
                 >
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl flex-shrink-0">{journey.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold text-foreground">{journey.title}</h3>
-                      {journey.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{journey.description}</p>}
-                      <div className="flex items-center gap-3 mt-2">
-                        {journey.start_date && (
-                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(journey.start_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-                            {journey.end_date && ` – ${new Date(journey.end_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`}
-                          </span>
+                  {journey.cover_image_url && (
+                    <img src={journey.cover_image_url} alt="" className="w-full h-32 object-cover" />
+                  )}
+                  <div className="p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl flex-shrink-0">{journey.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-foreground">{journey.title}</h3>
+                        {journey.destinations && journey.destinations.length > 0 && (
+                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" /> {journey.destinations.join(" · ")}
+                          </p>
                         )}
+                        {journey.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{journey.description}</p>}
+                        <div className="flex items-center gap-3 mt-2">
+                          {journey.start_date && (
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(journey.start_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                              {journey.end_date && ` – ${new Date(journey.end_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`}
+                            </span>
+                          )}
+                          {journey.privacy !== "public" && (
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <Lock className="w-3 h-3" /> {journey.privacy === "private" ? "Private" : "Friends"}
+                            </span>
+                          )}
+                        </div>
                       </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
                   </div>
                 </motion.div>
               ))

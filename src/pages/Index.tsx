@@ -6,8 +6,6 @@ import CityDetailsCard from "@/components/CityDetailsCard";
 import CityExploreBar from "@/components/CityExploreBar";
 import { usePlaces, useUpdatePlace, useDeletePlace, Place } from "@/hooks/usePlaces";
 import { useExperiencesWithPhotos } from "@/hooks/useExperiences";
-import { useLists } from "@/hooks/useLists";
-import { useAllListPlaces } from "@/hooks/useListPlaces";
 import { useAuth } from "@/hooks/useAuth";
 import { worldCities, City } from "@/data/cities";
 import { toast } from "sonner";
@@ -16,7 +14,6 @@ const Index = () => {
   const [showCities, setShowCities] = useState(true);
   const [mapFilter, setMapFilter] = useState<"all" | "visited" | "wishlist">("all");
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const { user } = useAuth();
   const { data: places = [] } = usePlaces();
   const { data: experiences = [] } = useExperiencesWithPhotos();
@@ -28,15 +25,6 @@ const Index = () => {
     wishlist: places.filter((p) => p.type === "wishlist").length,
     countries: new Set(places.filter((p) => p.type === "visited").map((p) => p.country)).size,
   }), [places]);
-
-  // Filter places by selected list
-  const filteredPlaces = useMemo(() => {
-    if (!selectedListId) return places;
-    const placeIdsInList = new Set(
-      allListPlaces.filter((lp) => lp.list_id === selectedListId).map((lp) => lp.place_id)
-    );
-    return places.filter((p) => placeIdsInList.has(p.id));
-  }, [places, selectedListId, allListPlaces]);
 
   const savedPlace = useMemo(() => {
     if (!selectedCity || !user) return null;
@@ -97,9 +85,6 @@ const Index = () => {
         mapFilter={mapFilter}
         onFilterChange={setMapFilter}
         stats={stats}
-        lists={lists.map((l) => ({ id: l.id, title: l.title, emoji: l.emoji || "📍" }))}
-        selectedListId={selectedListId}
-        onListSelect={setSelectedListId}
       />
       {selectedCity && (
         <CityDetailsCard
@@ -112,7 +97,7 @@ const Index = () => {
       <div className="absolute inset-0 pt-[60px]">
         <WorldMap
           cities={worldCities}
-          places={filteredPlaces}
+          places={places}
           experiences={experiences}
           showCities={showCities}
           mapFilter={mapFilter}

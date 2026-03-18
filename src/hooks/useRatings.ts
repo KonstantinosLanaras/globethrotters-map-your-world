@@ -128,7 +128,7 @@ export const useSubmitRating = () => {
 
       const { data, error } = await supabase
         .from("place_ratings")
-        .upsert(row, { onConflict: "place_id,user_id" })
+        .upsert(row as any, { onConflict: "place_id,user_id" })
         .select()
         .single();
       if (error) throw error;

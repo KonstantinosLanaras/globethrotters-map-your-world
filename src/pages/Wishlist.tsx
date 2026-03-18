@@ -7,13 +7,7 @@ import { useLists } from "@/hooks/useLists";
 import { useAllListPlaces } from "@/hooks/useListPlaces";
 import { toast } from "sonner";
 
-interface GroupedData {
-  [country: string]: {
-    [city: string]: typeof places;
-  };
-}
-
-type Place = ReturnType<typeof usePlaces>["data"] extends (infer T)[] | undefined ? T : never;
+import type { Place } from "@/hooks/usePlaces";
 
 const Wishlist = () => {
   const { data: places = [] } = usePlaces();

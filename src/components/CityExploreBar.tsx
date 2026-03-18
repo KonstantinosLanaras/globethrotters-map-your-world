@@ -514,14 +514,15 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.25 }}
-                    className="overflow-hidden"
+                    className="overflow-hidden flex flex-col"
+                    style={{ maxHeight: "min(420px, 50vh)" }}
                   >
-                    <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/50">
-                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Category filters</span>
+                    <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/50 flex-shrink-0">
+                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Experience Filters</span>
                       <div className="flex items-center gap-3">
-                        {activeExpCategory && (
-                          <button onClick={() => setActiveExpCategory(null)} className="text-xs text-primary hover:underline font-medium">
-                            Clear
+                        {hasActiveExpFilters && (
+                          <button onClick={() => setExpFilters(defaultExpFilters)} className="text-xs text-primary hover:underline font-medium">
+                            Clear all
                           </button>
                         )}
                         <button onClick={() => setShowFilters(false)} className="text-muted-foreground hover:text-foreground">
@@ -529,23 +530,82 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                         </button>
                       </div>
                     </div>
-                    <div className="px-4 py-3 flex flex-wrap gap-1.5">
-                      {experienceCategories.map((cat) => (
+                    <div className="overflow-y-auto flex-1 overscroll-contain px-4 py-3 space-y-5">
+                      {/* Category */}
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground mb-2 block">Category</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {experienceCategories.map((cat) => (
+                            <FilterChip
+                              key={cat}
+                              active={expFilters.categories.includes(cat)}
+                              onClick={() => toggleExpCategory(cat)}
+                            >
+                              {categoryEmoji[cat]} {cat}
+                            </FilterChip>
+                          ))}
+                          <FilterChip
+                            active={expFilters.categories.includes("general")}
+                            onClick={() => toggleExpCategory("general")}
+                          >
+                            📍 General
+                          </FilterChip>
+                        </div>
+                      </div>
+                      {/* Minimum rating */}
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground mb-2 block">Minimum rating</span>
+                        <div className="flex gap-1.5">
+                          {[3, 4, 5].map((r) => (
+                            <FilterChip
+                              key={r}
+                              active={expFilters.minRating === r}
+                              onClick={() => setExpFilters(prev => ({ ...prev, minRating: prev.minRating === r ? null : r }))}
+                              icon={Star}
+                            >
+                              {r}+
+                            </FilterChip>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Content filters */}
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground mb-2 block">Content</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          <FilterChip
+                            active={expFilters.withPhotos}
+                            onClick={() => setExpFilters(prev => ({ ...prev, withPhotos: !prev.withPhotos }))}
+                            icon={Camera}
+                          >
+                            With photos
+                          </FilterChip>
+                          <FilterChip
+                            active={expFilters.recent}
+                            onClick={() => setExpFilters(prev => ({ ...prev, recent: !prev.recent }))}
+                            icon={Sparkles}
+                          >
+                            Recent (30 days)
+                          </FilterChip>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50 bg-muted/20 flex-shrink-0">
+                      <p className="text-[10px] text-muted-foreground/60 leading-tight max-w-[200px]">
+                        Experiences are user-generated community content.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {hasActiveExpFilters && (
+                          <button onClick={() => setExpFilters(defaultExpFilters)} className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                            Clear all
+                          </button>
+                        )}
                         <button
-                          key={cat}
-                          onClick={() => {
-                            setActiveExpCategory(activeExpCategory === cat ? null : cat);
-                            setIsOpen(true);
-                          }}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                            activeExpCategory === cat
-                              ? "bg-primary text-primary-foreground shadow-sm"
-                              : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
-                          }`}
+                          onClick={() => setShowFilters(false)}
+                          className="px-4 py-1.5 bg-primary text-primary-foreground text-xs font-semibold rounded-lg shadow-sm hover:opacity-90 transition-opacity"
                         >
-                          {categoryEmoji[cat]} {cat}
+                          Apply{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
                         </button>
-                      ))}
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -559,11 +619,11 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                   <button
                     key={cat}
                     onClick={() => {
-                      setActiveExpCategory(activeExpCategory === cat ? null : cat);
+                      toggleExpCategory(cat);
                       setIsOpen(true);
                     }}
                     className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
-                      activeExpCategory === cat
+                      expFilters.categories.includes(cat)
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:text-foreground"
                     }`}

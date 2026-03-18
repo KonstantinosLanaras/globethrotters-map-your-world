@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { Search, SlidersHorizontal, X, Star, Shield, Users, Heart, TreePine, Utensils, Music, Palette, Mountain, ChevronDown } from "lucide-react";
+import { Search, SlidersHorizontal, X, Star, Shield, Users, Heart, TreePine, Utensils, Music, Palette, Mountain, Sparkles, Sun, Snowflake, Calendar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { worldCities, City } from "@/data/cities";
 import {
@@ -22,9 +22,9 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const budgetLabels: Record<BudgetFilter, string> = { low: "€", medium: "€€", high: "€€€" };
 const safetyLabels: Record<SafetyFilter, string> = { very_safe: "Very safe", generally_safe: "Generally safe", be_cautious: "Be cautious" };
 const styleLabels: Record<TravelStyleFilter, { label: string; icon: typeof Users }> = {
-  family: { label: "Family", icon: Users },
-  solo: { label: "Solo", icon: Users },
-  couple: { label: "Couple", icon: Heart },
+  family: { label: "Family-friendly", icon: Users },
+  solo: { label: "Solo-friendly", icon: Users },
+  couple: { label: "Couple-friendly", icon: Heart },
 };
 const prefLabels: Record<PreferenceFilter, { label: string; icon: typeof Utensils }> = {
   food: { label: "Food", icon: Utensils },
@@ -41,17 +41,21 @@ const climateGradeColor: Record<string, string> = {
   D: "text-red-400",
 };
 
+type CrowdFilter = "low" | "moderate" | "high";
+const crowdLabels: Record<CrowdFilter, string> = { low: "Quiet", moderate: "Moderate", high: "Busy" };
+
 const CityExploreBar = ({ onCitySelect }: CityExploreBarProps) => {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<ExploreFilters>({});
+  const [crowdFilter, setCrowdFilter] = useState<CrowdFilter[]>([]);
   const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const hasActiveFilters = useMemo(() => {
-    return !!(filters.budget?.length || filters.safety?.length || filters.travelStyle?.length || filters.preferences?.length || filters.month);
-  }, [filters]);
+    return !!(filters.budget?.length || filters.safety?.length || filters.travelStyle?.length || filters.preferences?.length || filters.month || crowdFilter.length);
+  }, [filters, crowdFilter]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -60,8 +64,9 @@ const CityExploreBar = ({ onCitySelect }: CityExploreBarProps) => {
     if (filters.travelStyle?.length) count += filters.travelStyle.length;
     if (filters.preferences?.length) count += filters.preferences.length;
     if (filters.month) count += 1;
+    if (crowdFilter.length) count += crowdFilter.length;
     return count;
-  }, [filters]);
+  }, [filters, crowdFilter]);
 
   // Close on outside click
   useEffect(() => {
@@ -84,6 +89,11 @@ const CityExploreBar = ({ onCitySelect }: CityExploreBarProps) => {
       ranked = [...cityScores].sort((a, b) => b.popularity - a.popularity);
     }
 
+    // Apply crowd filter
+    if (crowdFilter.length && filters.month) {
+      ranked = ranked.filter((c) => crowdFilter.includes(c.crowdLevel[filters.month!] as CrowdFilter));
+    }
+
     if (query.trim()) {
       const q = query.toLowerCase();
       ranked = ranked.filter(
@@ -93,8 +103,8 @@ const CityExploreBar = ({ onCitySelect }: CityExploreBarProps) => {
       );
     }
 
-    return ranked.slice(0, 12);
-  }, [query, filters, hasActiveFilters]);
+    return ranked.slice(0, 15);
+  }, [query, filters, hasActiveFilters, crowdFilter]);
 
   const handleSelect = useCallback(
     (score: CityScore) => {
@@ -111,10 +121,7 @@ const CityExploreBar = ({ onCitySelect }: CityExploreBarProps) => {
     [onCitySelect]
   );
 
-  const toggleFilter = <T extends string>(
-    key: keyof ExploreFilters,
-    value: T
-  ) => {
+  const toggleFilter = <T extends string>(key: keyof ExploreFilters, value: T) => {
     setFilters((prev) => {
       const current = (prev[key] as T[] | undefined) ?? [];
       const next = current.includes(value)
@@ -124,10 +131,40 @@ const CityExploreBar = ({ onCitySelect }: CityExploreBarProps) => {
     });
   };
 
+  const toggleCrowd = (value: CrowdFilter) => {
+    setCrowdFilter((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
+  };
+
   const clearFilters = () => {
     setFilters({});
-    setShowFilters(false);
+    setCrowdFilter([]);
   };
+
+  const FilterChip = ({
+    active,
+    onClick,
+    children,
+    icon: Icon,
+  }: {
+    active: boolean;
+    onClick: () => void;
+    children: React.ReactNode;
+    icon?: typeof Utensils;
+  }) => (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+        active
+          ? "bg-primary text-primary-foreground shadow-sm"
+          : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+      }`}
+    >
+      {Icon && <Icon className="w-3 h-3" />}
+      {children}
+    </button>
+  );
 
   return (
     <div ref={panelRef} className="fixed top-[68px] left-1/2 -translate-x-1/2 z-[1002] w-[92%] max-w-[520px]">
@@ -178,7 +215,7 @@ const CityExploreBar = ({ onCitySelect }: CityExploreBarProps) => {
         >
           <SlidersHorizontal className="w-4 h-4" />
           {activeFilterCount > 0 && !showFilters && (
-            <span className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center min-w-[18px] h-[18px]">
+            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center min-w-[18px] h-[18px]">
               {activeFilterCount}
             </span>
           )}
@@ -193,115 +230,101 @@ const CityExploreBar = ({ onCitySelect }: CityExploreBarProps) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="mt-2 bg-card/98 backdrop-blur-xl rounded-xl border border-border shadow-xl overflow-hidden max-h-[65vh] flex flex-col"
+            className="mt-2 bg-card/98 backdrop-blur-xl rounded-xl border border-border shadow-xl overflow-hidden flex flex-col"
+            style={{ maxHeight: "calc(100vh - 140px)" }}
           >
-            {/* Filter panel */}
+            {/* Filter panel — scrollable with fixed header/footer */}
             <AnimatePresence>
               {showFilters && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden border-b border-border"
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden flex flex-col"
+                  style={{ maxHeight: "min(420px, 50vh)" }}
                 >
-                  <div className="p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Filters</span>
+                  {/* Filter header — fixed */}
+                  <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/50 flex-shrink-0">
+                    <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Filters</span>
+                    <div className="flex items-center gap-3">
                       {hasActiveFilters && (
-                        <button onClick={clearFilters} className="text-xs text-primary hover:underline">
+                        <button onClick={clearFilters} className="text-xs text-primary hover:underline font-medium">
                           Clear all
                         </button>
                       )}
+                      <button
+                        onClick={() => setShowFilters(false)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
+                  </div>
 
+                  {/* Filter content — scrollable */}
+                  <div className="overflow-y-auto flex-1 overscroll-contain px-4 py-3 space-y-5">
                     {/* Budget */}
                     <div>
-                      <span className="text-xs font-medium text-muted-foreground mb-1.5 block">Budget</span>
+                      <span className="text-xs font-medium text-muted-foreground mb-2 block">Budget</span>
                       <div className="flex gap-1.5">
                         {(["low", "medium", "high"] as BudgetFilter[]).map((b) => (
-                          <button
-                            key={b}
-                            onClick={() => toggleFilter("budget", b)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                              filters.budget?.includes(b)
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                            }`}
-                          >
+                          <FilterChip key={b} active={!!filters.budget?.includes(b)} onClick={() => toggleFilter("budget", b)}>
                             {budgetLabels[b]}
-                          </button>
+                          </FilterChip>
                         ))}
                       </div>
                     </div>
 
                     {/* Safety */}
                     <div>
-                      <span className="text-xs font-medium text-muted-foreground mb-1.5 block">Safety</span>
+                      <span className="text-xs font-medium text-muted-foreground mb-2 block">Safety</span>
                       <div className="flex flex-wrap gap-1.5">
                         {(["very_safe", "generally_safe", "be_cautious"] as SafetyFilter[]).map((s) => (
-                          <button
-                            key={s}
-                            onClick={() => toggleFilter("safety", s)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                              filters.safety?.includes(s)
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                            }`}
-                          >
+                          <FilterChip key={s} active={!!filters.safety?.includes(s)} onClick={() => toggleFilter("safety", s)} icon={Shield}>
                             {safetyLabels[s]}
-                          </button>
+                          </FilterChip>
                         ))}
                       </div>
                     </div>
 
                     {/* Travel style */}
                     <div>
-                      <span className="text-xs font-medium text-muted-foreground mb-1.5 block">Travel style</span>
-                      <div className="flex gap-1.5">
+                      <span className="text-xs font-medium text-muted-foreground mb-2 block">Travel style</span>
+                      <div className="flex flex-wrap gap-1.5">
                         {(["solo", "couple", "family"] as TravelStyleFilter[]).map((t) => (
-                          <button
+                          <FilterChip
                             key={t}
+                            active={!!filters.travelStyle?.includes(t)}
                             onClick={() => toggleFilter("travelStyle", t)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                              filters.travelStyle?.includes(t)
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                            }`}
+                            icon={styleLabels[t].icon}
                           >
                             {styleLabels[t].label}
-                          </button>
+                          </FilterChip>
                         ))}
                       </div>
                     </div>
 
                     {/* Preferences */}
                     <div>
-                      <span className="text-xs font-medium text-muted-foreground mb-1.5 block">Preferences</span>
+                      <span className="text-xs font-medium text-muted-foreground mb-2 block">Preferences</span>
                       <div className="flex flex-wrap gap-1.5">
-                        {(["food", "nature", "nightlife", "culture", "adventure"] as PreferenceFilter[]).map((p) => {
-                          const Icon = prefLabels[p].icon;
-                          return (
-                            <button
-                              key={p}
-                              onClick={() => toggleFilter("preferences", p)}
-                              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                                filters.preferences?.includes(p)
-                                  ? "bg-primary text-primary-foreground"
-                                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                              }`}
-                            >
-                              <Icon className="w-3 h-3" />
-                              {prefLabels[p].label}
-                            </button>
-                          );
-                        })}
+                        {(["food", "nature", "nightlife", "culture", "adventure"] as PreferenceFilter[]).map((p) => (
+                          <FilterChip
+                            key={p}
+                            active={!!filters.preferences?.includes(p)}
+                            onClick={() => toggleFilter("preferences", p)}
+                            icon={prefLabels[p].icon}
+                          >
+                            {prefLabels[p].label}
+                          </FilterChip>
+                        ))}
                       </div>
                     </div>
 
-                    {/* Month */}
+                    {/* Best time to visit */}
                     <div>
-                      <span className="text-xs font-medium text-muted-foreground mb-1.5 block">Season / Month</span>
+                      <span className="text-xs font-medium text-muted-foreground mb-2 block">Best time to visit</span>
                       <div className="flex flex-wrap gap-1">
                         {MONTHS.map((m, i) => (
                           <button
@@ -312,9 +335,9 @@ const CityExploreBar = ({ onCitySelect }: CityExploreBarProps) => {
                                 month: prev.month === i + 1 ? undefined : i + 1,
                               }))
                             }
-                            className={`px-2 py-1 rounded-md text-[11px] font-medium transition-all ${
+                            className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${
                               filters.month === i + 1
-                                ? "bg-primary text-primary-foreground"
+                                ? "bg-primary text-primary-foreground shadow-sm"
                                 : "bg-muted/60 text-muted-foreground hover:bg-muted"
                             }`}
                           >
@@ -323,13 +346,57 @@ const CityExploreBar = ({ onCitySelect }: CityExploreBarProps) => {
                         ))}
                       </div>
                     </div>
+
+                    {/* Crowd level */}
+                    <div>
+                      <span className="text-xs font-medium text-muted-foreground mb-2 block">
+                        Crowd level
+                        {!filters.month && (
+                          <span className="text-[10px] text-muted-foreground/50 ml-1.5">(select a month first)</span>
+                        )}
+                      </span>
+                      <div className="flex gap-1.5">
+                        {(["low", "moderate", "high"] as CrowdFilter[]).map((c) => (
+                          <FilterChip
+                            key={c}
+                            active={crowdFilter.includes(c)}
+                            onClick={() => filters.month && toggleCrowd(c)}
+                          >
+                            <span className={!filters.month ? "opacity-40" : ""}>{crowdLabels[c]}</span>
+                          </FilterChip>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Filter footer — fixed */}
+                  <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50 bg-muted/20 flex-shrink-0">
+                    <p className="text-[10px] text-muted-foreground/60 leading-tight max-w-[200px]">
+                      City insights are based on community contributions and are not verified.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {hasActiveFilters && (
+                        <button
+                          onClick={clearFilters}
+                          className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          Clear all
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setShowFilters(false)}
+                        className="px-4 py-1.5 bg-primary text-primary-foreground text-xs font-semibold rounded-lg shadow-sm hover:opacity-90 transition-opacity"
+                      >
+                        Apply{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
             {/* Results header */}
-            <div className="px-4 pt-3 pb-1.5">
+            <div className="px-4 pt-3 pb-1.5 flex-shrink-0">
               <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                 {hasActiveFilters
                   ? `${results.length} cities match`
@@ -339,8 +406,8 @@ const CityExploreBar = ({ onCitySelect }: CityExploreBarProps) => {
               </span>
             </div>
 
-            {/* Results list */}
-            <div className="overflow-y-auto flex-1 px-2 pb-2">
+            {/* Results list — scrollable */}
+            <div className="overflow-y-auto flex-1 px-2 pb-2 overscroll-contain">
               {results.length === 0 ? (
                 <div className="py-8 text-center text-sm text-muted-foreground">
                   No cities found. Try adjusting your filters.
@@ -357,12 +424,14 @@ const CityExploreBar = ({ onCitySelect }: CityExploreBarProps) => {
               )}
             </div>
 
-            {/* Disclaimer */}
-            <div className="px-4 py-2.5 border-t border-border bg-muted/30">
-              <p className="text-[10px] text-muted-foreground/70 text-center leading-tight">
-                City insights and scores are based on community contributions and are not verified.
-              </p>
-            </div>
+            {/* Disclaimer — only show when filters are NOT open (filter panel has its own) */}
+            {!showFilters && (
+              <div className="px-4 py-2.5 border-t border-border bg-muted/30 flex-shrink-0">
+                <p className="text-[10px] text-muted-foreground/70 text-center leading-tight">
+                  City insights and scores are based on community contributions and are not verified.
+                </p>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -382,7 +451,6 @@ function CityResultCard({
   const climateGrade = selectedMonth ? city.climate[selectedMonth] : null;
   const crowdLevel = selectedMonth ? city.crowdLevel[selectedMonth] : null;
 
-  // Pick top 2 scores
   const scores = [
     { label: "Food", value: city.food },
     { label: "Nature", value: city.nature },
@@ -398,7 +466,6 @@ function CityResultCard({
       onClick={onClick}
       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left group"
     >
-      {/* City initial avatar */}
       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
         <span className="text-sm font-bold text-primary">
           {city.cityName.slice(0, 2).toUpperCase()}
@@ -407,39 +474,24 @@ function CityResultCard({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-foreground truncate">
-            {city.cityName}
-          </span>
-          <span className="text-xs text-muted-foreground truncate">
-            {city.country}
-          </span>
+          <span className="text-sm font-semibold text-foreground truncate">{city.cityName}</span>
+          <span className="text-xs text-muted-foreground truncate">{city.country}</span>
         </div>
-
-        <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs text-muted-foreground font-medium">
-            {budgetLabels[city.budget]}
-          </span>
-
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          <span className="text-xs text-muted-foreground font-medium">{budgetLabels[city.budget]}</span>
           {climateGrade && (
             <>
               <span className="text-muted-foreground/30">·</span>
-              <span className={`text-xs font-medium ${climateGradeColor[climateGrade]}`}>
-                Climate {climateGrade}
-              </span>
+              <span className={`text-xs font-medium ${climateGradeColor[climateGrade]}`}>Climate {climateGrade}</span>
             </>
           )}
-
           {crowdLevel && (
             <>
               <span className="text-muted-foreground/30">·</span>
-              <span className="text-xs text-muted-foreground capitalize">
-                {crowdLevel} crowds
-              </span>
+              <span className="text-xs text-muted-foreground capitalize">{crowdLevel} crowds</span>
             </>
           )}
-
           <span className="text-muted-foreground/30">·</span>
-
           {scores.map((s, i) => (
             <span key={s.label} className="flex items-center gap-0.5 text-xs text-muted-foreground">
               {i > 0 && <span className="text-muted-foreground/30 mx-0.5">·</span>}
@@ -449,7 +501,6 @@ function CityResultCard({
         </div>
       </div>
 
-      {/* Safety badge */}
       <div className="flex-shrink-0 hidden sm:block">
         <span
           className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${

@@ -272,6 +272,78 @@ export type Database = {
         }
         Relationships: []
       }
+      journey_experiences: {
+        Row: {
+          added_at: string
+          experience_id: string
+          id: string
+          journey_id: string
+        }
+        Insert: {
+          added_at?: string
+          experience_id: string
+          id?: string
+          journey_id: string
+        }
+        Update: {
+          added_at?: string
+          experience_id?: string
+          id?: string
+          journey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_experiences_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_experiences_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journeys: {
+        Row: {
+          created_at: string
+          description: string | null
+          emoji: string | null
+          end_date: string | null
+          id: string
+          start_date: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          end_date?: string | null
+          id?: string
+          start_date?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          end_date?: string | null
+          id?: string
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       list_places: {
         Row: {
           added_at: string

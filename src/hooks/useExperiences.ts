@@ -32,6 +32,10 @@ export interface ExperienceAttachment {
 
 export interface ExperienceWithPhotos extends Experience {
   photos: string[];
+  saves_count: number;
+  review_count: number;
+  rating_avg: number;
+  engagement_score: number;
 }
 
 export const useExperiences = () => {
@@ -81,6 +85,10 @@ export const useExperiencesWithPhotos = () => {
         ...exp,
         tags: exp.tags ?? [],
         rating: (exp as any).rating ?? 0,
+        saves_count: exp.saves_count ?? 0,
+        review_count: exp.review_count ?? 0,
+        rating_avg: Number(exp.rating_avg) ?? 0,
+        engagement_score: Number(exp.engagement_score) ?? 0,
         photos: attachments
           .filter(a => a.experience_id === exp.id)
           .map(a => a.url),

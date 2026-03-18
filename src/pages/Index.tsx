@@ -20,8 +20,6 @@ const Index = () => {
   const { user } = useAuth();
   const { data: places = [] } = usePlaces();
   const { data: experiences = [] } = useExperiencesWithPhotos();
-  const { data: lists = [] } = useLists();
-  const { data: allListPlaces = [] } = useAllListPlaces();
   const updatePlace = useUpdatePlace();
   const deletePlace = useDeletePlace();
 

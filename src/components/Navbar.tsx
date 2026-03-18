@@ -1,19 +1,16 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Map, MapPin, Heart, Bookmark, User, Menu, X, Camera, LogOut, Plane, Compass } from "lucide-react";
+import { Map, MapPin, Heart, User, Menu, X, LogOut, Search } from "lucide-react";
 import GlobethrottersLogo from "@/components/GlobethrottersLogo";
 import PeopleSearch from "@/components/PeopleSearch";
+import GlobalSearch from "@/components/GlobalSearch";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   { icon: <Map className="w-4 h-4" />, label: "Explore", path: "/" },
-  { icon: <MapPin className="w-4 h-4" />, label: "Visited", path: "/places" },
+  { icon: <MapPin className="w-4 h-4" />, label: "Visited", path: "/visited" },
   { icon: <Heart className="w-4 h-4" />, label: "Wishlist", path: "/wishlist" },
-  { icon: <Bookmark className="w-4 h-4" />, label: "Lists", path: "/lists" },
-  { icon: <Camera className="w-4 h-4" />, label: "Experiences", path: "/experiences" },
-  { icon: <Plane className="w-4 h-4" />, label: "Journeys", path: "/journeys" },
-  { icon: <Compass className="w-4 h-4" />, label: "Discover", path: "/discover" },
 ];
 
 const Navbar = () => {
@@ -55,7 +52,8 @@ const Navbar = () => {
       {/* Desktop nav */}
       <div className="hidden md:flex items-center gap-1">
         {navItems.map((item) => {
-          const active = location.pathname === item.path;
+          const active = location.pathname === item.path || 
+            (item.path === "/visited" && location.pathname === "/places");
           return (
             <button
               key={item.path}
@@ -73,8 +71,9 @@ const Navbar = () => {
         })}
       </div>
 
-      {/* People search + profile dropdown */}
+      {/* Search + People search + Profile */}
       <div className="hidden md:flex items-center gap-2">
+        <GlobalSearch />
         <PeopleSearch />
         <div className="relative" ref={profileRef}>
           <button
@@ -127,7 +126,8 @@ const Navbar = () => {
           animate={{ opacity: 1, y: 0 }}
           className="absolute top-full left-0 right-0 bg-card/95 backdrop-blur-xl border-b border-border p-3 md:hidden"
         >
-          <div className="mb-3 px-1">
+          <div className="mb-3 px-1 space-y-2">
+            <GlobalSearch />
             <PeopleSearch />
           </div>
 

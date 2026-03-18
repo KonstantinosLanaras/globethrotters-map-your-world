@@ -6,14 +6,10 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Onboarding from "./pages/Onboarding";
-import Places from "./pages/Places";
+import Visited from "./pages/Places";
 import Wishlist from "./pages/Wishlist";
-import Lists from "./pages/Lists";
 import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
-import Experiences from "./pages/Experiences";
-import Journeys from "./pages/Journeys";
-import Discover from "./pages/Discover";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
@@ -49,14 +45,16 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/places" element={<ProtectedRoute><Places /></ProtectedRoute>} />
+            <Route path="/visited" element={<ProtectedRoute><Visited /></ProtectedRoute>} />
+            <Route path="/places" element={<Navigate to="/visited" replace />} />
             <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
-            <Route path="/lists" element={<ProtectedRoute><Lists /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-            <Route path="/experiences" element={<ProtectedRoute><Experiences /></ProtectedRoute>} />
-            <Route path="/journeys" element={<ProtectedRoute><Journeys /></ProtectedRoute>} />
-            <Route path="/discover" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
+            {/* Legacy redirects */}
+            <Route path="/experiences" element={<Navigate to="/visited" replace />} />
+            <Route path="/journeys" element={<Navigate to="/visited" replace />} />
+            <Route path="/lists" element={<Navigate to="/wishlist" replace />} />
+            <Route path="/discover" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

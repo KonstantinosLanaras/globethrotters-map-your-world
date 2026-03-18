@@ -1,26 +1,24 @@
 import { useState, useCallback, useMemo } from "react";
 import WorldMap from "@/components/WorldMap";
 import Navbar from "@/components/Navbar";
-import MapControls from "@/components/MapControls";
+import MapControls, { type ActivityTag } from "@/components/MapControls";
 import CityDetailsCard from "@/components/CityDetailsCard";
 import CityExploreBar from "@/components/CityExploreBar";
 import type { SearchMode } from "@/components/CityExploreBar";
-import { usePlaces, useUpdatePlace, useDeletePlace, Place } from "@/hooks/usePlaces";
+import { usePlaces, Place } from "@/hooks/usePlaces";
 import { useExperiencesWithPhotos } from "@/hooks/useExperiences";
 import { useAuth } from "@/hooks/useAuth";
 import { worldCities, City } from "@/data/cities";
-import { toast } from "sonner";
 
 const Index = () => {
   const [showCities, setShowCities] = useState(true);
   const [mapFilter, setMapFilter] = useState<"all" | "visited" | "wishlist">("all");
+  const [activeTags, setActiveTags] = useState<ActivityTag[]>([]);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [searchMode, setSearchMode] = useState<SearchMode>("places");
   const { user } = useAuth();
   const { data: places = [] } = usePlaces();
   const { data: experiences = [] } = useExperiencesWithPhotos();
-  const updatePlace = useUpdatePlace();
-  const deletePlace = useDeletePlace();
 
   const stats = useMemo(() => ({
     visited: places.filter((p) => p.type === "visited").length,
@@ -59,23 +57,11 @@ const Index = () => {
     }
   }, []);
 
-  const handleTogglePlace = useCallback((place: Place) => {
-    const newType = place.type === "visited" ? "wishlist" : "visited";
-    updatePlace.mutate(
-      { id: place.id, type: newType },
-      {
-        onSuccess: () => toast.success(`Moved to ${newType === "visited" ? "Visited" : "Wishlist"}`),
-        onError: () => toast.error("Failed to update place"),
-      }
+  const handleTagToggle = useCallback((tag: ActivityTag) => {
+    setActiveTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     );
-  }, [updatePlace]);
-
-  const handleRemovePlace = useCallback((placeId: string) => {
-    deletePlace.mutate(placeId, {
-      onSuccess: () => toast.success("Place removed from map"),
-      onError: () => toast.error("Failed to remove place"),
-    });
-  }, [deletePlace]);
+  }, []);
 
   return (
     <div className="relative h-screen w-screen overflow-hidden">
@@ -91,6 +77,8 @@ const Index = () => {
         mapFilter={mapFilter}
         onFilterChange={setMapFilter}
         stats={stats}
+        activeTags={activeTags}
+        onTagToggle={handleTagToggle}
       />
       {selectedCity && (
         <CityDetailsCard
@@ -107,10 +95,9 @@ const Index = () => {
           experiences={experiences}
           showCities={showCities}
           mapFilter={mapFilter}
+          activeTags={activeTags}
           onCityClick={handleCityClick}
           onPlaceClick={handlePlaceClick}
-          onTogglePlace={handleTogglePlace}
-          onRemovePlace={handleRemovePlace}
         />
       </div>
     </div>

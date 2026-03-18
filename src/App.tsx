@@ -13,6 +13,7 @@ import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
 import Experiences from "./pages/Experiences";
 import Journeys from "./pages/Journeys";
+import Discover from "./pages/Discover";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
             <Route path="/experiences" element={<ProtectedRoute><Experiences /></ProtectedRoute>} />
             <Route path="/journeys" element={<ProtectedRoute><Journeys /></ProtectedRoute>} />
+            <Route path="/discover" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

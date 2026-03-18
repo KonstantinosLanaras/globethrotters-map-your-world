@@ -167,7 +167,7 @@ const CityExploreBar = ({ onCitySelect }: CityExploreBarProps) => {
   );
 
   return (
-    <div ref={panelRef} className="fixed top-[68px] left-1/2 -translate-x-1/2 z-[1002] w-[92%] max-w-[520px]">
+    <div ref={panelRef} className="fixed top-[68px] left-1/2 -translate-x-1/2 z-[1002] w-[92%] max-w-[520px] pointer-events-auto">
       {/* Search bar */}
       <div className="relative flex items-center gap-2">
         <div

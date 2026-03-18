@@ -494,7 +494,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
         }
       } else {
         const result = await addPlace.mutateAsync({
-          name: city.name, country: city.country, lat: city.lat, lng: city.lng,
+          name: city.name, country: city.country, city: city.name, lat: city.lat, lng: city.lng,
           type, tags: [], rating: 0, notes: "",
           date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
         });

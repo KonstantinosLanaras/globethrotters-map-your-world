@@ -102,7 +102,7 @@ export const useAddJourney = () => {
         .select()
         .single();
       if (error) throw error;
-      return data as Journey;
+      return data as unknown as Journey;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["journeys"] }),
   });

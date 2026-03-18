@@ -255,24 +255,41 @@ const WorldMap = ({ cities, places, experiences = [], showCities, mapFilter, onC
 
     const filtered = mapFilter === "all" ? places : places.filter((p) => p.type === mapFilter);
 
+    // Deduplicate pins per destination (same name + country = one pin)
+    const destMap = new Map<string, Place[]>();
     filtered.forEach((place) => {
-      const marker = L.marker([place.lat, place.lng], {
-        icon: createSavedPinIcon(place.type as "visited" | "wishlist"),
+      const key = `${place.name.toLowerCase()}||${place.country.toLowerCase()}`;
+      if (!destMap.has(key)) destMap.set(key, []);
+      destMap.get(key)!.push(place);
+    });
+
+    destMap.forEach((destPlaces) => {
+      // Use first place as the representative for the pin
+      const representative = destPlaces[0];
+      // If any place in this destination is visited, show visited pin (priority)
+      const hasVisited = destPlaces.some(p => p.type === "visited");
+      const pinType = hasVisited ? "visited" : representative.type as "visited" | "wishlist";
+
+      const marker = L.marker([representative.lat, representative.lng], {
+        icon: createSavedPinIcon(pinType),
         zIndexOffset: 1000,
       });
 
-      marker.bindPopup(createPopupContent(place, experiences), {
+      // Use representative for popup but count all places in this destination
+      marker.bindPopup(createPopupContent(representative, experiences), {
         className: "place-pin-popup",
         closeButton: true,
         maxWidth: 280,
       });
 
+      const count = destPlaces.length;
+      const countLabel = count > 1 ? ` (${count} items)` : "";
       marker.bindTooltip(
-        `<span style="font-weight:600;font-size:12px;">${place.name}</span><br/><span style="font-size:10px;color:#888;">${place.country}</span>`,
+        `<span style="font-weight:600;font-size:12px;">${representative.name}${countLabel}</span><br/><span style="font-size:10px;color:#888;">${representative.country}</span>`,
         { direction: "top", offset: [0, -36], className: "city-tooltip" }
       );
 
-      marker.on("click", () => onPlaceClick(place));
+      marker.on("click", () => onPlaceClick(representative));
       layer.addLayer(marker);
     });
   }, [places, experiences, mapFilter, onPlaceClick]);

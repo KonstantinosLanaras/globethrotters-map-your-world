@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import { Heart, MapPin, Trash2, ChevronDown, ChevronRight, Filter, Globe } from "lucide-react";
+import { Heart, MapPin, Trash2, ChevronDown, ChevronRight, Filter, Globe, Compass } from "lucide-react";
 import { usePlaces, useDeletePlace } from "@/hooks/usePlaces";
+import { useExperiencesWithPhotos } from "@/hooks/useExperiences";
 import { toast } from "sonner";
 import type { Place } from "@/hooks/usePlaces";
 
@@ -11,35 +12,129 @@ const categoryEmoji: Record<string, string> = {
   Food: "🍽️", Culture: "🏛️", Nature: "🌿", Hiking: "🥾", Nightlife: "🌙",
 };
 
+interface DestinationNode {
+  city: string;
+  country: string;
+  lat: number;
+  lng: number;
+  places: Place[];
+  experiences: { id: string; title: string; category: string; rating: number | null; tags: string[] | null; caption: string | null }[];
+}
+
 const Wishlist = () => {
   const { data: places = [] } = usePlaces();
+  const { data: experiences = [] } = useExperiencesWithPhotos();
   const deletePlace = useDeletePlace();
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [expandedCountries, setExpandedCountries] = useState<Set<string>>(new Set());
+  const [expandedDestinations, setExpandedDestinations] = useState<Set<string>>(new Set());
 
   const wishlistPlaces = useMemo(() => {
-    let items = places.filter((p) => p.type === "wishlist");
-    if (activeFilter !== "All") {
-      items = items.filter((p) => p.tags?.some(t => t.toLowerCase() === activeFilter.toLowerCase()));
-    }
-    return items;
-  }, [places, activeFilter]);
+    return places.filter((p) => p.type === "wishlist");
+  }, [places]);
 
-  const grouped = useMemo(() => {
-    const g: Record<string, typeof wishlistPlaces> = {};
+  // Build destination hierarchy: Country → City → places + experiences
+  const hierarchy = useMemo(() => {
+    // Group places by country → city (name)
+    const destMap = new Map<string, DestinationNode>();
+
     wishlistPlaces.forEach((p) => {
-      const country = p.country || "Unknown";
-      if (!g[country]) g[country] = [];
-      g[country].push(p);
+      const key = `${p.country}||${p.name}`;
+      if (!destMap.has(key)) {
+        destMap.set(key, {
+          city: p.name,
+          country: p.country || "Unknown",
+          lat: p.lat,
+          lng: p.lng,
+          places: [],
+          experiences: [],
+        });
+      }
+      destMap.get(key)!.places.push(p);
     });
-    return Object.entries(g).sort(([a], [b]) => a.localeCompare(b));
-  }, [wishlistPlaces]);
 
+    // Attach experiences to destinations
+    destMap.forEach((dest) => {
+      const cityExps = experiences.filter(
+        (e) =>
+          e.city?.toLowerCase() === dest.city.toLowerCase() &&
+          e.country?.toLowerCase() === dest.country.toLowerCase()
+      );
+      dest.experiences = cityExps.map((e) => ({
+        id: e.id,
+        title: e.title,
+        category: e.category,
+        rating: e.rating,
+        tags: e.tags,
+        caption: e.caption,
+      }));
+    });
+
+    // Group by country
+    const countryMap = new Map<string, DestinationNode[]>();
+    destMap.forEach((dest) => {
+      const c = dest.country;
+      if (!countryMap.has(c)) countryMap.set(c, []);
+      countryMap.get(c)!.push(dest);
+    });
+
+    // Sort countries and destinations
+    const sorted = Array.from(countryMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([country, dests]) => ({
+        country,
+        destinations: dests.sort((a, b) => a.city.localeCompare(b.city)),
+      }));
+
+    return sorted;
+  }, [wishlistPlaces, experiences]);
+
+  // Apply category filter
+  const filteredHierarchy = useMemo(() => {
+    if (activeFilter === "All") return hierarchy;
+
+    return hierarchy
+      .map(({ country, destinations }) => ({
+        country,
+        destinations: destinations
+          .map((dest) => ({
+            ...dest,
+            places: dest.places.filter((p) =>
+              p.tags?.some((t) => t.toLowerCase() === activeFilter.toLowerCase())
+            ),
+            experiences: dest.experiences.filter(
+              (e) => e.category.toLowerCase() === activeFilter.toLowerCase() ||
+                e.tags?.some((t) => t.toLowerCase() === activeFilter.toLowerCase())
+            ),
+          }))
+          .filter((d) => d.places.length > 0 || d.experiences.length > 0),
+      }))
+      .filter((c) => c.destinations.length > 0);
+  }, [hierarchy, activeFilter]);
+
+  // Counts
+  const totalExperiences = useMemo(() => {
+    return filteredHierarchy.reduce(
+      (sum, c) => sum + c.destinations.reduce((s, d) => s + d.places.length + d.experiences.length, 0),
+      0
+    );
+  }, [filteredHierarchy]);
+
+  const totalDestinations = useMemo(() => {
+    return filteredHierarchy.reduce((sum, c) => sum + c.destinations.length, 0);
+  }, [filteredHierarchy]);
+
+  // Auto-expand all on first load
   useMemo(() => {
-    if (expandedCountries.size === 0 && grouped.length > 0) {
-      setExpandedCountries(new Set(grouped.map(([c]) => c)));
+    if (expandedCountries.size === 0 && filteredHierarchy.length > 0) {
+      setExpandedCountries(new Set(filteredHierarchy.map((c) => c.country)));
+      const allDests = new Set<string>();
+      filteredHierarchy.forEach((c) =>
+        c.destinations.forEach((d) => allDests.add(`${c.country}||${d.city}`))
+      );
+      setExpandedDestinations(allDests);
     }
-  }, [grouped.length]);
+  }, [filteredHierarchy.length]);
 
   const toggleCountry = (country: string) => {
     setExpandedCountries((prev) => {
@@ -50,11 +145,22 @@ const Wishlist = () => {
     });
   };
 
+  const toggleDestination = (key: string) => {
+    setExpandedDestinations((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   const handleDelete = async (id: string, name: string) => {
     try {
       await deletePlace.mutateAsync(id);
       toast.success(`Removed ${name} from wishlist`);
-    } catch { toast.error("Failed to remove"); }
+    } catch {
+      toast.error("Failed to remove");
+    }
   };
 
   return (
@@ -67,11 +173,13 @@ const Wishlist = () => {
             <h1 className="font-display text-2xl font-semibold text-foreground">Wishlist</h1>
           </div>
           <p className="text-sm text-muted-foreground">
-            {wishlistPlaces.length} places across {grouped.length} {grouped.length === 1 ? "country" : "countries"}
+            {totalExperiences} {totalExperiences === 1 ? "experience" : "experiences"} across{" "}
+            {totalDestinations} {totalDestinations === 1 ? "destination" : "destinations"} in{" "}
+            {filteredHierarchy.length} {filteredHierarchy.length === 1 ? "country" : "countries"}
           </p>
         </motion.div>
 
-        {/* Tag-based category filters */}
+        {/* Category filters */}
         <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1 scrollbar-hide">
           <Filter className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           {categoryFilters.map((cat) => (
@@ -90,52 +198,164 @@ const Wishlist = () => {
           ))}
         </div>
 
-        {wishlistPlaces.length === 0 ? (
+        {filteredHierarchy.length === 0 ? (
           <div className="text-center py-20">
             <Heart className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-muted-foreground text-sm">
-              {activeFilter !== "All" ? `No ${activeFilter} wishlist places.` : "Nothing here yet."}
+              {activeFilter !== "All" ? `No ${activeFilter} wishlist items.` : "Nothing here yet."}
             </p>
             <p className="text-muted-foreground/60 text-xs mt-1">
-              Toggle "Cities" on the map and start saving places!
+              Toggle "Cities" on the map and start saving destinations!
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {grouped.map(([country, items], ci) => (
-              <motion.div key={country} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.04 }}>
-                <button onClick={() => toggleCountry(country)}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors mb-1">
-                  {expandedCountries.has(country) ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+            {filteredHierarchy.map(({ country, destinations }, ci) => (
+              <motion.div
+                key={country}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: ci * 0.04 }}
+              >
+                {/* Country row */}
+                <button
+                  onClick={() => toggleCountry(country)}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors mb-1"
+                >
+                  {expandedCountries.has(country) ? (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  )}
                   <Globe className="w-3.5 h-3.5 text-primary" />
                   <span className="text-sm font-semibold text-foreground">{country}</span>
-                  <span className="text-xs text-muted-foreground ml-auto">{items.length} {items.length === 1 ? "place" : "places"}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {destinations.length} {destinations.length === 1 ? "destination" : "destinations"}
+                  </span>
                 </button>
+
+                {/* Destinations */}
                 <AnimatePresence>
                   {expandedCountries.has(country) && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="pl-6 space-y-1.5 overflow-hidden">
-                      {items.map((place, i) => (
-                        <motion.div key={place.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
-                          className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-wishlist/20 transition-all group">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-wishlist/10 text-wishlist flex-shrink-0">
-                            <MapPin className="w-4 h-4" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{place.name}</p>
-                            {place.tags && place.tags.length > 0 && (
-                              <div className="flex gap-1 mt-0.5">
-                                {place.tags.slice(0, 3).map(tag => (
-                                  <span key={tag} className="px-1.5 py-0.5 rounded-full bg-muted text-[10px] text-muted-foreground">{tag}</span>
-                                ))}
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="pl-4 space-y-1.5 overflow-hidden"
+                    >
+                      {destinations.map((dest, di) => {
+                        const destKey = `${country}||${dest.city}`;
+                        const itemCount = dest.places.length + dest.experiences.length;
+                        const isExpanded = expandedDestinations.has(destKey);
+
+                        return (
+                          <motion.div
+                            key={destKey}
+                            initial={{ opacity: 0, x: -4 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: di * 0.02 }}
+                          >
+                            {/* Destination node */}
+                            <button
+                              onClick={() => toggleDestination(destKey)}
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-wishlist/20 transition-all"
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                              ) : (
+                                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                              )}
+                              <div className="w-7 h-7 rounded-md flex items-center justify-center bg-wishlist/10 text-wishlist flex-shrink-0">
+                                <Compass className="w-3.5 h-3.5" />
                               </div>
-                            )}
-                          </div>
-                          <button onClick={() => handleDelete(place.id, place.name)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </motion.div>
-                      ))}
+                              <span className="text-sm font-medium text-foreground">{dest.city}</span>
+                              <span className="text-[11px] text-muted-foreground ml-auto">
+                                {itemCount} {itemCount === 1 ? "item" : "items"}
+                              </span>
+                            </button>
+
+                            {/* Nested experiences/places */}
+                            <AnimatePresence>
+                              {isExpanded && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="pl-8 space-y-1 mt-1 overflow-hidden"
+                                >
+                                  {/* Saved places */}
+                                  {dest.places.map((place, pi) => (
+                                    <motion.div
+                                      key={place.id}
+                                      initial={{ opacity: 0, x: -4 }}
+                                      animate={{ opacity: 1, x: 0 }}
+                                      transition={{ delay: pi * 0.02 }}
+                                      className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
+                                    >
+                                      <MapPin className="w-3.5 h-3.5 text-wishlist flex-shrink-0" />
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-medium text-foreground truncate">{place.name}</p>
+                                        {place.tags && place.tags.length > 0 && (
+                                          <div className="flex gap-1 mt-0.5">
+                                            {place.tags.slice(0, 3).map((tag) => (
+                                              <span
+                                                key={tag}
+                                                className="px-1.5 py-0.5 rounded-full bg-muted text-[9px] text-muted-foreground"
+                                              >
+                                                {tag}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <button
+                                        onClick={() => handleDelete(place.id, place.name)}
+                                        className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    </motion.div>
+                                  ))}
+
+                                  {/* Linked experiences */}
+                                  {dest.experiences.map((exp, ei) => (
+                                    <motion.div
+                                      key={exp.id}
+                                      initial={{ opacity: 0, x: -4 }}
+                                      animate={{ opacity: 1, x: 0 }}
+                                      transition={{ delay: (dest.places.length + ei) * 0.02 }}
+                                      className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors"
+                                    >
+                                      <span className="text-xs flex-shrink-0">
+                                        {categoryEmoji[exp.category] || "📍"}
+                                      </span>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-medium text-foreground truncate">{exp.title}</p>
+                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                          <span className="text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                                            {exp.category}
+                                          </span>
+                                          {exp.rating && exp.rating > 0 && (
+                                            <span className="text-[9px] text-muted-foreground">
+                                              ★ {exp.rating}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </motion.div>
+                                  ))}
+
+                                  {dest.places.length === 0 && dest.experiences.length === 0 && (
+                                    <p className="text-[11px] text-muted-foreground/60 px-2 py-2">
+                                      No experiences saved yet for this destination.
+                                    </p>
+                                  )}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </motion.div>
+                        );
+                      })}
                     </motion.div>
                   )}
                 </AnimatePresence>

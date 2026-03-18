@@ -294,16 +294,37 @@ const UserProfilePage = () => {
           )}
         </motion.div>
 
-        {/* Interests */}
-        {profile.interests && profile.interests.length > 0 && (
-          <div className="p-4 rounded-2xl bg-card border border-border mb-4">
-            <div className="flex flex-wrap gap-2">
-              {profile.interests.map((interest) => (
-                <span key={interest} className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium capitalize">
-                  {interest}
-                </span>
-              ))}
-            </div>
+        {/* Interests & Identity */}
+        {((profile.interests && profile.interests.length > 0) || 
+          (profile.languages && profile.languages.length > 0) || 
+          (profile.travel_style && profile.travel_style.length > 0)) && (
+          <div className="p-4 rounded-2xl bg-card border border-border mb-4 space-y-3">
+            {profile.interests && profile.interests.length > 0 && (
+              <div>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Interests</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.interests.map((interest) => (
+                    <span key={interest} className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium capitalize">{interest}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {profile.travel_style && profile.travel_style.length > 0 && (
+              <div>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Travel Style</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.travel_style.map((s) => (
+                    <span key={s} className="px-2.5 py-0.5 rounded-full bg-accent/20 text-accent-foreground text-xs font-medium capitalize">{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {profile.languages && profile.languages.length > 0 && (
+              <div>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Languages</p>
+                <p className="text-sm text-foreground">{profile.languages.join(", ")}</p>
+              </div>
+            )}
           </div>
         )}
 

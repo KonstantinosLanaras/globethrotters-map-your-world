@@ -531,48 +531,69 @@ export type Database = {
       place_ratings: {
         Row: {
           accessibility_rating: number | null
+          atmosphere_rating: number | null
+          authenticity_rating: number | null
+          category: string
           comment: string | null
           created_at: string
           crowd_rating: number | null
+          difficulty_rating: number | null
           family_rating: number | null
+          food_quality_rating: number | null
           id: string
           overall_rating: number
           place_id: string
           safety_rating: number | null
+          scenery_rating: number | null
           tags: string[] | null
           updated_at: string
           user_id: string
           value_rating: number | null
+          worth_it_rating: number | null
         }
         Insert: {
           accessibility_rating?: number | null
+          atmosphere_rating?: number | null
+          authenticity_rating?: number | null
+          category?: string
           comment?: string | null
           created_at?: string
           crowd_rating?: number | null
+          difficulty_rating?: number | null
           family_rating?: number | null
+          food_quality_rating?: number | null
           id?: string
           overall_rating: number
           place_id: string
           safety_rating?: number | null
+          scenery_rating?: number | null
           tags?: string[] | null
           updated_at?: string
           user_id: string
           value_rating?: number | null
+          worth_it_rating?: number | null
         }
         Update: {
           accessibility_rating?: number | null
+          atmosphere_rating?: number | null
+          authenticity_rating?: number | null
+          category?: string
           comment?: string | null
           created_at?: string
           crowd_rating?: number | null
+          difficulty_rating?: number | null
           family_rating?: number | null
+          food_quality_rating?: number | null
           id?: string
           overall_rating?: number
           place_id?: string
           safety_rating?: number | null
+          scenery_rating?: number | null
           tags?: string[] | null
           updated_at?: string
           user_id?: string
           value_rating?: number | null
+          worth_it_rating?: number | null
         }
         Relationships: [
           {

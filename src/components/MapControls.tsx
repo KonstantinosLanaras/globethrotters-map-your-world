@@ -21,7 +21,7 @@ const MapControls = ({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="fixed top-[72px] left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 px-2 py-1.5 bg-card/90 backdrop-blur-xl rounded-full border border-border shadow-lg"
+      className="fixed top-[124px] left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 px-2 py-1.5 bg-card/90 backdrop-blur-xl rounded-full border border-border shadow-lg"
     >
       {/* Cities toggle - prominent */}
       <button

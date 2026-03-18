@@ -69,6 +69,7 @@ const UserProfilePage = () => {
   const sendRequest = useSendConnectionRequest();
   const acceptConnection = useAcceptConnection();
   const removeConnection = useRemoveConnection();
+  const startConversation = useStartConversation();
   const { data: followerCount = 0 } = useFollowerCount(userId);
   const { data: followingCount = 0 } = useFollowingCount(userId);
 

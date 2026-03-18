@@ -155,27 +155,27 @@ export function computeTravelerLevel(places: Place[], contributionScore: number 
       icon: "🗺️",
       earned: visited.length >= 25,
     },
-    // Contribution achievements
+    // Contribution achievements — validation-based, not creation-based
     {
       id: "contributor",
-      title: "Contributor",
-      description: "Share 3 community experiences",
+      title: "Trusted Voice",
+      description: "Have contributions validated by 3+ travelers",
       icon: "✍️",
-      earned: contributionScore >= 3,
+      earned: contributionScore >= 6,
     },
     {
       id: "local_guide",
-      title: "Local Guide",
-      description: "Get 10 saves on your experiences",
+      title: "Community Guide",
+      description: "Help 10 travelers with your experiences",
       icon: "🧭",
-      earned: contributionScore >= 10,
+      earned: contributionScore >= 20,
     },
     {
       id: "top_explorer",
-      title: "Top Explorer",
-      description: "Reach 25 contribution points",
+      title: "Top Contributor",
+      description: "Reach 40 validated impact points",
       icon: "🏆",
-      earned: contributionScore >= 25,
+      earned: contributionScore >= 40,
     },
   ];
 

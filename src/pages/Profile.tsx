@@ -2,20 +2,18 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import {
-  User, Globe, MapPin, LogOut, Shield, Edit3, Camera, Check, X,
-  Heart, Compass, Users, Lock, Eye, Sparkles, Languages, Plane
+  User, Globe, MapPin, LogOut, Shield, Edit3, Check, X,
+  Heart, Compass, Users, Lock, Sparkles, Languages, Plane, Star, Camera, Plus, Image
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
 import { usePlaces } from "@/hooks/usePlaces";
-import { useExperiences } from "@/hooks/useExperiences";
+import { useExperiencesWithPhotos, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { useTravelerLevel } from "@/hooks/useTravelerLevel";
-import { useFollowerCount, useFollowingCount } from "@/hooks/useFollowers";
 import { useNavigate } from "react-router-dom";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import TrustScoreCard from "@/components/TrustScoreCard";
 import TravelerLevelCard from "@/components/TravelerLevelCard";
-import CreditsDashboard from "@/components/CreditsDashboard";
 import ExperienceComposer from "@/components/ExperienceComposer";
 import { toast } from "sonner";
 
@@ -30,13 +28,11 @@ const Profile = () => {
   const { data: profile } = useProfile();
   const updateProfile = useUpdateProfile();
   const { data: places = [] } = usePlaces();
-  const { data: experiences = [] } = useExperiences();
-  const { data: followerCount = 0 } = useFollowerCount(user?.id);
-  const { data: followingCount = 0 } = useFollowingCount(user?.id);
+  const { data: experiences = [] } = useExperiencesWithPhotos();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
-  const [tab, setTab] = useState<"overview" | "experiences" | "settings">("overview");
+  const [tab, setTab] = useState<"experiences" | "stats" | "settings">("experiences");
 
   // Edit state
   const [editName, setEditName] = useState("");
@@ -52,6 +48,15 @@ const Profile = () => {
   const wishlistCount = places.filter((p) => p.type === "wishlist").length;
   const countries = new Set(places.filter((p) => p.type === "visited").map((p) => p.country)).size;
   const level = useTravelerLevel(places);
+
+  // Stats
+  const avgRating = experiences.length > 0
+    ? (experiences.reduce((sum, e) => sum + (e.rating || 0), 0) / experiences.filter(e => e.rating > 0).length || 0).toFixed(1)
+    : "–";
+  const photosCount = experiences.reduce((sum, e) => sum + e.photos.length, 0);
+  const topCategories = Object.entries(
+    experiences.reduce((acc, e) => ({ ...acc, [e.category]: (acc[e.category] || 0) + 1 }), {} as Record<string, number>)
+  ).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
   const startEdit = () => {
     setEditName(profile?.display_name || "");
@@ -92,8 +97,8 @@ const Profile = () => {
   };
 
   const tabs = [
-    { id: "overview" as const, label: "Overview" },
     { id: "experiences" as const, label: "Experiences" },
+    { id: "stats" as const, label: "Stats" },
     { id: "settings" as const, label: "Settings" },
   ];
 
@@ -121,7 +126,6 @@ const Profile = () => {
               {(profile as any)?.username && (
                 <p className="text-xs text-muted-foreground">@{(profile as any).username}</p>
               )}
-              <p className="text-xs text-muted-foreground mt-0.5">{user?.email}</p>
               {(profile as any)?.bio && (
                 <p className="text-sm text-foreground/80 mt-2 leading-relaxed">{(profile as any).bio}</p>
               )}
@@ -134,11 +138,6 @@ const Profile = () => {
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                   <Shield className="w-3 h-3" /> {profile?.privacy || "private"}
                 </span>
-                {profile?.personality && (
-                  <span className="inline-flex items-center gap-1 text-xs text-primary">
-                    <Sparkles className="w-3 h-3" /> {profile.personality}
-                  </span>
-                )}
               </div>
             </div>
             <button
@@ -153,9 +152,9 @@ const Profile = () => {
           <div className="grid grid-cols-5 gap-2 mt-5">
             <MiniStat value={countries} label="Countries" />
             <MiniStat value={visitedCount} label="Visited" />
+            <MiniStat value={experiences.length} label="Experiences" />
+            <MiniStat value={photosCount} label="Photos" />
             <MiniStat value={wishlistCount} label="Wishlist" />
-            <MiniStat value={followerCount} label="Followers" />
-            <MiniStat value={followingCount} label="Following" />
           </div>
         </motion.div>
 
@@ -184,8 +183,6 @@ const Profile = () => {
             <EditField label="Languages" value={editLanguages} onChange={setEditLanguages} placeholder="English, Spanish" />
             <EditField label="Dream Destinations" value={editDreamDest} onChange={setEditDreamDest} placeholder="Japan, Iceland, Peru" />
             <EditField label="Next Trip" value={editNextTrip} onChange={setEditNextTrip} placeholder="e.g. Bali in March" />
-
-            {/* Privacy */}
             <div>
               <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Profile Visibility</p>
               <div className="grid grid-cols-3 gap-1.5">
@@ -221,9 +218,63 @@ const Profile = () => {
           ))}
         </div>
 
-        {tab === "overview" && (
+        {/* EXPERIENCES TAB (Main content — Strava model) */}
+        {tab === "experiences" && (
+          <div className="space-y-3">
+            <button
+              onClick={() => setShowComposer(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              <Plus className="w-4 h-4" />
+              Add Experience
+            </button>
+
+            {experiences.length === 0 ? (
+              <div className="text-center py-12">
+                <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No experiences yet</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Add your first travel experience</p>
+              </div>
+            ) : (
+              experiences.map((exp) => (
+                <ProfileExperienceCard key={exp.id} exp={exp} />
+              ))
+            )}
+          </div>
+        )}
+
+        {/* STATS TAB */}
+        {tab === "stats" && (
           <div className="space-y-4">
-            {/* Travel Info */}
+            {/* Key numbers */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-5 rounded-2xl bg-card border border-border">
+              <h3 className="font-display text-base font-medium text-foreground mb-4">Travel Overview</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <StatBlock label="Countries visited" value={countries} />
+                <StatBlock label="Places visited" value={visitedCount} />
+                <StatBlock label="Experiences" value={experiences.length} />
+                <StatBlock label="Photos shared" value={photosCount} />
+                <StatBlock label="Avg rating given" value={avgRating} />
+                <StatBlock label="On wishlist" value={wishlistCount} />
+              </div>
+            </motion.div>
+
+            {/* Top categories */}
+            {topCategories.length > 0 && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-5 rounded-2xl bg-card border border-border">
+                <h3 className="font-display text-base font-medium text-foreground mb-3">Top Categories</h3>
+                <div className="space-y-2">
+                  {topCategories.map(([cat, count]) => (
+                    <div key={cat} className="flex items-center justify-between">
+                      <span className="text-sm text-foreground capitalize">{cat.replace("_", " ")}</span>
+                      <span className="text-xs text-muted-foreground">{count} experience{count !== 1 ? "s" : ""}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Travel identity */}
             {((profile as any)?.languages?.length > 0 || (profile as any)?.dream_destinations?.length > 0 || (profile as any)?.next_trip) && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-5 rounded-2xl bg-card border border-border">
                 <h3 className="font-display text-base font-medium text-foreground mb-3">Travel Identity</h3>
@@ -259,86 +310,12 @@ const Profile = () => {
               </motion.div>
             )}
 
-            {/* Interests */}
-            {profile?.interests && profile.interests.length > 0 && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-5 rounded-2xl bg-card border border-border">
-                <h3 className="font-display text-base font-medium text-foreground mb-3">Interests</h3>
-                <div className="flex flex-wrap gap-2">
-                  {profile.interests.map((interest) => (
-                    <span key={interest} className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium capitalize">
-                      {interest}
-                    </span>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
             <TrustScoreCard trustScore={profile?.trust_score ?? 0} isVerified={profile?.is_verified ?? false} />
             <TravelerLevelCard level={level} />
-            <CreditsDashboard />
           </div>
         )}
 
-        {tab === "experiences" && (
-          <div className="space-y-3">
-            <button
-              onClick={() => setShowComposer(true)}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-            >
-              <Camera className="w-4 h-4" />
-              Share an Experience
-            </button>
-
-            {experiences.length === 0 ? (
-              <div className="text-center py-12">
-                <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">No experiences shared yet</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">Share your first travel experience</p>
-              </div>
-            ) : (
-              experiences.map((exp) => (
-                <motion.div
-                  key={exp.id}
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-2xl bg-card border border-border"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="text-sm font-semibold text-foreground">{exp.title}</h4>
-                      {exp.city && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <MapPin className="w-3 h-3" /> {exp.city}{exp.country ? `, ${exp.country}` : ""}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground capitalize">{exp.category}</span>
-                      <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] text-muted-foreground">
-                        {exp.visibility === "public" ? <Globe className="w-3 h-3 inline" /> :
-                         exp.visibility === "close_friends" ? <Eye className="w-3 h-3 inline" /> :
-                         exp.visibility === "followers" ? <Users className="w-3 h-3 inline" /> :
-                         <Lock className="w-3 h-3 inline" />}
-                      </span>
-                    </div>
-                  </div>
-                  {exp.caption && <p className="text-sm text-foreground/80 mt-2 leading-relaxed">{exp.caption}</p>}
-                  {exp.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {exp.tags.map((tag) => (
-                        <span key={tag} className="px-2 py-0.5 rounded-md bg-primary/8 text-[10px] font-medium text-primary">{tag}</span>
-                      ))}
-                    </div>
-                  )}
-                  {exp.experience_date && (
-                    <p className="text-[10px] text-muted-foreground mt-2">{new Date(exp.experience_date).toLocaleDateString()}</p>
-                  )}
-                </motion.div>
-              ))
-            )}
-          </div>
-        )}
-
+        {/* SETTINGS TAB */}
         {tab === "settings" && (
           <div className="space-y-3">
             <button
@@ -364,10 +341,100 @@ const Profile = () => {
   );
 };
 
-const MiniStat = ({ value, label }: { value: number; label: string }) => (
+/* Profile experience card with photo preview */
+const ProfileExperienceCard = ({ exp }: { exp: ExperienceWithPhotos }) => {
+  const [showGallery, setShowGallery] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-2xl bg-card border border-border overflow-hidden"
+    >
+      {/* Photo preview: 1-2 images */}
+      {exp.photos.length > 0 && (
+        <div className="relative cursor-pointer" onClick={() => setShowGallery(!showGallery)}>
+          {exp.photos.length === 1 ? (
+            <img src={exp.photos[0]} alt="" className="w-full h-40 object-cover" />
+          ) : (
+            <div className="grid grid-cols-2 gap-0.5 h-40">
+              <img src={exp.photos[0]} alt="" className="w-full h-full object-cover" />
+              <div className="relative">
+                <img src={exp.photos[1]} alt="" className="w-full h-full object-cover" />
+                {exp.photos.length > 2 && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">+{exp.photos.length - 2}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {showGallery && exp.photos.length > 2 && (
+        <div className="grid grid-cols-3 gap-0.5 px-0.5 pb-0.5">
+          {exp.photos.slice(2).map((url, i) => (
+            <img key={i} src={url} alt="" className="w-full aspect-square object-cover" />
+          ))}
+        </div>
+      )}
+
+      <div className="p-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <h4 className="text-sm font-semibold text-foreground">{exp.title}</h4>
+            {exp.city && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                <MapPin className="w-3 h-3" /> {exp.city}{exp.country ? `, ${exp.country}` : ""}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {exp.rating > 0 && (
+              <span className="flex items-center gap-0.5">
+                {[...Array(exp.rating)].map((_, i) => (
+                  <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                ))}
+              </span>
+            )}
+            <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground capitalize">{exp.category}</span>
+          </div>
+        </div>
+        {exp.caption && <p className="text-sm text-foreground/80 mt-2 leading-relaxed">{exp.caption}</p>}
+        {exp.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {exp.tags.map((tag) => (
+              <span key={tag} className="px-2 py-0.5 rounded-full bg-primary/10 text-[10px] font-medium text-primary">{tag}</span>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center gap-2 mt-2">
+          {exp.experience_date && (
+            <p className="text-[10px] text-muted-foreground">{new Date(exp.experience_date).toLocaleDateString()}</p>
+          )}
+          {exp.photos.length > 0 && (
+            <p className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+              <Image className="w-3 h-3" /> {exp.photos.length}
+            </p>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const MiniStat = ({ value, label }: { value: number | string; label: string }) => (
   <div className="text-center">
     <p className="font-display text-lg font-semibold text-foreground">{value}</p>
     <p className="text-[10px] text-muted-foreground">{label}</p>
+  </div>
+);
+
+const StatBlock = ({ label, value }: { label: string; value: number | string }) => (
+  <div className="p-3 rounded-xl bg-muted/30">
+    <p className="font-display text-xl font-semibold text-foreground">{value}</p>
+    <p className="text-[11px] text-muted-foreground">{label}</p>
   </div>
 );
 
@@ -377,20 +444,11 @@ const EditField = ({ label, value, onChange, multiline, placeholder }: {
   <div>
     <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">{label}</p>
     {multiline ? (
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={2}
-        className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 resize-none"
-      />
+      <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        rows={3} className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground resize-none focus:outline-none focus:border-primary/40" />
     ) : (
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40"
-      />
+      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary/40" />
     )}
   </div>
 );

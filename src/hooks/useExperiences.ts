@@ -15,6 +15,7 @@ export interface Experience {
   tags: string[];
   lat: number | null;
   lng: number | null;
+  rating: number;
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +30,10 @@ export interface ExperienceAttachment {
   created_at: string;
 }
 
+export interface ExperienceWithPhotos extends Experience {
+  photos: string[];
+}
+
 export const useExperiences = () => {
   const { user } = useAuth();
 
@@ -39,9 +44,47 @@ export const useExperiences = () => {
       const { data, error } = await supabase
         .from("experiences")
         .select("*")
+        .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Experience[];
+    },
+  });
+};
+
+export const useExperiencesWithPhotos = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["experiences-with-photos", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data: experiences, error } = await supabase
+        .from("experiences")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+
+      const expIds = (experiences ?? []).map(e => e.id);
+      let attachments: any[] = [];
+      if (expIds.length > 0) {
+        const { data: atts } = await supabase
+          .from("experience_attachments")
+          .select("*")
+          .in("experience_id", expIds)
+          .eq("attachment_type", "photo");
+        attachments = atts ?? [];
+      }
+
+      return (experiences ?? []).map(exp => ({
+        ...exp,
+        tags: exp.tags ?? [],
+        rating: (exp as any).rating ?? 0,
+        photos: attachments
+          .filter(a => a.experience_id === exp.id)
+          .map(a => a.url),
+      })) as ExperienceWithPhotos[];
     },
   });
 };
@@ -71,13 +114,16 @@ export const useAddExperience = () => {
       if (!user) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("experiences")
-        .insert({ ...exp, user_id: user.id })
+        .insert({ ...exp, user_id: user.id } as any)
         .select()
         .single();
       if (error) throw error;
       return data as Experience;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["experiences"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["experiences"] });
+      qc.invalidateQueries({ queryKey: ["experiences-with-photos"] });
+    },
   });
 };
 
@@ -89,7 +135,10 @@ export const useDeleteExperience = () => {
       const { error } = await supabase.from("experiences").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["experiences"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["experiences"] });
+      qc.invalidateQueries({ queryKey: ["experiences-with-photos"] });
+    },
   });
 };
 
@@ -106,6 +155,9 @@ export const useAddAttachment = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["experiences"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["experiences"] });
+      qc.invalidateQueries({ queryKey: ["experiences-with-photos"] });
+    },
   });
 };

@@ -88,12 +88,6 @@ const Index = () => {
           onClose={() => setSelectedCity(null)}
         />
       )}
-      {!selectedCity && (
-        <RecommendationsSection
-          isOpen={isRecommendationsOpen}
-          onToggle={() => setIsRecommendationsOpen((v) => !v)}
-        />
-      )}
       <MapLegend />
       <div className="absolute inset-0 pt-[60px]">
         <WorldMap

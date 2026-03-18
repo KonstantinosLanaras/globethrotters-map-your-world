@@ -128,7 +128,7 @@ const categoryEmoji: Record<string, string> = {
   general: "📍",
 };
 
-const ExperienceCard = ({ exp, index }: { exp: DiscoverExperience; index: number }) => {
+const ExperienceCard = ({ exp, index, isHelpful, onToggleHelpful }: { exp: DiscoverExperience; index: number; isHelpful: boolean; onToggleHelpful: (id: string, current: boolean) => void }) => {
   const photo = exp.photos[0];
 
   return (
@@ -220,6 +220,23 @@ const ExperienceCard = ({ exp, index }: { exp: DiscoverExperience; index: number
                 <span className="text-[11px] text-muted-foreground">{exp.review_count}</span>
               </div>
             )}
+
+            {/* Helpful button — validation signal */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleHelpful(exp.id, isHelpful);
+              }}
+              className={`flex items-center gap-0.5 transition-colors ${
+                isHelpful
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-primary"
+              }`}
+              title={isHelpful ? "Marked as helpful" : "Mark as helpful"}
+            >
+              <ThumbsUp className={`w-3 h-3 ${isHelpful ? "fill-primary" : ""}`} />
+              <span className="text-[11px]">Helpful</span>
+            </button>
           </div>
 
           {/* Author */}

@@ -494,7 +494,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
         }
       } else {
         const result = await addPlace.mutateAsync({
-          name: city.name, country: city.country, lat: city.lat, lng: city.lng,
+          name: city.name, country: city.country, city: city.name, lat: city.lat, lng: city.lng,
           type, tags: [], rating: 0, notes: "",
           date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
         });
@@ -521,7 +521,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     if (!savedPlace) {
       try {
         const result = await addPlace.mutateAsync({
-          name: city.name, country: city.country, lat: city.lat, lng: city.lng,
+          name: city.name, country: city.country, city: city.name, lat: city.lat, lng: city.lng,
           type: "wishlist", tags: [], rating: 0, notes: "", date_visited: null,
         });
         if (result?.id) {
@@ -556,7 +556,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     setSavingItem(item.name);
     try {
       await addPlace.mutateAsync({
-        name: item.name, country: city.country, lat: city.lat, lng: city.lng,
+        name: item.name, country: city.country, city: city.name, lat: city.lat, lng: city.lng,
         type, tags: [item.category], rating: 0, notes: item.description || "",
         date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
       });
@@ -580,7 +580,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     setSavingItem(item.name);
     try {
       const result = await addPlace.mutateAsync({
-        name: item.name, country: city.country, lat: city.lat, lng: city.lng,
+        name: item.name, country: city.country, city: city.name, lat: city.lat, lng: city.lng,
         type: "wishlist", tags: [item.category], rating: 0, notes: item.description || "",
         date_visited: null,
       });

@@ -27,6 +27,7 @@ const RecommendationsSection = ({ isOpen, onToggle }: RecommendationsSectionProp
       await addPlace.mutateAsync({
         name: s.name,
         country: s.country,
+        city: s.name,
         lat: s.lat,
         lng: s.lng,
         type: "wishlist",

@@ -81,6 +81,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
       await addPlace.mutateAsync({
         name: pin.name,
         country: pin.country,
+        city: pin.name,
         lat: pin.lat,
         lng: pin.lng,
         type: "visited",

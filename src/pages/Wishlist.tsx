@@ -33,16 +33,17 @@ const Wishlist = () => {
     return places.filter((p) => p.type === "wishlist");
   }, [places]);
 
-  // Build destination hierarchy: Country → City → places + experiences
+  // Build destination hierarchy: Country → City (destination) → places (experiences inside)
   const hierarchy = useMemo(() => {
-    // Group places by country → city (name)
     const destMap = new Map<string, DestinationNode>();
 
     wishlistPlaces.forEach((p) => {
-      const key = `${p.country}||${p.name}`;
+      // Destination = city field if available, otherwise fall back to name
+      const destinationName = p.city || p.name;
+      const key = `${p.country}||${destinationName}`;
       if (!destMap.has(key)) {
         destMap.set(key, {
-          city: p.name,
+          city: destinationName,
           country: p.country || "Unknown",
           lat: p.lat,
           lng: p.lng,
@@ -50,10 +51,19 @@ const Wishlist = () => {
           experiences: [],
         });
       }
-      destMap.get(key)!.places.push(p);
+      const dest = destMap.get(key)!;
+      // Only add as a nested experience if the place name differs from the destination
+      // (i.e., it's a specific activity/experience, not the city itself)
+      if (p.name.toLowerCase() !== destinationName.toLowerCase()) {
+        dest.places.push(p);
+      } else {
+        // It's the city-level save — keep it as the destination node itself, don't duplicate
+        // But store it so we can delete it if needed
+        dest.places.push(p);
+      }
     });
 
-    // Attach experiences to destinations
+    // Attach community experiences to destinations
     destMap.forEach((dest) => {
       const cityExps = experiences.filter(
         (e) =>
@@ -78,15 +88,12 @@ const Wishlist = () => {
       countryMap.get(c)!.push(dest);
     });
 
-    // Sort countries and destinations
-    const sorted = Array.from(countryMap.entries())
+    return Array.from(countryMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([country, dests]) => ({
         country,
         destinations: dests.sort((a, b) => a.city.localeCompare(b.city)),
       }));
-
-    return sorted;
   }, [wishlistPlaces, experiences]);
 
   // Apply category filter
@@ -112,10 +119,13 @@ const Wishlist = () => {
       .filter((c) => c.destinations.length > 0);
   }, [hierarchy, activeFilter]);
 
-  // Counts
+  // Counts — exclude city-level saves from experience count
   const totalExperiences = useMemo(() => {
     return filteredHierarchy.reduce(
-      (sum, c) => sum + c.destinations.reduce((s, d) => s + d.places.length + d.experiences.length, 0),
+      (sum, c) => sum + c.destinations.reduce((s, d) => {
+        const subPlaces = d.places.filter(p => p.name.toLowerCase() !== d.city.toLowerCase());
+        return s + subPlaces.length + d.experiences.length;
+      }, 0),
       0
     );
   }, [filteredHierarchy]);
@@ -245,7 +255,14 @@ const Wishlist = () => {
                     >
                       {destinations.map((dest, di) => {
                         const destKey = `${country}||${dest.city}`;
-                        const itemCount = dest.places.length + dest.experiences.length;
+                        // Separate city-level saves from sub-experience saves
+                        const subPlaces = dest.places.filter(
+                          (p) => p.name.toLowerCase() !== dest.city.toLowerCase()
+                        );
+                        const cityLevelPlace = dest.places.find(
+                          (p) => p.name.toLowerCase() === dest.city.toLowerCase()
+                        );
+                        const itemCount = subPlaces.length + dest.experiences.length;
                         const isExpanded = expandedDestinations.has(destKey);
 
                         return (
@@ -256,35 +273,53 @@ const Wishlist = () => {
                             transition={{ delay: di * 0.02 }}
                           >
                             {/* Destination node */}
-                            <button
-                              onClick={() => toggleDestination(destKey)}
-                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-wishlist/20 transition-all"
-                            >
-                              {isExpanded ? (
-                                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                            <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-wishlist/20 transition-all">
+                              {itemCount > 0 ? (
+                                <button onClick={() => toggleDestination(destKey)} className="flex items-center">
+                                  {isExpanded ? (
+                                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                                  )}
+                                </button>
                               ) : (
-                                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                                <div className="w-3.5" />
                               )}
-                              <div className="w-7 h-7 rounded-md flex items-center justify-center bg-wishlist/10 text-wishlist flex-shrink-0">
-                                <Compass className="w-3.5 h-3.5" />
-                              </div>
-                              <span className="text-sm font-medium text-foreground">{dest.city}</span>
-                              <span className="text-[11px] text-muted-foreground ml-auto">
-                                {itemCount} {itemCount === 1 ? "item" : "items"}
-                              </span>
-                            </button>
+                              <button
+                                onClick={() => itemCount > 0 ? toggleDestination(destKey) : undefined}
+                                className="flex items-center gap-2 flex-1 min-w-0"
+                              >
+                                <div className="w-7 h-7 rounded-md flex items-center justify-center bg-wishlist/10 text-wishlist flex-shrink-0">
+                                  <Compass className="w-3.5 h-3.5" />
+                                </div>
+                                <span className="text-sm font-medium text-foreground">{dest.city}</span>
+                                <span className="text-[11px] text-muted-foreground ml-auto">
+                                  {itemCount > 0
+                                    ? `${itemCount} ${itemCount === 1 ? "experience" : "experiences"}`
+                                    : "destination saved"}
+                                </span>
+                              </button>
+                              {cityLevelPlace && (
+                                <button
+                                  onClick={() => handleDelete(cityLevelPlace.id, cityLevelPlace.name)}
+                                  className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
 
-                            {/* Nested experiences/places */}
+                            {/* Nested experiences/places (only sub-experiences, NOT duplicated city) */}
                             <AnimatePresence>
-                              {isExpanded && (
+                              {isExpanded && itemCount > 0 && (
                                 <motion.div
                                   initial={{ opacity: 0, height: 0 }}
                                   animate={{ opacity: 1, height: "auto" }}
                                   exit={{ opacity: 0, height: 0 }}
                                   className="pl-8 space-y-1 mt-1 overflow-hidden"
                                 >
-                                  {/* Saved places */}
-                                  {dest.places.map((place, pi) => (
+                                  {/* Sub-place experiences */}
+                                  {subPlaces.map((place, pi) => (
                                     <motion.div
                                       key={place.id}
                                       initial={{ opacity: 0, x: -4 }}

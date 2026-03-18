@@ -115,13 +115,23 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
     enabled: mode === "experiences",
   });
 
+  const hasActiveExpFilters = useMemo(() => {
+    return expFilters.categories.length > 0 || expFilters.minRating !== null || expFilters.withPhotos || expFilters.recent;
+  }, [expFilters]);
+
   const hasActiveFilters = useMemo(() => {
-    if (mode === "experiences") return !!activeExpCategory;
+    if (mode === "experiences") return hasActiveExpFilters;
     return !!(filters.budget?.length || filters.safety?.length || filters.travelStyle?.length || filters.preferences?.length || filters.month || crowdFilter.length);
-  }, [filters, crowdFilter, mode, activeExpCategory]);
+  }, [filters, crowdFilter, mode, hasActiveExpFilters]);
 
   const activeFilterCount = useMemo(() => {
-    if (mode === "experiences") return activeExpCategory ? 1 : 0;
+    if (mode === "experiences") {
+      let count = expFilters.categories.length;
+      if (expFilters.minRating !== null) count++;
+      if (expFilters.withPhotos) count++;
+      if (expFilters.recent) count++;
+      return count;
+    }
     let count = 0;
     if (filters.budget?.length) count += filters.budget.length;
     if (filters.safety?.length) count += filters.safety.length;
@@ -130,7 +140,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
     if (filters.month) count += 1;
     if (crowdFilter.length) count += crowdFilter.length;
     return count;
-  }, [filters, crowdFilter, mode, activeExpCategory]);
+  }, [filters, crowdFilter, mode, expFilters]);
 
   // Close on outside click
   useEffect(() => {

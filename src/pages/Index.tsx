@@ -6,6 +6,7 @@ import CityDetailsCard from "@/components/CityDetailsCard";
 import CityExploreBar from "@/components/CityExploreBar";
 import { usePlaces, useUpdatePlace, useDeletePlace, Place } from "@/hooks/usePlaces";
 import { useExperiencesWithPhotos } from "@/hooks/useExperiences";
+import { useAuth } from "@/hooks/useAuth";
 import { worldCities, City } from "@/data/cities";
 import { toast } from "sonner";
 

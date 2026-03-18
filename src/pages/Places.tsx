@@ -171,12 +171,6 @@ const Visited = () => {
     });
   };
 
-  const handleDeleteExp = (id: string) => {
-    deleteExperience.mutate(id, {
-      onSuccess: () => toast.success("Experience removed"),
-      onError: () => toast.error("Failed to delete"),
-    });
-  };
 
   const handleCreateJourney = async () => {
     if (!newTitle.trim()) { toast.error("Add a title"); return; }

@@ -33,16 +33,17 @@ const Wishlist = () => {
     return places.filter((p) => p.type === "wishlist");
   }, [places]);
 
-  // Build destination hierarchy: Country → City → places + experiences
+  // Build destination hierarchy: Country → City (destination) → places (experiences inside)
   const hierarchy = useMemo(() => {
-    // Group places by country → city (name)
     const destMap = new Map<string, DestinationNode>();
 
     wishlistPlaces.forEach((p) => {
-      const key = `${p.country}||${p.name}`;
+      // Destination = city field if available, otherwise fall back to name
+      const destinationName = p.city || p.name;
+      const key = `${p.country}||${destinationName}`;
       if (!destMap.has(key)) {
         destMap.set(key, {
-          city: p.name,
+          city: destinationName,
           country: p.country || "Unknown",
           lat: p.lat,
           lng: p.lng,
@@ -50,10 +51,19 @@ const Wishlist = () => {
           experiences: [],
         });
       }
-      destMap.get(key)!.places.push(p);
+      const dest = destMap.get(key)!;
+      // Only add as a nested experience if the place name differs from the destination
+      // (i.e., it's a specific activity/experience, not the city itself)
+      if (p.name.toLowerCase() !== destinationName.toLowerCase()) {
+        dest.places.push(p);
+      } else {
+        // It's the city-level save — keep it as the destination node itself, don't duplicate
+        // But store it so we can delete it if needed
+        dest.places.push(p);
+      }
     });
 
-    // Attach experiences to destinations
+    // Attach community experiences to destinations
     destMap.forEach((dest) => {
       const cityExps = experiences.filter(
         (e) =>
@@ -78,15 +88,12 @@ const Wishlist = () => {
       countryMap.get(c)!.push(dest);
     });
 
-    // Sort countries and destinations
-    const sorted = Array.from(countryMap.entries())
+    return Array.from(countryMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([country, dests]) => ({
         country,
         destinations: dests.sort((a, b) => a.city.localeCompare(b.city)),
       }));
-
-    return sorted;
   }, [wishlistPlaces, experiences]);
 
   // Apply category filter

@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import ExperienceComposer from "@/components/ExperienceComposer";
+import RatingModal from "@/components/RatingModal";
 
 interface CityDetailsCardProps {
   city: City;

@@ -131,6 +131,16 @@ const UserProfilePage = () => {
     }
   };
 
+  const handleMessage = async () => {
+    if (!userId) return;
+    try {
+      const convoId = await startConversation.mutateAsync(userId);
+      navigate(`/messages/${convoId}`);
+    } catch {
+      toast.error("Failed to start conversation");
+    }
+  };
+
   if (profileLoading) {
     return (
       <div className="min-h-screen bg-background">

@@ -13,6 +13,8 @@ import UserProfile from "./pages/UserProfile";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Connections from "./pages/Connections";
+import Messages from "./pages/Messages";
 
 const queryClient = new QueryClient();
 

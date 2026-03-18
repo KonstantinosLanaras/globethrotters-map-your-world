@@ -1,10 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Map, MapPin, Heart, User, Menu, X, LogOut } from "lucide-react";
+import { Map, MapPin, Heart, User, Menu, X, LogOut, Users, MessageSquare } from "lucide-react";
 import GlobethrottersLogo from "@/components/GlobethrottersLogo";
 import PeopleSearch from "@/components/PeopleSearch";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUnreadCount } from "@/hooks/useMessages";
 import type { SearchMode } from "@/components/CityExploreBar";
 
 interface NavbarProps {

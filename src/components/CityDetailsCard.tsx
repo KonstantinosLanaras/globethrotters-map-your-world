@@ -499,6 +499,10 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
           setRatingPlaceId(result.id);
           setShowRating(true);
         }
+        if (type === "wishlist" && result?.id && lists.length > 0) {
+          setCollectionPlaceId(result.id);
+          setShowCollectionPrompt(true);
+        }
       }
     } catch (err: any) {
       console.error("Save city error:", err);

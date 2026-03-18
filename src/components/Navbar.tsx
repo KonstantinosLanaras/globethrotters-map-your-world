@@ -204,6 +204,8 @@ const Navbar = ({ searchMode = "places", onSearchModeChange }: NavbarProps) => {
             { icon: <Map className="w-4 h-4" />, label: "Explore", action: handleExploreClick },
             { icon: <MapPin className="w-4 h-4" />, label: "Visited", action: () => navigate("/visited") },
             { icon: <Heart className="w-4 h-4" />, label: "Wishlist", action: () => navigate("/wishlist") },
+            { icon: <MessageSquare className="w-4 h-4" />, label: "Messages", action: () => navigate("/messages") },
+            { icon: <Users className="w-4 h-4" />, label: "Connections", action: () => navigate("/connections") },
             { icon: <User className="w-4 h-4" />, label: "Profile", action: () => navigate("/profile") },
           ].map((item) => (
             <button

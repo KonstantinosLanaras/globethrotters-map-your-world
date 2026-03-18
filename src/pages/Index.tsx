@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import MapControls from "@/components/MapControls";
 import MapLegend from "@/components/MapLegend";
 import CityDetailsCard from "@/components/CityDetailsCard";
+import CityExploreBar from "@/components/CityExploreBar";
 import { usePlaces, useUpdatePlace, useDeletePlace, Place } from "@/hooks/usePlaces";
 import { worldCities, City } from "@/data/cities";
 import { toast } from "sonner";

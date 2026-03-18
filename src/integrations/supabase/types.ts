@@ -185,6 +185,7 @@ export type Database = {
           is_sponsored: boolean
           lat: number | null
           lng: number | null
+          rating: number | null
           rating_avg: number
           review_count: number
           saves_count: number
@@ -208,6 +209,7 @@ export type Database = {
           is_sponsored?: boolean
           lat?: number | null
           lng?: number | null
+          rating?: number | null
           rating_avg?: number
           review_count?: number
           saves_count?: number
@@ -231,6 +233,7 @@ export type Database = {
           is_sponsored?: boolean
           lat?: number | null
           lng?: number | null
+          rating?: number | null
           rating_avg?: number
           review_count?: number
           saves_count?: number

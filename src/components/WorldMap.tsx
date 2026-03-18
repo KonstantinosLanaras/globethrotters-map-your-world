@@ -106,6 +106,8 @@ const WorldMap = ({ cities, places, showCities, mapFilter, onCityClick, onPlaceC
       attributionControl: false,
       worldCopyJump: true,
       zoomControl: false,
+      maxBounds: L.latLngBounds(L.latLng(-85, -180), L.latLng(85, 180)),
+      maxBoundsViscosity: 1.0,
     });
 
     L.control.zoom({ position: "bottomright" }).addTo(map);

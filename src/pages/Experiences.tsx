@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import { Camera, MapPin, Globe, Eye, Users, Lock, Plus, Star, Image, Trash2 } from "lucide-react";
+import { Camera, MapPin, Globe, Eye, Users, Lock, Plus, Star, Image, Trash2, Heart, Award, TrendingUp } from "lucide-react";
 import { useExperiencesWithPhotos, useDeleteExperience, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import ExperienceComposer from "@/components/ExperienceComposer";
 import { toast } from "sonner";

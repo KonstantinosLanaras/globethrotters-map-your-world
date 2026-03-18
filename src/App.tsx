@@ -10,6 +10,7 @@ import Places from "./pages/Places";
 import Wishlist from "./pages/Wishlist";
 import Lists from "./pages/Lists";
 import Profile from "./pages/Profile";
+import UserProfile from "./pages/UserProfile";
 import Experiences from "./pages/Experiences";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";

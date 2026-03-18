@@ -97,7 +97,7 @@ export const useAddJourney = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (journey: { title: string; description?: string; emoji?: string; start_date?: string; end_date?: string }) => {
+    mutationFn: async (journey: { title: string; description?: string; emoji?: string; start_date?: string; end_date?: string; destinations?: string[]; cover_image_url?: string; privacy?: string }) => {
       if (!user) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("journeys" as any)

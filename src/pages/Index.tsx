@@ -4,7 +4,6 @@ import Navbar from "@/components/Navbar";
 import MapControls from "@/components/MapControls";
 import MapLegend from "@/components/MapLegend";
 import CityDetailsCard from "@/components/CityDetailsCard";
-import RecommendationsSection from "@/components/RecommendationsSection";
 import { usePlaces, useUpdatePlace, useDeletePlace, Place } from "@/hooks/usePlaces";
 import { worldCities, City } from "@/data/cities";
 import { toast } from "sonner";
@@ -13,7 +12,7 @@ const Index = () => {
   const [showCities, setShowCities] = useState(true);
   const [mapFilter, setMapFilter] = useState<"all" | "visited" | "wishlist">("all");
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(true);
+  
   const { data: places = [] } = usePlaces();
   const updatePlace = useUpdatePlace();
   const deletePlace = useDeletePlace();
@@ -35,11 +34,9 @@ const Index = () => {
 
   const handleCityClick = useCallback((city: City) => {
     setSelectedCity(city);
-    setIsRecommendationsOpen(false);
   }, []);
 
   const handlePlaceClick = useCallback((place: Place) => {
-    setIsRecommendationsOpen(false);
     const matchingCity = worldCities.find(
       (c) => c.name.toLowerCase() === place.name.toLowerCase()
     );
@@ -89,12 +86,6 @@ const Index = () => {
           city={selectedCity}
           savedPlace={savedPlace}
           onClose={() => setSelectedCity(null)}
-        />
-      )}
-      {!selectedCity && (
-        <RecommendationsSection
-          isOpen={isRecommendationsOpen}
-          onToggle={() => setIsRecommendationsOpen((v) => !v)}
         />
       )}
       <MapLegend />

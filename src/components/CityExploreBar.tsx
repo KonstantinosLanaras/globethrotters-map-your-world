@@ -684,7 +684,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                     <div className="py-8 text-center">
                       <Camera className="w-6 h-6 text-muted-foreground/30 mx-auto mb-2" />
                       <p className="text-xs text-muted-foreground">
-                        {query || activeExpCategory ? "No experiences found" : "Type to search or pick a category"}
+                        {query || hasActiveExpFilters ? "No experiences found" : "Type to search or pick a category"}
                       </p>
                     </div>
                   ) : (

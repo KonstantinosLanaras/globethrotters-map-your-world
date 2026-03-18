@@ -425,7 +425,7 @@ const Discover = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((exp, i) => (
-              <ExperienceCard key={exp.id} exp={exp} index={i} />
+              <ExperienceCard key={exp.id} exp={exp} index={i} isHelpful={helpfulSet.has(exp.id)} onToggleHelpful={handleToggleHelpful} />
             ))}
           </div>
         )}

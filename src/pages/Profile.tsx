@@ -11,6 +11,7 @@ import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
 import { usePlaces } from "@/hooks/usePlaces";
 import { useExperiencesWithPhotos, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { useTravelerLevel, useContributionScore } from "@/hooks/useTravelerLevel";
+import { useReputation } from "@/hooks/useReputation";
 import { useFollowerCount, useFollowingCount } from "@/hooks/useFollowers";
 import { useNavigate } from "react-router-dom";
 import VerifiedBadge from "@/components/VerifiedBadge";

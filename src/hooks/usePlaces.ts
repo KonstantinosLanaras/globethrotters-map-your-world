@@ -7,6 +7,7 @@ export interface Place {
   user_id: string;
   name: string;
   country: string;
+  city: string | null;
   lat: number;
   lng: number;
   type: "visited" | "wishlist";

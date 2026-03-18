@@ -245,7 +245,16 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
   const clearFilters = () => {
     setFilters({});
     setCrowdFilter([]);
-    setActiveExpCategory(null);
+    setExpFilters(defaultExpFilters);
+  };
+
+  const toggleExpCategory = (cat: string) => {
+    setExpFilters(prev => ({
+      ...prev,
+      categories: prev.categories.includes(cat)
+        ? prev.categories.filter(c => c !== cat)
+        : [...prev.categories, cat],
+    }));
   };
 
   const FilterChip = ({

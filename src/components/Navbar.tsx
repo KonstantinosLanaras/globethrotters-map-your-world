@@ -13,6 +13,7 @@ const navItems = [
   { icon: <Bookmark className="w-4 h-4" />, label: "Lists", path: "/lists" },
   { icon: <Camera className="w-4 h-4" />, label: "Experiences", path: "/experiences" },
   { icon: <Plane className="w-4 h-4" />, label: "Journeys", path: "/journeys" },
+  { icon: <Compass className="w-4 h-4" />, label: "Discover", path: "/discover" },
 ];
 
 const Navbar = () => {

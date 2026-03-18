@@ -560,25 +560,40 @@ const Profile = () => {
                   key={journey.id}
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-2xl bg-card border border-border hover:border-primary/20 transition-all cursor-pointer"
+                  className="rounded-2xl bg-card border border-border hover:border-primary/20 transition-all cursor-pointer overflow-hidden"
                   onClick={() => navigate("/visited")}
                 >
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl flex-shrink-0">{journey.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold text-foreground">{journey.title}</h3>
-                      {journey.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{journey.description}</p>}
-                      <div className="flex items-center gap-3 mt-2">
-                        {journey.start_date && (
-                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(journey.start_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-                            {journey.end_date && ` – ${new Date(journey.end_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`}
-                          </span>
+                  {journey.cover_image_url && (
+                    <img src={journey.cover_image_url} alt="" className="w-full h-32 object-cover" />
+                  )}
+                  <div className="p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl flex-shrink-0">{journey.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-foreground">{journey.title}</h3>
+                        {journey.destinations && journey.destinations.length > 0 && (
+                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" /> {journey.destinations.join(" · ")}
+                          </p>
                         )}
+                        {journey.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{journey.description}</p>}
+                        <div className="flex items-center gap-3 mt-2">
+                          {journey.start_date && (
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(journey.start_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                              {journey.end_date && ` – ${new Date(journey.end_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`}
+                            </span>
+                          )}
+                          {journey.privacy !== "public" && (
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <Lock className="w-3 h-3" /> {journey.privacy === "private" ? "Private" : "Friends"}
+                            </span>
+                          )}
+                        </div>
                       </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
                   </div>
                 </motion.div>
               ))

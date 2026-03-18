@@ -66,7 +66,12 @@ const Profile = () => {
   const [tripEmoji, setTripEmoji] = useState("✈️");
   const [tripStartDate, setTripStartDate] = useState("");
   const [tripEndDate, setTripEndDate] = useState("");
-
+  const [tripDestinations, setTripDestinations] = useState("");
+  const [tripPrivacy, setTripPrivacy] = useState("public");
+  const [tripCoverFile, setTripCoverFile] = useState<File | null>(null);
+  const [tripCoverPreview, setTripCoverPreview] = useState("");
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const tripCoverInputRef = useRef<HTMLInputElement>(null);
   const visitedCount = places.filter((p) => p.type === "visited").length;
   const wishlistCount = places.filter((p) => p.type === "wishlist").length;
   const countries = new Set(places.filter((p) => p.type === "visited").map((p) => p.country)).size;

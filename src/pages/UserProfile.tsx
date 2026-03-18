@@ -5,7 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
   User, MapPin, Globe, Lock, Shield, UserPlus, UserCheck,
-  Clock, UserX, ArrowLeft, Sparkles
+  Clock, UserX, ArrowLeft, Sparkles, MessageSquare
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +16,7 @@ import {
   useAcceptConnection,
   useRemoveConnection,
 } from "@/hooks/useConnections";
+import { useStartConversation } from "@/hooks/useMessages";
 import { useFollowerCount, useFollowingCount } from "@/hooks/useFollowers";
 import Navbar from "@/components/Navbar";
 import VerifiedBadge from "@/components/VerifiedBadge";

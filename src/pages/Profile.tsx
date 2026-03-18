@@ -293,22 +293,18 @@ const Profile = () => {
           </div>
         </motion.div>
 
-        {/* ═══════ ACTION BUTTONS ═══════ */}
-        <div className="flex gap-2 mb-4">
+        {/* ═══════ ACTION BUTTON ═══════ */}
+        <div className="mb-4">
           <button
             onClick={() => setShowTripCreate(true)}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-card border border-border text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-card border border-border text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
           >
             <Plane className="w-4 h-4 text-primary" />
             Add Trip
           </button>
-          <button
-            onClick={() => setShowComposer(true)}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            <Plus className="w-4 h-4" />
-            Log Experience
-          </button>
+          <p className="text-[10px] text-muted-foreground text-center mt-1.5">
+            Posts are created from visited places on the map
+          </p>
         </div>
 
         {/* ═══════ TRIP CREATE MODAL ═══════ */}

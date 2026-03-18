@@ -1,15 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, MapPin, Check, Heart, Star, Bookmark, Plus, Loader2,
+  X, MapPin, Check, Heart, Star, Plus, Loader2,
   BadgeCheck, Utensils, Mountain, Landmark, Eye, Bus, Gem, TreePine, Wine, Camera,
   Search, SlidersHorizontal, TrendingUp, Flame, Users,
-  Moon, Compass, ListIcon
+  Moon, Compass, Image, FileText
 } from "lucide-react";
 import { City } from "@/data/cities";
 import { Place, useAddPlace, useUpdatePlace, usePlaces } from "@/hooks/usePlaces";
-import { useLists, useAddList } from "@/hooks/useLists";
-import { useAddPlaceToList } from "@/hooks/useListPlaces";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useUnifiedExperiences, UnifiedExperience, useToggleExperienceSave, useExperienceSaves } from "@/hooks/useCityExperiences";
@@ -36,14 +34,9 @@ interface FilterOption {
 const categoryFilters: Record<string, FilterOption[]> = {
   food: [
     { key: "cuisine", label: "Cuisine", type: "select", options: ["Italian", "Asian", "Mexican", "French", "Local", "Fusion"] },
-    { key: "dietary", label: "Dietary", type: "select", options: ["Vegan", "Vegetarian", "Gluten-free"] },
     { key: "price", label: "Price range", type: "select", options: ["€", "€€", "€€€", "€€€€"] },
     { key: "rating", label: "Min rating", type: "select", options: ["4.0+", "4.5+", "4.8+"] },
     { key: "kidFriendly", label: "Kid-friendly", type: "toggle" },
-  ],
-  bars: [
-    { key: "barType", label: "Type", type: "select", options: ["Cocktail bar", "Wine bar", "Pub", "Rooftop", "Dive bar"] },
-    { key: "price", label: "Price range", type: "select", options: ["€", "€€", "€€€"] },
   ],
   nightlife: [
     { key: "venueType", label: "Type", type: "select", options: ["Bars", "Clubs", "Live music", "Rooftop", "Lounge"] },
@@ -52,30 +45,15 @@ const categoryFilters: Record<string, FilterOption[]> = {
   experiences: [
     { key: "expType", label: "Type", type: "select", options: ["Outdoor", "Indoor", "Cultural", "Adventure"] },
     { key: "duration", label: "Duration", type: "select", options: ["< 1h", "1-3h", "3-6h", "Full day"] },
-    { key: "difficulty", label: "Difficulty", type: "select", options: ["Easy", "Moderate", "Hard"] },
     { key: "kidFriendly", label: "Kid-friendly", type: "toggle" },
-  ],
-  hiking: [
-    { key: "difficulty", label: "Difficulty", type: "select", options: ["Easy", "Moderate", "Hard"] },
-    { key: "duration", label: "Duration", type: "select", options: ["< 1h", "1-3h", "3-6h", "Full day"] },
-  ],
-  hike: [
-    { key: "difficulty", label: "Difficulty", type: "select", options: ["Easy", "Moderate", "Hard"] },
-    { key: "duration", label: "Duration", type: "select", options: ["< 1h", "1-3h", "3-6h", "Full day"] },
   ],
   nature: [
     { key: "activityType", label: "Type", type: "select", options: ["Hiking", "Viewpoints", "Beaches", "Parks", "Lakes"] },
     { key: "kidFriendly", label: "Kid-friendly", type: "toggle" },
   ],
   culture: [
-    { key: "cultureType", label: "Type", type: "select", options: ["Museums", "Historical sites", "Guided tours", "Architecture", "Gallery"] },
+    { key: "cultureType", label: "Type", type: "select", options: ["Museums", "Historical sites", "Guided tours", "Architecture"] },
     { key: "duration", label: "Duration", type: "select", options: ["< 1h", "1-2h", "Half day", "Full day"] },
-  ],
-  scenic: [
-    { key: "scenicType", label: "Type", type: "select", options: ["Viewpoint", "Sunset spot", "Photo spot", "Panorama"] },
-  ],
-  hidden_gem: [
-    { key: "gemType", label: "Type", type: "select", options: ["Local spot", "Off-beat", "Secret", "Underrated"] },
   ],
 };
 
@@ -110,8 +88,6 @@ const categoryConfig: Record<string, { icon: typeof Utensils; label: string; col
   beach: { icon: Eye, label: "Beach", color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400" },
   museum: { icon: Landmark, label: "Museum", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" },
   city_walk: { icon: MapPin, label: "City Walk", color: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400" },
-  road_trip: { icon: Bus, label: "Road Trip", color: "bg-slate-100 text-slate-600 dark:bg-slate-800/30 dark:text-slate-400" },
-  hotel: { icon: MapPin, label: "Hotel", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400" },
   general: { icon: Camera, label: "Other", color: "bg-muted text-muted-foreground" },
 };
 
@@ -124,7 +100,6 @@ const labelConfig: Record<string, { icon: typeof Star; color: string }> = {
   Popular: { icon: Star, color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" },
 };
 
-// Category matching for filtering
 const categoryMatchMap: Record<string, string[]> = {
   food: ["food", "restaurant", "cafe", "bakery"],
   experiences: ["general", "experiences", "city_walk", "road_trip", "adventure"],
@@ -139,16 +114,14 @@ const matchesCategory = (itemCat: string, filterCat: string): boolean => {
   return mapped.includes(itemCat.toLowerCase());
 };
 
-// --- Experience Card ---
+// --- Experience Card (no Lists button, added Rate for visited items) ---
 const ExperienceCard = ({
-  item, idx, onSaveToWishlist, onSaveToVisited, lists, onAddToList, isSaved: isExpSaved, saving,
+  item, idx, onSaveToWishlist, onSaveToVisited, isSaved: isExpSaved, saving,
 }: {
   item: UnifiedExperience; idx: number;
   onSaveToWishlist: () => void; onSaveToVisited: () => void;
-  lists: { id: string; title: string; emoji: string }[];
-  onAddToList: (listId: string) => void; isSaved: boolean; saving: boolean;
+  isSaved: boolean; saving: boolean;
 }) => {
-  const [showListPicker, setShowListPicker] = useState(false);
   const conf = categoryConfig[item.category] || categoryConfig.general;
   const Icon = conf?.icon || Camera;
   const lbl = item.label ? labelConfig[item.label] : null;
@@ -183,7 +156,6 @@ const ExperienceCard = ({
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{item.description}</p>
           )}
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            {/* Category tag */}
             <span className={`inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full font-medium ${conf.color}`}>
               {conf.label}
             </span>
@@ -199,7 +171,7 @@ const ExperienceCard = ({
               </span>
             )}
           </div>
-          {/* Save actions */}
+          {/* Actions: Wishlist / Visited only — no Lists button */}
           <div className="flex items-center gap-1.5 mt-2">
             <button
               onClick={onSaveToWishlist}
@@ -221,41 +193,6 @@ const ExperienceCard = ({
               <Check className="w-3 h-3" />
               Visited
             </button>
-            <div className="relative">
-              <button
-                onClick={() => setShowListPicker(!showListPicker)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
-              >
-                <Bookmark className="w-3 h-3" />
-                List
-              </button>
-              <AnimatePresence>
-                {showListPicker && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                    className="absolute bottom-full left-0 mb-1 w-[180px] bg-card border border-border rounded-xl shadow-xl z-30"
-                  >
-                    <div className="p-2 max-h-[140px] overflow-y-auto space-y-0.5">
-                      {lists.length === 0 ? (
-                        <p className="text-[11px] text-muted-foreground text-center py-2">No lists yet</p>
-                      ) : lists.map(list => (
-                        <button
-                          key={list.id}
-                          onClick={() => { onAddToList(list.id); setShowListPicker(false); }}
-                          className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
-                        >
-                          <span className="text-sm">{list.emoji}</span>
-                          <span className="text-[11px] font-medium text-foreground truncate flex-1">{list.title}</span>
-                          <Plus className="w-3 h-3 text-muted-foreground" />
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
           </div>
         </div>
       </div>
@@ -263,123 +200,33 @@ const ExperienceCard = ({
   );
 };
 
-// --- My Lists Modal ---
-const MyListsModal = ({
-  open, onClose, lists, onNavigateToLists,
-}: {
-  open: boolean; onClose: () => void;
-  lists: { id: string; title: string; emoji: string; description: string | null }[];
-  onNavigateToLists: () => void;
-}) => {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-[1100] flex items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="relative z-10 w-[340px] max-h-[400px] bg-card rounded-2xl border border-border shadow-2xl overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Bookmark className="w-4 h-4 text-primary" />
-            <h3 className="text-sm font-semibold text-foreground">My Lists</h3>
-          </div>
-          <button onClick={onClose} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
-            <X className="w-3.5 h-3.5 text-muted-foreground" />
-          </button>
-        </div>
-        <div className="p-3 max-h-[300px] overflow-y-auto space-y-1.5">
-          {/* Default collections */}
-          <button
-            onClick={onNavigateToLists}
-            className="w-full flex items-center gap-3 p-3 rounded-xl bg-wishlist/8 hover:bg-wishlist/12 transition-colors text-left"
-          >
-            <Heart className="w-4 h-4 text-wishlist" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">Wishlist</p>
-              <p className="text-[10px] text-muted-foreground">Dream destinations</p>
-            </div>
-          </button>
-          <button
-            onClick={onNavigateToLists}
-            className="w-full flex items-center gap-3 p-3 rounded-xl bg-visited/8 hover:bg-visited/12 transition-colors text-left"
-          >
-            <Check className="w-4 h-4 text-visited" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">Visited</p>
-              <p className="text-[10px] text-muted-foreground">Places you've been</p>
-            </div>
-          </button>
-          {/* Custom lists */}
-          {lists.length > 0 && (
-            <div className="pt-1.5">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-1 mb-1">Custom lists</p>
-              {lists.map(list => (
-                <button
-                  key={list.id}
-                  onClick={onNavigateToLists}
-                  className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left"
-                >
-                  <span className="text-lg">{list.emoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{list.title}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="px-3 py-2.5 border-t border-border">
-          <button
-            onClick={onNavigateToLists}
-            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-primary hover:bg-primary/5 transition-colors"
-          >
-            View all lists
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
-
 const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) => {
   const { user } = useAuth();
   const addPlace = useAddPlace();
   const updatePlace = useUpdatePlace();
-  const { data: lists = [] } = useLists();
-  const addList = useAddList();
-  const addToList = useAddPlaceToList();
   const { data: profile } = useProfile();
   const { data: allPlaces = [] } = usePlaces();
   const { sponsored, allSeeded, loading: unifiedLoading } = useUnifiedExperiences(city.name, city.country);
   const toggleSave = useToggleExperienceSave();
   const { data: savedExpIds = new Set<string>() } = useExperienceSaves();
 
-  const [showLists, setShowLists] = useState(false);
-  const [newListName, setNewListName] = useState("");
-  const [showNewList, setShowNewList] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
-  
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string | boolean>>({});
   const filterRef = useRef<HTMLDivElement>(null);
   const [savingItem, setSavingItem] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
-  const [showMyLists, setShowMyLists] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [ratingPlaceId, setRatingPlaceId] = useState<string | null>(null);
-  const [showCollectionPrompt, setShowCollectionPrompt] = useState(false);
-  const [collectionPlaceId, setCollectionPlaceId] = useState<string | null>(null);
+  const [showPostPrompt, setShowPostPrompt] = useState(false);
+  const [postPlaceId, setPostPlaceId] = useState<string | null>(null);
+
   const isVisited = savedPlace?.type === "visited";
   const isWishlist = savedPlace?.type === "wishlist";
   const isSaved = !!savedPlace;
   const isPending = addPlace.isPending || updatePlace.isPending;
 
-  // Stats for gamification
   const cityPlaces = useMemo(() => {
     return allPlaces.filter(p =>
       p.name.toLowerCase() === city.name.toLowerCase() ||
@@ -410,19 +257,15 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     setShowFilters(false);
   }, [activeCategory]);
 
-  // All items sorted by popularity (engagement + rating)
   const displayedItems = useMemo(() => {
     let items = [...allSeeded];
-    // Category filter
     if (activeCategory !== "all") {
       items = items.filter(i => matchesCategory(i.category, activeCategory));
     }
-    // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       items = items.filter(i => i.name.toLowerCase().includes(q) || i.description.toLowerCase().includes(q));
     }
-    // Sort by popularity: engagement + rating
     items.sort((a, b) => {
       const scoreA = a.engagement + a.rating * 10;
       const scoreB = b.engagement + b.rating * 10;
@@ -431,20 +274,13 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     return items;
   }, [allSeeded, searchQuery, activeCategory]);
 
-  // Filters adapt to selected category
   const currentFilters = useMemo(() => {
     if (activeCategory !== "all") {
       const specific = categoryFilters[activeCategory] || [];
       return [...specific, ...genericFilters];
     }
-    // For "all", use generic + detect dominant
-    const cats: Record<string, number> = {};
-    displayedItems.forEach(i => { cats[i.category] = (cats[i.category] || 0) + 1; });
-    const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
-    const dominant = sorted[0]?.[0] || "general";
-    const specific = categoryFilters[dominant] || [];
-    return [...specific, ...genericFilters];
-  }, [activeCategory, displayedItems]);
+    return genericFilters;
+  }, [activeCategory]);
 
   const activeFilterChips = useMemo(() => {
     return Object.entries(activeFilters)
@@ -468,13 +304,17 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
 
   const clearFilters = () => { setActiveFilters({}); setSearchQuery(""); };
 
-  const searchPlaceholder = `Search places in ${city.name} (food, museums, beaches…)`;
+  const searchPlaceholder = `Search places in ${city.name}…`;
 
   // --- Save handlers ---
   const handleSave = async (type: "visited" | "wishlist") => {
     if (!user) { toast.error("Sign in to save places"); return; }
     if (isSaved && savedPlace.type === type) {
-      toast.info(`Already ${type === "visited" ? "marked as visited" : "in your wishlist"}`);
+      if (type === "visited") {
+        // If already visited, open rating
+        setRatingPlaceId(savedPlace.id);
+        setShowRating(true);
+      }
       return;
     }
     try {
@@ -487,10 +327,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
         if (type === "visited") {
           setRatingPlaceId(savedPlace.id);
           setShowRating(true);
-        }
-        if (type === "wishlist" && lists.length > 0) {
-          setCollectionPlaceId(savedPlace.id);
-          setShowCollectionPrompt(true);
+          // After rating closes, show post prompt
+          setPostPlaceId(savedPlace.id);
         }
       } else {
         const result = await addPlace.mutateAsync({
@@ -502,10 +340,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
         if (type === "visited" && result?.id) {
           setRatingPlaceId(result.id);
           setShowRating(true);
-        }
-        if (type === "wishlist" && result?.id && lists.length > 0) {
-          setCollectionPlaceId(result.id);
-          setShowCollectionPrompt(true);
+          setPostPlaceId(result.id);
         }
       }
     } catch (err: any) {
@@ -516,46 +351,11 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     }
   };
 
-  const handleAddToList = async (listId: string) => {
-    if (!user) { toast.error("Sign in first"); return; }
-    if (!savedPlace) {
-      try {
-        const result = await addPlace.mutateAsync({
-          name: city.name, country: city.country, city: city.name, lat: city.lat, lng: city.lng,
-          type: "wishlist", tags: [], rating: 0, notes: "", date_visited: null,
-        });
-        if (result?.id) {
-          await addToList.mutateAsync({ listId, placeId: result.id });
-          toast.success("Saved & added to list!");
-        }
-      } catch { toast.error("Failed to add to list."); }
-      return;
-    }
-    try {
-      await addToList.mutateAsync({ listId, placeId: savedPlace.id });
-      toast.success("Added to list!");
-    } catch { toast.error("Already in this list or failed to add"); }
-  };
-
-  const handleCreateList = async () => {
-    if (!newListName.trim()) return;
-    try {
-      const placeId = savedPlace?.id;
-      const list = await addList.mutateAsync({ title: newListName.trim(), description: "", emoji: "📍" });
-      if (list?.id && placeId) {
-        await addToList.mutateAsync({ listId: list.id, placeId });
-      }
-      toast.success(`Created "${newListName}"${placeId ? ` and added ${city.name}` : ""}`);
-      setNewListName("");
-      setShowNewList(false);
-    } catch { toast.error("Failed to create list"); }
-  };
-
   const handleItemSave = async (item: UnifiedExperience, type: "visited" | "wishlist") => {
     if (!user) { toast.error("Sign in to save"); return; }
     setSavingItem(item.name);
     try {
-      await addPlace.mutateAsync({
+      const result = await addPlace.mutateAsync({
         name: item.name, country: city.country, city: city.name, lat: city.lat, lng: city.lng,
         type, tags: [item.category], rating: 0, notes: item.description || "",
         date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
@@ -567,6 +367,11 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
         }
       }
       toast.success(`${item.name} added to ${type}!`);
+      // If visited, prompt for post
+      if (type === "visited" && result?.id) {
+        setPostPlaceId(result.id);
+        setShowPostPrompt(true);
+      }
     } catch (err: any) {
       if (err?.message?.includes("Already")) toast.info(err.message);
       else toast.error("Failed to save");
@@ -575,30 +380,15 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
     }
   };
 
-  const handleItemAddToList = async (item: UnifiedExperience, listId: string) => {
-    if (!user) { toast.error("Sign in first"); return; }
-    setSavingItem(item.name);
-    try {
-      const result = await addPlace.mutateAsync({
-        name: item.name, country: city.country, city: city.name, lat: city.lat, lng: city.lng,
-        type: "wishlist", tags: [item.category], rating: 0, notes: item.description || "",
-        date_visited: null,
-      });
-      if (result?.id) {
-        await addToList.mutateAsync({ listId, placeId: result.id });
-        toast.success(`${item.name} added to list!`);
-      }
-    } catch (err: any) {
-      if (err?.message?.includes("Already")) toast.info("Already saved");
-      else toast.error("Failed to add to list");
-    } finally {
-      setSavingItem(null);
+  const handleRatingClose = () => {
+    setShowRating(false);
+    setRatingPlaceId(null);
+    // After rating, prompt for post creation
+    if (postPlaceId) {
+      setShowPostPrompt(true);
     }
   };
 
-  // sections tabs removed — single flat list
-
-  // Sponsored filtered by category
   const filteredSponsored = useMemo(() => {
     if (activeCategory === "all") return sponsored;
     return sponsored.filter(s => matchesCategory(s.category, activeCategory));
@@ -643,19 +433,16 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               </div>
             </div>
 
-            {/* Gamification stats */}
             {(visitedInCity > 0 || savedInCity > 0) && (
               <div className="mt-2 flex items-center gap-3">
                 {visitedInCity > 0 && (
                   <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Check className="w-3 h-3 text-visited" />
-                    {visitedInCity} visited
+                    <Check className="w-3 h-3 text-visited" /> {visitedInCity} visited
                   </span>
                 )}
                 {savedInCity > 0 && (
                   <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Bookmark className="w-3 h-3 text-primary" />
-                    {savedInCity} saved
+                    <MapPin className="w-3 h-3 text-primary" /> {savedInCity} saved
                   </span>
                 )}
               </div>
@@ -673,8 +460,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
             )}
           </div>
 
-          {/* Save Actions */}
-          <div className="px-5 py-2.5 border-b border-border space-y-2 flex-shrink-0">
+          {/* Save Actions: Visited / Wishlist / Rate — no Lists button */}
+          <div className="px-5 py-2.5 border-b border-border flex-shrink-0">
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => handleSave("visited")}
@@ -703,71 +490,29 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                 {isWishlist ? "Wishlist ✓" : "Wishlist"}
               </button>
               <button
-                onClick={() => setShowLists(!showLists)}
-                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all bg-primary/10 text-primary hover:bg-primary/15"
+                onClick={() => {
+                  if (!savedPlace) {
+                    toast.info("Mark as visited first to rate");
+                    return;
+                  }
+                  if (savedPlace.type !== "visited") {
+                    toast.info("Mark as visited first to rate");
+                    return;
+                  }
+                  setRatingPlaceId(savedPlace.id);
+                  setShowRating(true);
+                }}
+                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                  isVisited
+                    ? "bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400"
+                    : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                }`}
               >
-                <Bookmark className="w-3.5 h-3.5" />
-                Lists
+                <Star className="w-3.5 h-3.5" />
+                Rate
               </button>
             </div>
           </div>
-
-          {/* Custom Lists Panel */}
-          <AnimatePresence>
-            {showLists && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="border-b border-border overflow-hidden flex-shrink-0"
-              >
-                <div className="px-5 py-3 max-h-[160px] overflow-y-auto space-y-1">
-                  {lists.length === 0 && !showNewList ? (
-                    <p className="text-sm text-muted-foreground text-center py-3">No custom lists yet</p>
-                  ) : (
-                    lists.map((list) => (
-                      <button
-                        key={list.id}
-                        onClick={() => handleAddToList(list.id)}
-                        className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left"
-                      >
-                        <span className="text-lg">{list.emoji}</span>
-                        <span className="text-sm font-medium text-foreground truncate flex-1">{list.title}</span>
-                        <Plus className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
-                    ))
-                  )}
-                  {showNewList ? (
-                    <div className="flex gap-2 mt-2">
-                      <input
-                        value={newListName}
-                        onChange={(e) => setNewListName(e.target.value)}
-                        placeholder="List name..."
-                        className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40"
-                        autoFocus
-                        onKeyDown={(e) => e.key === "Enter" && handleCreateList()}
-                      />
-                      <button
-                        onClick={handleCreateList}
-                        disabled={!newListName.trim()}
-                        className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium disabled:opacity-40"
-                      >
-                        Create
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setShowNewList(true)}
-                      className="w-full flex items-center justify-center gap-1.5 p-2.5 rounded-lg text-sm text-primary hover:bg-primary/5 transition-colors"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      New List
-                    </button>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Discovery – scrollable area */}
           <div className="flex-1 overflow-y-auto">
@@ -793,8 +538,6 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               })}
             </div>
 
-            {/* Section tabs removed — category bar is the only navigation */}
-
             {/* Search + filters */}
             <div className="px-4 py-2 sticky top-0 z-10 bg-card">
               <div className="flex items-center gap-1.5">
@@ -815,7 +558,6 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     </button>
                   )}
                 </div>
-                {/* Filter button */}
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -827,7 +569,6 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                               ? "bg-primary text-primary-foreground"
                               : "bg-muted/80 text-foreground hover:bg-muted"
                           }`}
-                          aria-label="Filters"
                         >
                           <SlidersHorizontal className="w-4 h-4" />
                         </button>
@@ -896,7 +637,6 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                   </Tooltip>
                 </TooltipProvider>
 
-                {/* Add experience button */}
                 <button
                   onClick={() => setShowComposer(true)}
                   className="w-9 h-9 rounded-lg flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
@@ -907,11 +647,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               </div>
             </div>
 
-            {/* Explorer section removed — filters are in filter panel only */}
-
             {/* Results */}
             <div className="px-4 pb-5 space-y-2">
-              {/* Sponsored (always at top, max 2) */}
               {filteredSponsored.length > 0 && (
                 <>
                   {filteredSponsored.map((item, idx) => (
@@ -921,17 +658,13 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                       idx={idx}
                       onSaveToWishlist={() => handleItemSave(item, "wishlist")}
                       onSaveToVisited={() => handleItemSave(item, "visited")}
-                      lists={lists}
-                      onAddToList={(listId) => handleItemAddToList(item, listId)}
                       isSaved={false}
                       saving={savingItem === item.name}
                     />
                   ))}
-                  {/* No divider — continuous list */}
                 </>
               )}
 
-              {/* Loading */}
               {unifiedLoading ? (
                 [1, 2, 3].map(i => (
                   <div key={i} className="p-3 rounded-xl bg-muted/30 space-y-2">
@@ -948,8 +681,6 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     idx={idx}
                     onSaveToWishlist={() => handleItemSave(item, "wishlist")}
                     onSaveToVisited={() => handleItemSave(item, "visited")}
-                    lists={lists}
-                    onAddToList={(listId) => handleItemAddToList(item, listId)}
                     isSaved={item.type === "community" && item.experience ? savedExpIds.has(item.experience.id) : false}
                     saving={savingItem === item.name}
                   />
@@ -977,36 +708,10 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               ) : null}
             </div>
           </div>
-
-          {/* Floating My Lists button */}
-          <div className="absolute bottom-4 right-4 z-20">
-            <button
-              onClick={() => setShowMyLists(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-foreground text-background text-xs font-medium shadow-lg hover:opacity-90 transition-opacity"
-            >
-              <ListIcon className="w-3.5 h-3.5" />
-              My Lists
-            </button>
-          </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* My Lists Modal */}
-      <AnimatePresence>
-        {showMyLists && (
-          <MyListsModal
-            open={showMyLists}
-            onClose={() => setShowMyLists(false)}
-            lists={lists}
-            onNavigateToLists={() => {
-              setShowMyLists(false);
-              window.location.href = "/lists";
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Experience Composer */}
+      {/* Experience Composer (triggered from post prompt or share button) */}
       <ExperienceComposer
         open={showComposer}
         onClose={() => setShowComposer(false)}
@@ -1018,54 +723,47 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
       {ratingPlaceId && (
         <RatingModal
           open={showRating}
-          onClose={() => { setShowRating(false); setRatingPlaceId(null); }}
+          onClose={handleRatingClose}
           placeId={ratingPlaceId}
           placeName={city.name}
         />
       )}
 
-      {/* Collection prompt after wishlist save */}
+      {/* Post Creation Prompt — triggered after marking as Visited */}
       <AnimatePresence>
-        {showCollectionPrompt && collectionPlaceId && (
+        {showPostPrompt && postPlaceId && (
           <div className="fixed inset-0 z-[2000] flex items-center justify-center">
-            <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" onClick={() => setShowCollectionPrompt(false)} />
+            <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" onClick={() => { setShowPostPrompt(false); setPostPlaceId(null); }} />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="relative w-full max-w-xs mx-4 bg-card rounded-2xl border border-border shadow-2xl overflow-hidden"
             >
-              <div className="p-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <Bookmark className="w-4 h-4 text-primary" />
-                  <h3 className="font-display text-sm font-semibold text-foreground">Add to a collection?</h3>
+              <div className="p-5 text-center">
+                <div className="w-12 h-12 rounded-full bg-visited/15 text-visited mx-auto mb-3 flex items-center justify-center">
+                  <Camera className="w-6 h-6" />
                 </div>
-                <p className="text-xs text-muted-foreground mb-4">{city.name} saved to wishlist</p>
-                <div className="space-y-1.5 max-h-[200px] overflow-y-auto mb-3">
-                  {lists.map((list) => (
-                    <button
-                      key={list.id}
-                      onClick={async () => {
-                        try {
-                          await addToList.mutateAsync({ listId: list.id, placeId: collectionPlaceId });
-                          toast.success(`Added to "${list.title}"`);
-                          setShowCollectionPrompt(false);
-                        } catch { toast.error("Failed to add"); }
-                      }}
-                      className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-muted/60 transition-colors text-left"
-                    >
-                      <span className="text-lg">{list.emoji}</span>
-                      <span className="text-sm font-medium text-foreground truncate flex-1">{list.title}</span>
-                      <Plus className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
-                  ))}
+                <h3 className="font-display text-base font-semibold text-foreground mb-1">Create a post?</h3>
+                <p className="text-xs text-muted-foreground mb-5">Share photos and a note from your visit to {city.name}</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowPostPrompt(false); setPostPlaceId(null); }}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    Not now
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowPostPrompt(false);
+                      setPostPlaceId(null);
+                      setShowComposer(true);
+                    }}
+                    className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity"
+                  >
+                    Yes, create post
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowCollectionPrompt(false)}
-                  className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Skip
-                </button>
               </div>
             </motion.div>
           </div>

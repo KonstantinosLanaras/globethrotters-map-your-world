@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Map, MapPin, Heart, Bookmark, User, Menu, X, Camera, LogOut } from "lucide-react";
+import { Map, MapPin, Heart, Bookmark, User, Menu, X, Camera, LogOut, Plane } from "lucide-react";
 import GlobethrottersLogo from "@/components/GlobethrottersLogo";
 import PeopleSearch from "@/components/PeopleSearch";
 import { useState, useRef, useEffect } from "react";
@@ -12,6 +12,7 @@ const navItems = [
   { icon: <Heart className="w-4 h-4" />, label: "Wishlist", path: "/wishlist" },
   { icon: <Bookmark className="w-4 h-4" />, label: "Lists", path: "/lists" },
   { icon: <Camera className="w-4 h-4" />, label: "Experiences", path: "/experiences" },
+  { icon: <Plane className="w-4 h-4" />, label: "Journeys", path: "/journeys" },
 ];
 
 const Navbar = () => {

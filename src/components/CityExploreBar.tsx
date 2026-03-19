@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { Search, SlidersHorizontal, X, Star, Shield, Users, Heart, TreePine, Utensils, Music, Palette, Mountain, Sparkles, Compass, Camera, Bookmark, MapPin, ChevronDown } from "lucide-react";
+import { Search, SlidersHorizontal, X, Star, Shield, Users, Heart, TreePine, Utensils, Music, Palette, Mountain, Sparkles, Compass, Camera, Bookmark, MapPin, ChevronDown, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { worldCities, City, DestinationType } from "@/data/cities";
 import {

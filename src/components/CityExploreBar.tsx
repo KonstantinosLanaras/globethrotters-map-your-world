@@ -63,6 +63,8 @@ const crowdLabels: Record<CrowdFilter, string> = { low: "Quiet", moderate: "Mode
 
 interface ExpFilters {
   categories: string[];
+  country: string | null;
+  city: string | null;
   minRating: number | null;
   withPhotos: boolean;
   recent: boolean;
@@ -71,6 +73,8 @@ interface ExpFilters {
 
 const defaultExpFilters: ExpFilters = {
   categories: [],
+  country: null,
+  city: null,
   minRating: null,
   withPhotos: false,
   recent: false,

@@ -242,12 +242,31 @@ const JourneyDetail = ({
         <button onClick={onBack} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
           ← Back
         </button>
-        <button
-          onClick={() => onDelete(journeyId)}
-          className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
-        >
-          <Trash2 className="w-3 h-3" /> Delete
-        </button>
+        <div className="flex items-center gap-3">
+          {journey.privacy !== "private" && (
+            <button
+              onClick={() => onShare({
+                type: "journey",
+                id: journeyId,
+                title: journey.title,
+                emoji: journey.emoji || "✈️",
+                description: journey.description,
+                destinations: journey.destinations || [],
+                experienceCount: journey.experiences.length,
+                coverImage: journey.cover_image_url,
+              })}
+              className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
+            >
+              <Share2 className="w-3 h-3" /> Share
+            </button>
+          )}
+          <button
+            onClick={() => onDelete(journeyId)}
+            className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
+          >
+            <Trash2 className="w-3 h-3" /> Delete
+          </button>
+        </div>
       </div>
 
       <div className="p-5 rounded-2xl bg-card border border-border">

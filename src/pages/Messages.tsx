@@ -237,4 +237,70 @@ const ChatView = ({ conversationId }: { conversationId: string }) => {
   );
 };
 
+/* ─── Shared card parser ─── */
+function parseShareContent(content: string): { item: any; note?: string } | null {
+  try {
+    const parsed = JSON.parse(content);
+    if (parsed?.__share && parsed?.item) return { item: parsed.item, note: parsed.note };
+  } catch {
+    // Not a share payload
+  }
+  return null;
+}
+
+/* ─── Shared card bubble in chat ─── */
+const SharedCardBubble = ({ data, isMine }: { data: { item: any; note?: string }; isMine: boolean }) => {
+  const { item, note } = data;
+
+  return (
+    <div className="space-y-1.5">
+      {note && (
+        <p className="px-1.5 whitespace-pre-wrap break-words text-sm">{note}</p>
+      )}
+      <div className={`rounded-xl overflow-hidden border ${isMine ? "border-primary-foreground/20 bg-primary-foreground/10" : "border-border bg-muted/40"}`}>
+        {item.type === "experience" ? (
+          <div className="flex items-center gap-2.5 p-2.5">
+            {item.photo ? (
+              <img src={item.photo} alt="" className="w-11 h-11 rounded-lg object-cover flex-shrink-0" />
+            ) : (
+              <div className={`w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 ${isMine ? "bg-primary-foreground/20" : "bg-muted"}`}>
+                <MapPin className="w-4 h-4" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold truncate">{item.title}</p>
+              <p className={`text-[10px] truncate ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                {item.city}{item.country ? `, ${item.country}` : ""} · {item.category}
+              </p>
+            </div>
+            {item.rating > 0 && (
+              <div className="flex items-center gap-0.5 flex-shrink-0">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                <span className="text-[10px] font-medium">{item.rating}</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5 p-2.5">
+            {item.coverImage ? (
+              <img src={item.coverImage} alt="" className="w-11 h-11 rounded-lg object-cover flex-shrink-0" />
+            ) : (
+              <div className={`w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 text-lg ${isMine ? "bg-primary-foreground/20" : "bg-muted"}`}>
+                {item.emoji || "✈️"}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold truncate">{item.title}</p>
+              <p className={`text-[10px] truncate ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                {item.destinations?.length > 0 ? item.destinations.slice(0, 2).join(", ") : "Journey"} · {item.experienceCount || 0} exp
+              </p>
+            </div>
+            <Plane className="w-3.5 h-3.5 flex-shrink-0" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default Messages;

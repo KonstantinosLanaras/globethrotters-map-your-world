@@ -61,6 +61,8 @@ const climateGradeColor: Record<string, string> = {
 type CrowdFilter = "low" | "moderate" | "high";
 const crowdLabels: Record<CrowdFilter, string> = { low: "Quiet", moderate: "Moderate", high: "Busy" };
 
+type ContributorFilter = "all" | "community_approved" | "verified";
+
 interface ExpFilters {
   categories: string[];
   country: string | null;
@@ -69,6 +71,7 @@ interface ExpFilters {
   withPhotos: boolean;
   recent: boolean;
   tags: string[];
+  contributorQuality: ContributorFilter;
 }
 
 const defaultExpFilters: ExpFilters = {
@@ -79,6 +82,7 @@ const defaultExpFilters: ExpFilters = {
   withPhotos: false,
   recent: false,
   tags: [],
+  contributorQuality: "all",
 };
 
 const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProps) => {

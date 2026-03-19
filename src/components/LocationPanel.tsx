@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MapPin, Star, Heart, Calendar, Tag, Flag, Bookmark, Utensils, Mountain, Landmark, Camera, Train, Gem, Loader2, Clock, Gauge } from "lucide-react";
+import { X, MapPin, Star, Heart, Calendar, Tag, Flag, Bookmark, Utensils, Mountain, Landmark, Camera, Train, Gem, Loader2, Clock, Gauge, Share2, ShieldCheck } from "lucide-react";
 import { Pin } from "@/types/travel";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AuthenticityMeter from "@/components/AuthenticityMeter";
 import ReportDialog from "@/components/ReportDialog";
 import AddToListDialog from "@/components/AddToListDialog";
+import RatingModal from "@/components/RatingModal";
+import ShareModal, { ShareableExperience } from "@/components/ShareModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useAddPlace } from "@/hooks/usePlaces";
 import { useActivities, Activity } from "@/hooks/useActivities";
@@ -36,6 +38,8 @@ const difficultyColors: Record<string, string> = {
 const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
   const [showReport, setShowReport] = useState(false);
   const [showAddToList, setShowAddToList] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const { user } = useAuth();
   const addPlace = useAddPlace();
@@ -75,6 +79,9 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
 
   if (!pin) return null;
 
+  const isVisited = pin.type === "visited";
+  const isWishlist = pin.type === "wishlist";
+
   const handleMarkVisited = async () => {
     if (!user) return;
     try {
@@ -94,6 +101,45 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
     } catch {
       toast.error("Failed to mark as visited");
     }
+  };
+
+  const handleMarkWishlist = async () => {
+    if (!user) return;
+    try {
+      await addPlace.mutateAsync({
+        name: pin.name,
+        country: pin.country,
+        city: pin.name,
+        lat: pin.lat,
+        lng: pin.lng,
+        type: "wishlist",
+        tags: pin.tags,
+        rating: 0,
+        notes: "",
+        date_visited: null,
+      });
+      toast.success(`Added ${pin.name} to wishlist!`);
+    } catch {
+      toast.error("Failed to add to wishlist");
+    }
+  };
+
+  const handleRateClick = () => {
+    if (!isVisited) {
+      toast.info("You can rate this after marking it as Visited.");
+      return;
+    }
+    setShowRating(true);
+  };
+
+  const shareItem: ShareableExperience = {
+    type: "experience",
+    id: pin.id,
+    title: pin.name,
+    city: pin.name,
+    country: pin.country,
+    category: "destination",
+    rating: pin.rating > 0 ? pin.rating : undefined,
   };
 
   const filteredActivities = activeCategory
@@ -145,7 +191,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
             <div className="flex items-start gap-3 pr-16">
               <div
                 className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                  pin.type === "visited" ? "bg-visited/15 text-visited" : "bg-wishlist/15 text-wishlist"
+                  isVisited ? "bg-visited/15 text-visited" : "bg-wishlist/15 text-wishlist"
                 }`}
               >
                 <MapPin className="w-5 h-5" />
@@ -159,35 +205,81 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
             </div>
           </div>
 
-          {/* Quick actions */}
-          <div className="px-5 pb-3 flex items-center gap-2">
-            <span
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                pin.type === "visited"
-                  ? "bg-visited/15 text-visited"
-                  : "bg-wishlist/15 text-wishlist"
+          {/* ===== Primary Action Row ===== */}
+          <div className="px-5 pb-3 flex items-center gap-1.5">
+            {/* Visited */}
+            <button
+              onClick={handleMarkVisited}
+              disabled={addPlace.isPending}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                isVisited
+                  ? "bg-visited text-white"
+                  : "bg-visited/10 text-visited hover:bg-visited/20"
               }`}
             >
-              {pin.type === "visited" ? <Star className="w-3 h-3" /> : <Heart className="w-3 h-3" />}
-              {pin.type === "visited" ? "Visited" : "Wishlist"}
-            </span>
+              <Star className="w-3 h-3" />
+              Visited{isVisited ? " ✓" : ""}
+            </button>
+
+            {/* Wishlist */}
+            <button
+              onClick={handleMarkWishlist}
+              disabled={addPlace.isPending}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                isWishlist
+                  ? "bg-wishlist text-white"
+                  : "bg-wishlist/10 text-wishlist hover:bg-wishlist/20"
+              }`}
+            >
+              <Heart className="w-3 h-3" />
+              Wishlist{isWishlist ? " ✓" : ""}
+            </button>
+
+            {/* Rate */}
+            <button
+              onClick={handleRateClick}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                isVisited
+                  ? "bg-gold/10 text-gold hover:bg-gold/20"
+                  : "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+              }`}
+              title={isVisited ? "Rate this place" : "You can rate this after marking it as Visited."}
+            >
+              <Star className="w-3 h-3" />
+              Rate
+            </button>
+
+            <div className="flex-1" />
+
+            {/* Share */}
+            <button
+              onClick={() => setShowShare(true)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+            >
+              <Share2 className="w-3 h-3" />
+              Share
+            </button>
+          </div>
+
+          {/* Secondary actions */}
+          <div className="px-5 pb-3 flex items-center gap-2">
             {reviewScore && (
               <AuthenticityMeter score={reviewScore.authenticity_score} compact />
             )}
             <div className="flex-1" />
             <button
               onClick={() => setShowAddToList(true)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
             >
               <Bookmark className="w-3 h-3" />
-              Save
+              Save to list
             </button>
           </div>
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-4">
             {/* Rating */}
-            {pin.type === "visited" && pin.rating > 0 && (
+            {isVisited && pin.rating > 0 && (
               <div className="flex items-center gap-1">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star
@@ -234,7 +326,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
             )}
 
             {/* Authenticity detail */}
-            {reviewScore && pin.type === "visited" && (
+            {reviewScore && isVisited && (
               <div className="p-3 rounded-xl bg-muted/50 space-y-2">
                 <AuthenticityMeter score={reviewScore.authenticity_score} />
                 <div className="flex flex-wrap gap-1.5">
@@ -319,18 +411,6 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
                 </p>
               )}
             </div>
-
-            {/* Mark as visited CTA for wishlist items */}
-            {pin.type === "wishlist" && (
-              <button
-                onClick={handleMarkVisited}
-                disabled={addPlace.isPending}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-visited/10 text-visited font-medium text-sm hover:bg-visited/15 transition-colors"
-              >
-                <Star className="w-4 h-4" />
-                Mark as Visited
-              </button>
-            )}
           </div>
         </motion.div>
       </AnimatePresence>
@@ -346,6 +426,21 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
           onClose={() => setShowAddToList(false)}
         />
       )}
+
+      {showRating && (
+        <RatingModal
+          open={showRating}
+          onClose={() => setShowRating(false)}
+          placeId={pin.id}
+          placeName={pin.name}
+        />
+      )}
+
+      <ShareModal
+        open={showShare}
+        onClose={() => setShowShare(false)}
+        item={shareItem}
+      />
     </>
   );
 };

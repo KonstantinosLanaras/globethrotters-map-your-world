@@ -11,6 +11,7 @@ import ShareModal, { ShareableItem } from "@/components/ShareModal";
 import { useExperiencesWithPhotos, useDeleteExperience, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { useExperienceLocations, useDiscoverExperiences, DiscoverExperience } from "@/hooks/useDiscoverExperiences";
 import ExperienceComposer from "@/components/ExperienceComposer";
+import { useFavoriteExperienceIds, useToggleFavoriteExperience } from "@/hooks/useFavorites";
 import { toast } from "sonner";
 
 const ACTIVITY_FILTERS = [

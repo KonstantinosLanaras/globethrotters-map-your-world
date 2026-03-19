@@ -124,7 +124,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
   });
 
   const hasActiveExpFilters = useMemo(() => {
-    return expFilters.categories.length > 0 || expFilters.country !== null || expFilters.city !== null || expFilters.minRating !== null || expFilters.withPhotos || expFilters.recent;
+    return expFilters.categories.length > 0 || expFilters.country !== null || expFilters.city !== null || expFilters.minRating !== null || expFilters.withPhotos || expFilters.recent || expFilters.contributorQuality !== "all";
   }, [expFilters]);
 
   const hasActiveFilters = useMemo(() => {

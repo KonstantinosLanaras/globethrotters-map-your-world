@@ -675,14 +675,24 @@ const DiscoverCard = ({ exp, onShare, isFav, onToggleFav }: { exp: DiscoverExper
               </span>
             )}
           </div>
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
-            title="Share with a friend"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            Share
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onToggleFav.mutate({ experienceId: exp.id, isFavorite: isFav })}
+              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-amber-500 transition-colors"
+              title={isFav ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Star className={`w-3.5 h-3.5 ${isFav ? "fill-amber-400 text-amber-400" : ""}`} />
+              {isFav ? "Favorited" : "Favorite"}
+            </button>
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
+              title="Share with a friend"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Share
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>

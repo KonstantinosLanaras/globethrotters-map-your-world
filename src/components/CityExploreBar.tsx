@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { Search, SlidersHorizontal, X, Star, Shield, Users, Heart, TreePine, Utensils, Music, Palette, Mountain, Sparkles, Compass, Camera, Bookmark } from "lucide-react";
+import { Search, SlidersHorizontal, X, Star, Shield, Users, Heart, TreePine, Utensils, Music, Palette, Mountain, Sparkles, Compass, Camera, Bookmark, MapPin, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { worldCities, City } from "@/data/cities";
 import {
@@ -32,7 +32,7 @@ const categoryEmoji: Record<string, string> = {
   general: "📍",
 };
 
-const experienceCategories = ["Food", "Culture", "Nature", "Hiking", "Nightlife"] as const;
+const experienceCategories = ["Food", "Culture", "Nature", "Hiking", "Nightlife", "Beach", "Museum", "Hidden Gem", "Stay"] as const;
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -63,6 +63,8 @@ const crowdLabels: Record<CrowdFilter, string> = { low: "Quiet", moderate: "Mode
 
 interface ExpFilters {
   categories: string[];
+  country: string | null;
+  city: string | null;
   minRating: number | null;
   withPhotos: boolean;
   recent: boolean;
@@ -71,6 +73,8 @@ interface ExpFilters {
 
 const defaultExpFilters: ExpFilters = {
   categories: [],
+  country: null,
+  city: null,
   minRating: null,
   withPhotos: false,
   recent: false,
@@ -116,7 +120,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
   });
 
   const hasActiveExpFilters = useMemo(() => {
-    return expFilters.categories.length > 0 || expFilters.minRating !== null || expFilters.withPhotos || expFilters.recent;
+    return expFilters.categories.length > 0 || expFilters.country !== null || expFilters.city !== null || expFilters.minRating !== null || expFilters.withPhotos || expFilters.recent;
   }, [expFilters]);
 
   const hasActiveFilters = useMemo(() => {
@@ -127,6 +131,8 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
   const activeFilterCount = useMemo(() => {
     if (mode === "experiences") {
       let count = expFilters.categories.length;
+      if (expFilters.country) count++;
+      if (expFilters.city) count++;
       if (expFilters.minRating !== null) count++;
       if (expFilters.withPhotos) count++;
       if (expFilters.recent) count++;
@@ -175,15 +181,32 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
     return ranked.slice(0, 15);
   }, [query, filters, hasActiveFilters, crowdFilter, mode]);
 
+  // Extract unique countries and cities from experiences for geo filters
+  const geoOptions = useMemo(() => {
+    const countries = new Set<string>();
+    const citiesByCountry: Record<string, Set<string>> = {};
+    communityExperiences.forEach(e => {
+      if (e.country) {
+        countries.add(e.country);
+        if (e.city) {
+          if (!citiesByCountry[e.country]) citiesByCountry[e.country] = new Set();
+          citiesByCountry[e.country].add(e.city);
+        }
+      }
+    });
+    return {
+      countries: Array.from(countries).sort(),
+      citiesForCountry: (country: string) => Array.from(citiesByCountry[country] || []).sort(),
+    };
+  }, [communityExperiences]);
+
   // Experiences mode results
   const experienceResults = useMemo(() => {
     if (mode !== "experiences") return [];
     const q = query.toLowerCase().trim();
     const hasCatFilter = expFilters.categories.length > 0;
-    if (!q && !hasCatFilter && !expFilters.minRating && !expFilters.withPhotos && !expFilters.recent) return [];
-    
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const hasGeoFilter = !!expFilters.country || !!expFilters.city;
+    if (!q && !hasCatFilter && !hasGeoFilter && !expFilters.minRating && !expFilters.withPhotos && !expFilters.recent) return [];
     
     return communityExperiences
       .filter(e => {
@@ -194,10 +217,12 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
           e.caption?.toLowerCase().includes(q) ||
           e.tags?.some((t: string) => t.toLowerCase().includes(q));
         const matchesCat = !hasCatFilter || expFilters.categories.some(c => e.category.toLowerCase() === c.toLowerCase());
+        const matchesCountry = !expFilters.country || e.country?.toLowerCase() === expFilters.country.toLowerCase();
+        const matchesCity = !expFilters.city || e.city?.toLowerCase() === expFilters.city.toLowerCase();
         const matchesRating = !expFilters.minRating || (e.rating && e.rating >= expFilters.minRating);
-        return matchesSearch && matchesCat && matchesRating;
+        return matchesSearch && matchesCat && matchesCountry && matchesCity && matchesRating;
       })
-      .slice(0, 15);
+      .slice(0, 20);
   }, [query, mode, expFilters, communityExperiences]);
 
   // Group experiences by location
@@ -531,6 +556,42 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                       </div>
                     </div>
                     <div className="overflow-y-auto flex-1 overscroll-contain px-4 py-3 space-y-5">
+                      {/* Location */}
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                          <MapPin className="w-3 h-3" /> Location
+                        </span>
+                        <div className="space-y-2">
+                          <div className="relative">
+                            <select
+                              value={expFilters.country || ""}
+                              onChange={(e) => setExpFilters(prev => ({ ...prev, country: e.target.value || null, city: null }))}
+                              className="w-full px-3 py-2 rounded-lg bg-muted/60 border-0 text-xs font-medium text-foreground appearance-none cursor-pointer focus:ring-1 focus:ring-primary outline-none"
+                            >
+                              <option value="">All countries</option>
+                              {geoOptions.countries.map(c => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                          </div>
+                          {expFilters.country && geoOptions.citiesForCountry(expFilters.country).length > 0 && (
+                            <div className="relative">
+                              <select
+                                value={expFilters.city || ""}
+                                onChange={(e) => setExpFilters(prev => ({ ...prev, city: e.target.value || null }))}
+                                className="w-full px-3 py-2 rounded-lg bg-muted/60 border-0 text-xs font-medium text-foreground appearance-none cursor-pointer focus:ring-1 focus:ring-primary outline-none"
+                              >
+                                <option value="">All cities in {expFilters.country}</option>
+                                {geoOptions.citiesForCountry(expFilters.country).map(c => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
+                              </select>
+                              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       {/* Category */}
                       <div>
                         <span className="text-xs font-medium text-muted-foreground mb-2 block">Category</span>

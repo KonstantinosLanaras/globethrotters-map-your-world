@@ -1,8 +1,9 @@
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2, Eye, EyeOff, Layers,
-  Utensils, Mountain, Landmark, TreePine, Moon, Palmtree,
-  Gem, Camera, MapPin, Compass, Home
+  Utensils, Mountain, Landmark, TreePine, Moon, Compass,
+  Gem, Home, Plus, Minus, Check
 } from "lucide-react";
 
 export const ACTIVITY_TAGS = [
@@ -38,12 +39,25 @@ const MapControls = ({
   activeTags,
   onTagToggle,
 }: MapControlsProps) => {
+  const [activitiesOpen, setActivitiesOpen] = useState(false);
+  const activeCount = activeTags.length;
+
+  const clearAll = () => {
+    activeTags.forEach(t => onTagToggle(t));
+  };
+
+  const selectAll = () => {
+    ACTIVITY_TAGS.forEach(t => {
+      if (!activeTags.includes(t.id)) onTagToggle(t.id);
+    });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -16 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.2 }}
-      className="fixed top-[72px] left-3 z-[1000] flex flex-col gap-1 p-1.5 bg-card/90 backdrop-blur-xl rounded-2xl border border-border shadow-lg max-h-[calc(100vh-100px)] overflow-y-auto scrollbar-hide"
+      className="fixed top-[72px] left-3 z-[1000] flex flex-col gap-1 p-1.5 bg-card/90 backdrop-blur-xl rounded-2xl border border-border shadow-lg"
     >
       {/* Cities toggle */}
       <button
@@ -93,26 +107,84 @@ const MapControls = ({
 
       <div className="h-px bg-border mx-1" />
 
-      {/* Activity tag filters */}
-      <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground px-3 pt-1">Activity</p>
-      {ACTIVITY_TAGS.map((tag) => {
-        const Icon = tag.icon;
-        const isActive = activeTags.includes(tag.id);
-        return (
-          <button
-            key={tag.id}
-            onClick={() => onTagToggle(tag.id)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
-              isActive
-                ? "bg-primary/15 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-            }`}
+      {/* Activities collapsible */}
+      <button
+        onClick={() => setActivitiesOpen(!activitiesOpen)}
+        className={`group flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
+          activeCount > 0
+            ? "text-primary font-semibold"
+            : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        <span className={`w-4 h-4 rounded-md flex items-center justify-center transition-all ${
+          activitiesOpen
+            ? "bg-primary/15 text-primary"
+            : "bg-orange-500/15 text-orange-500 group-hover:bg-orange-500/25"
+        }`}>
+          {activitiesOpen
+            ? <Minus className="w-2.5 h-2.5" />
+            : <Plus className="w-2.5 h-2.5" />
+          }
+        </span>
+        Activities
+        {activeCount > 0 && (
+          <span className="w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center font-bold">
+            {activeCount}
+          </span>
+        )}
+      </button>
+
+      {/* Dropdown */}
+      <AnimatePresence>
+        {activitiesOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
           >
-            <Icon className="w-3.5 h-3.5" />
-            {tag.label}
-          </button>
-        );
-      })}
+            <div className="pl-2 space-y-0.5 pb-1">
+              {ACTIVITY_TAGS.map((tag) => {
+                const Icon = tag.icon;
+                const isActive = activeTags.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id}
+                    onClick={() => onTagToggle(tag.id)}
+                    className={`w-full flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                      isActive
+                        ? "bg-primary/15 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span className="flex-1 text-left">{tag.label}</span>
+                    {isActive && <Check className="w-3 h-3 text-primary" />}
+                  </button>
+                );
+              })}
+
+              {/* Select/Clear controls */}
+              <div className="flex items-center gap-2 px-2.5 pt-1">
+                <button
+                  onClick={selectAll}
+                  className="text-[10px] text-muted-foreground hover:text-foreground"
+                >
+                  Select all
+                </button>
+                <span className="text-muted-foreground/30">·</span>
+                <button
+                  onClick={clearAll}
+                  className="text-[10px] text-muted-foreground hover:text-foreground"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

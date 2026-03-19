@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useJourneys, useAddJourney, useDeleteJourney, useJourneyWithExperiences, useAddExperienceToJourney, useRemoveExperienceFromJourney, Journey } from "@/hooks/useJourneys";
 import { useExperiencesWithPhotos, ExperienceWithPhotos } from "@/hooks/useExperiences";
+import { useFavoriteJourneyIds, useToggleFavoriteJourney } from "@/hooks/useFavorites";
 import { toast } from "sonner";
 import ShareModal, { ShareableItem } from "@/components/ShareModal";
 

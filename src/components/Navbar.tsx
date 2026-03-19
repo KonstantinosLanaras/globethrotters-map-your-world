@@ -110,6 +110,19 @@ const Navbar = ({ searchMode = "places", onSearchModeChange }: NavbarProps) => {
           Wishlist
         </button>
 
+        {/* Favorites */}
+        <button
+          onClick={() => navigate("/favorites")}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+            location.pathname === "/favorites"
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          <Star className="w-4 h-4" />
+          Favorites
+        </button>
+
       </div>
 
       {/* People search + Social + Profile */}

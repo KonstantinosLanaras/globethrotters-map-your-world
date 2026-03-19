@@ -186,17 +186,23 @@ const ChatView = ({ conversationId }: { conversationId: string }) => {
           ) : (
             messages.map((msg) => {
               const isMine = msg.sender_id === user?.id;
+              const shareData = parseShareContent(msg.content);
+
               return (
                 <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-sm leading-relaxed ${
+                    className={`max-w-[75%] rounded-2xl text-sm leading-relaxed ${
                       isMine
                         ? "bg-primary text-primary-foreground rounded-br-md"
                         : "bg-card border border-border text-foreground rounded-bl-md"
-                    }`}
+                    } ${shareData ? "p-2" : "px-3.5 py-2"}`}
                   >
-                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                    <p className={`text-[9px] mt-1 ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                    {shareData ? (
+                      <SharedCardBubble data={shareData} isMine={isMine} />
+                    ) : (
+                      <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                    )}
+                    <p className={`text-[9px] mt-1 ${shareData ? "px-1.5" : ""} ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                       {format(new Date(msg.created_at), "h:mm a")}
                     </p>
                   </div>

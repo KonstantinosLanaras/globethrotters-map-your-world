@@ -250,6 +250,14 @@ const JourneyDetail = ({
           ← Back
         </button>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => onToggleFav.mutate({ journeyId, isFavorite: isFav })}
+            className="text-xs text-muted-foreground hover:text-amber-500 flex items-center gap-1 transition-colors"
+            title={isFav ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Star className={`w-3 h-3 ${isFav ? "fill-amber-400 text-amber-400" : ""}`} />
+            {isFav ? "Favorited" : "Favorite"}
+          </button>
           {journey.privacy !== "private" && (
             <button
               onClick={() => onShare({

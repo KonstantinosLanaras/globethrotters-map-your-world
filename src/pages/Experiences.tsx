@@ -700,7 +700,7 @@ const DiscoverCard = ({ exp, onShare, isFav, onToggleFav }: { exp: DiscoverExper
 };
 
 /* ── My Experience Card ── */
-const MyExperienceCard = ({ exp, onDelete, onShare }: { exp: ExperienceWithPhotos; onDelete: (id: string) => void; onShare: (item: ShareableItem) => void }) => {
+const MyExperienceCard = ({ exp, onDelete, onShare, isFav, onToggleFav }: { exp: ExperienceWithPhotos; onDelete: (id: string) => void; onShare: (item: ShareableItem) => void; isFav: boolean; onToggleFav: { mutate: (v: { experienceId: string; isFavorite: boolean }) => void } }) => {
   const [showGallery, setShowGallery] = useState(false);
 
   const handleShare = () => {

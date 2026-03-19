@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import {
   Plus, MapPin, Star, Calendar, ChevronRight, Trash2, X, Check,
-  Image, Plane, Loader2
+  Image, Plane, Loader2, Share2
 } from "lucide-react";
 import { useJourneys, useAddJourney, useDeleteJourney, useJourneyWithExperiences, useAddExperienceToJourney, useRemoveExperienceFromJourney, Journey } from "@/hooks/useJourneys";
 import { useExperiencesWithPhotos, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { toast } from "sonner";
+import ShareModal, { ShareableItem } from "@/components/ShareModal";
 
 const Journeys = () => {
   const { data: journeys = [], isLoading } = useJourneys();
@@ -17,6 +18,7 @@ const Journeys = () => {
 
   const [showCreate, setShowCreate] = useState(false);
   const [selectedJourney, setSelectedJourney] = useState<string | null>(null);
+  const [shareItem, setShareItem] = useState<ShareableItem | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newEmoji, setNewEmoji] = useState("✈️");
@@ -138,6 +140,7 @@ const Journeys = () => {
             allExperiences={experiences}
             onBack={() => setSelectedJourney(null)}
             onDelete={handleDelete}
+            onShare={setShareItem}
           />
         ) : (
           <>
@@ -189,18 +192,22 @@ const Journeys = () => {
           </>
         )}
       </div>
+      {shareItem && (
+        <ShareModal open={!!shareItem} onClose={() => setShareItem(null)} item={shareItem} />
+      )}
     </div>
   );
 };
 
 /* Journey detail with timeline */
 const JourneyDetail = ({
-  journeyId, allExperiences, onBack, onDelete,
+  journeyId, allExperiences, onBack, onDelete, onShare,
 }: {
   journeyId: string;
   allExperiences: ExperienceWithPhotos[];
   onBack: () => void;
   onDelete: (id: string) => void;
+  onShare: (item: ShareableItem) => void;
 }) => {
   const { data: journey, isLoading } = useJourneyWithExperiences(journeyId);
   const addExpToJourney = useAddExperienceToJourney();
@@ -235,12 +242,31 @@ const JourneyDetail = ({
         <button onClick={onBack} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
           ← Back
         </button>
-        <button
-          onClick={() => onDelete(journeyId)}
-          className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
-        >
-          <Trash2 className="w-3 h-3" /> Delete
-        </button>
+        <div className="flex items-center gap-3">
+          {journey.privacy !== "private" && (
+            <button
+              onClick={() => onShare({
+                type: "journey",
+                id: journeyId,
+                title: journey.title,
+                emoji: journey.emoji || "✈️",
+                description: journey.description,
+                destinations: journey.destinations || [],
+                experienceCount: journey.experiences.length,
+                coverImage: journey.cover_image_url,
+              })}
+              className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
+            >
+              <Share2 className="w-3 h-3" /> Share
+            </button>
+          )}
+          <button
+            onClick={() => onDelete(journeyId)}
+            className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
+          >
+            <Trash2 className="w-3 h-3" /> Delete
+          </button>
+        </div>
       </div>
 
       <div className="p-5 rounded-2xl bg-card border border-border">

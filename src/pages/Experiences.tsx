@@ -4,9 +4,10 @@ import Navbar from "@/components/Navbar";
 import {
   MapPin, Globe, Search, Star, Image, Camera, Plus, X,
   Heart, Award, TrendingUp, Users, SlidersHorizontal,
-  Trash2, Check,
+  Trash2, Check, Share2,
   Utensils, Landmark, TreePine, Mountain, Moon, Compass, Building2, Gem, Home
 } from "lucide-react";
+import ShareModal, { ShareableItem } from "@/components/ShareModal";
 import { useExperiencesWithPhotos, useDeleteExperience, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { useExperienceLocations, useDiscoverExperiences, DiscoverExperience } from "@/hooks/useDiscoverExperiences";
 import ExperienceComposer from "@/components/ExperienceComposer";
@@ -36,6 +37,7 @@ const Experiences = () => {
   const deleteExperience = useDeleteExperience();
   const { data: locations } = useExperienceLocations();
   const [showComposer, setShowComposer] = useState(false);
+  const [shareItem, setShareItem] = useState<ShareableItem | null>(null);
 
   const [viewMode, setViewMode] = useState<"mine" | "discover">("discover");
 
@@ -530,7 +532,7 @@ const Experiences = () => {
             ) : (
               <div className="space-y-4">
                 {discoveredExperiences.map(exp => (
-                  <DiscoverCard key={exp.id} exp={exp} />
+                  <DiscoverCard key={exp.id} exp={exp} onShare={setShareItem} />
                 ))}
               </div>
             )}
@@ -558,7 +560,7 @@ const Experiences = () => {
             ) : (
               <div className="space-y-4">
                 {myExperiences.map(exp => (
-                  <MyExperienceCard key={exp.id} exp={exp} onDelete={handleDelete} />
+                  <MyExperienceCard key={exp.id} exp={exp} onDelete={handleDelete} onShare={setShareItem} />
                 ))}
               </div>
             )}
@@ -567,13 +569,31 @@ const Experiences = () => {
       </div>
 
       <ExperienceComposer open={showComposer} onClose={() => setShowComposer(false)} />
+      {shareItem && (
+        <ShareModal open={!!shareItem} onClose={() => setShareItem(null)} item={shareItem} />
+      )}
     </div>
   );
 };
 
 /* ── Discover Experience Card ── */
-const DiscoverCard = ({ exp }: { exp: DiscoverExperience }) => {
+const DiscoverCard = ({ exp, onShare }: { exp: DiscoverExperience; onShare: (item: ShareableItem) => void }) => {
   const [showGallery, setShowGallery] = useState(false);
+
+  const handleShare = () => {
+    if (exp.visibility !== "public") return;
+    onShare({
+      type: "experience",
+      id: exp.id,
+      title: exp.title,
+      city: exp.city,
+      country: exp.country,
+      category: exp.category,
+      rating: exp.rating,
+      photo: exp.photos[0] || null,
+      caption: exp.caption,
+    });
+  };
 
   return (
     <motion.div
@@ -634,22 +654,32 @@ const DiscoverCard = ({ exp }: { exp: DiscoverExperience }) => {
             ))}
           </div>
         )}
-        <div className="flex items-center gap-3 mt-2.5 flex-wrap">
-          {exp.saves_count > 0 && (
-            <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <Heart className="w-3 h-3" /> {exp.saves_count} save{exp.saves_count !== 1 ? "s" : ""}
-            </span>
-          )}
-          {exp.rating_avg >= 4 && (
-            <span className="flex items-center gap-1 text-[10px] text-amber-600 font-medium">
-              <Award className="w-3 h-3" /> Highly rated
-            </span>
-          )}
-          {exp.engagement_score >= 50 && (
-            <span className="flex items-center gap-1 text-[10px] text-primary font-medium">
-              <TrendingUp className="w-3 h-3" /> Popular
-            </span>
-          )}
+        <div className="flex items-center justify-between mt-2.5">
+          <div className="flex items-center gap-3 flex-wrap">
+            {exp.saves_count > 0 && (
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <Heart className="w-3 h-3" /> {exp.saves_count} save{exp.saves_count !== 1 ? "s" : ""}
+              </span>
+            )}
+            {exp.rating_avg >= 4 && (
+              <span className="flex items-center gap-1 text-[10px] text-amber-600 font-medium">
+                <Award className="w-3 h-3" /> Highly rated
+              </span>
+            )}
+            {exp.engagement_score >= 50 && (
+              <span className="flex items-center gap-1 text-[10px] text-primary font-medium">
+                <TrendingUp className="w-3 h-3" /> Popular
+              </span>
+            )}
+          </div>
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
+            title="Share with a friend"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            Share
+          </button>
         </div>
       </div>
     </motion.div>
@@ -657,8 +687,23 @@ const DiscoverCard = ({ exp }: { exp: DiscoverExperience }) => {
 };
 
 /* ── My Experience Card ── */
-const MyExperienceCard = ({ exp, onDelete }: { exp: ExperienceWithPhotos; onDelete: (id: string) => void }) => {
+const MyExperienceCard = ({ exp, onDelete, onShare }: { exp: ExperienceWithPhotos; onDelete: (id: string) => void; onShare: (item: ShareableItem) => void }) => {
   const [showGallery, setShowGallery] = useState(false);
+
+  const handleShare = () => {
+    if (exp.visibility === "private") return;
+    onShare({
+      type: "experience",
+      id: exp.id,
+      title: exp.title,
+      city: exp.city,
+      country: exp.country,
+      category: exp.category,
+      rating: exp.rating,
+      photo: exp.photos[0] || null,
+      caption: exp.caption,
+    });
+  };
 
   return (
     <motion.div
@@ -720,19 +765,31 @@ const MyExperienceCard = ({ exp, onDelete }: { exp: ExperienceWithPhotos; onDele
           </div>
         )}
         <div className="flex items-center justify-between mt-3">
-          {exp.experience_date && (
-            <p className="text-[10px] text-muted-foreground">{new Date(exp.experience_date).toLocaleDateString()}</p>
-          )}
-          <button
-            onClick={() => onDelete(exp.id)}
-            className="text-[10px] text-muted-foreground hover:text-destructive transition-colors flex items-center gap-0.5"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
+          <div className="flex items-center gap-2">
+            {exp.experience_date && (
+              <p className="text-[10px] text-muted-foreground">{new Date(exp.experience_date).toLocaleDateString()}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {exp.visibility !== "private" && (
+              <button
+                onClick={handleShare}
+                className="text-[10px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-0.5"
+              >
+                <Share2 className="w-3 h-3" />
+                Share
+              </button>
+            )}
+            <button
+              onClick={() => onDelete(exp.id)}
+              className="text-[10px] text-muted-foreground hover:text-destructive transition-colors flex items-center gap-0.5"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
   );
 };
-
 export default Experiences;

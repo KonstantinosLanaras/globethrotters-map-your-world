@@ -4,9 +4,10 @@ import Navbar from "@/components/Navbar";
 import {
   MapPin, Globe, Search, Star, Image, Camera, Plus, X,
   Heart, Award, TrendingUp, Users, SlidersHorizontal,
-  Trash2, Check,
+  Trash2, Check, Share2,
   Utensils, Landmark, TreePine, Mountain, Moon, Compass, Building2, Gem, Home
 } from "lucide-react";
+import ShareModal, { ShareableItem } from "@/components/ShareModal";
 import { useExperiencesWithPhotos, useDeleteExperience, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { useExperienceLocations, useDiscoverExperiences, DiscoverExperience } from "@/hooks/useDiscoverExperiences";
 import ExperienceComposer from "@/components/ExperienceComposer";

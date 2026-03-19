@@ -308,7 +308,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
 
   const showResults = mode === "places"
     ? isOpen
-    : (isOpen && (!!query || hasActiveExpFilters));
+    : (isOpen && (!!query || hasActiveExpFilters || showFilters));
 
   const currentResults = mode === "places" ? placeResults : experienceResults;
 

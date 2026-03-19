@@ -144,6 +144,8 @@ const Journeys = () => {
             onBack={() => setSelectedJourney(null)}
             onDelete={handleDelete}
             onShare={setShareItem}
+            isFav={favJourneyIds.has(selectedJourney)}
+            onToggleFav={toggleFavJourney}
           />
         ) : (
           <>

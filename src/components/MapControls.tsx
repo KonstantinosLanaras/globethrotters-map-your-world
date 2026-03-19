@@ -59,7 +59,7 @@ const MapControls = ({
       transition={{ delay: 0.2 }}
       className="fixed top-[72px] left-3 z-[1000] flex flex-col gap-1 p-1.5 bg-card/90 backdrop-blur-xl rounded-2xl border border-border shadow-lg"
     >
-      {/* Cities toggle */}
+      {/* Destinations toggle */}
       <button
         onClick={onToggleCities}
         className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
@@ -69,7 +69,7 @@ const MapControls = ({
         }`}
       >
         <Building2 className="w-3.5 h-3.5" />
-        Cities
+        Destinations
         {showCities ? <Eye className="w-3 h-3 opacity-70" /> : <EyeOff className="w-3 h-3 opacity-50" />}
       </button>
 

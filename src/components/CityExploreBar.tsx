@@ -359,7 +359,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
             }}
             placeholder={
               mode === "places"
-                ? "Search cities (Barcelona, Tokyo, Lisbon…)"
+                ? "Search destinations (Patagonia, Bali, Yellowstone…)"
                 : "Search experiences, tags, places…"
             }
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"

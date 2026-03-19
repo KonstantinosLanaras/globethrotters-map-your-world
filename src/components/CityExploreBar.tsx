@@ -556,6 +556,42 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                       </div>
                     </div>
                     <div className="overflow-y-auto flex-1 overscroll-contain px-4 py-3 space-y-5">
+                      {/* Location */}
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                          <MapPin className="w-3 h-3" /> Location
+                        </span>
+                        <div className="space-y-2">
+                          <div className="relative">
+                            <select
+                              value={expFilters.country || ""}
+                              onChange={(e) => setExpFilters(prev => ({ ...prev, country: e.target.value || null, city: null }))}
+                              className="w-full px-3 py-2 rounded-lg bg-muted/60 border-0 text-xs font-medium text-foreground appearance-none cursor-pointer focus:ring-1 focus:ring-primary outline-none"
+                            >
+                              <option value="">All countries</option>
+                              {geoOptions.countries.map(c => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                          </div>
+                          {expFilters.country && geoOptions.citiesForCountry(expFilters.country).length > 0 && (
+                            <div className="relative">
+                              <select
+                                value={expFilters.city || ""}
+                                onChange={(e) => setExpFilters(prev => ({ ...prev, city: e.target.value || null }))}
+                                className="w-full px-3 py-2 rounded-lg bg-muted/60 border-0 text-xs font-medium text-foreground appearance-none cursor-pointer focus:ring-1 focus:ring-primary outline-none"
+                              >
+                                <option value="">All cities in {expFilters.country}</option>
+                                {geoOptions.citiesForCountry(expFilters.country).map(c => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
+                              </select>
+                              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       {/* Category */}
                       <div>
                         <span className="text-xs font-medium text-muted-foreground mb-2 block">Category</span>

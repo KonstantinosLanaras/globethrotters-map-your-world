@@ -39,6 +39,8 @@ const Experiences = () => {
   const { data: locations } = useExperienceLocations();
   const [showComposer, setShowComposer] = useState(false);
   const [shareItem, setShareItem] = useState<ShareableItem | null>(null);
+  const { data: favIds = new Set<string>() } = useFavoriteExperienceIds();
+  const toggleFav = useToggleFavoriteExperience();
 
   const [viewMode, setViewMode] = useState<"mine" | "discover">("discover");
 

@@ -192,6 +192,9 @@ const Journeys = () => {
           </>
         )}
       </div>
+      {shareItem && (
+        <ShareModal open={!!shareItem} onClose={() => setShareItem(null)} item={shareItem} />
+      )}
     </div>
   );
 };

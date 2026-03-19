@@ -18,6 +18,7 @@ const Journeys = () => {
 
   const [showCreate, setShowCreate] = useState(false);
   const [selectedJourney, setSelectedJourney] = useState<string | null>(null);
+  const [shareItem, setShareItem] = useState<ShareableItem | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newEmoji, setNewEmoji] = useState("✈️");

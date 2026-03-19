@@ -56,6 +56,7 @@ const App = () => (
             <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/messages/:conversationId" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+            <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
             {/* Legacy redirects */}
             <Route path="/experiences" element={<Navigate to="/visited" replace />} />
             <Route path="/journeys" element={<Navigate to="/visited" replace />} />

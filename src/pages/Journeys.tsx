@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useJourneys, useAddJourney, useDeleteJourney, useJourneyWithExperiences, useAddExperienceToJourney, useRemoveExperienceFromJourney, Journey } from "@/hooks/useJourneys";
 import { useExperiencesWithPhotos, ExperienceWithPhotos } from "@/hooks/useExperiences";
+import { useFavoriteJourneyIds, useToggleFavoriteJourney } from "@/hooks/useFavorites";
 import { toast } from "sonner";
 import ShareModal, { ShareableItem } from "@/components/ShareModal";
 
@@ -19,6 +20,8 @@ const Journeys = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [selectedJourney, setSelectedJourney] = useState<string | null>(null);
   const [shareItem, setShareItem] = useState<ShareableItem | null>(null);
+  const { data: favJourneyIds = new Set<string>() } = useFavoriteJourneyIds();
+  const toggleFavJourney = useToggleFavoriteJourney();
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newEmoji, setNewEmoji] = useState("✈️");
@@ -141,6 +144,8 @@ const Journeys = () => {
             onBack={() => setSelectedJourney(null)}
             onDelete={handleDelete}
             onShare={setShareItem}
+            isFav={favJourneyIds.has(selectedJourney)}
+            onToggleFav={toggleFavJourney}
           />
         ) : (
           <>
@@ -201,13 +206,15 @@ const Journeys = () => {
 
 /* Journey detail with timeline */
 const JourneyDetail = ({
-  journeyId, allExperiences, onBack, onDelete, onShare,
+  journeyId, allExperiences, onBack, onDelete, onShare, isFav, onToggleFav,
 }: {
   journeyId: string;
   allExperiences: ExperienceWithPhotos[];
   onBack: () => void;
   onDelete: (id: string) => void;
   onShare: (item: ShareableItem) => void;
+  isFav: boolean;
+  onToggleFav: { mutate: (v: { journeyId: string; isFavorite: boolean }) => void };
 }) => {
   const { data: journey, isLoading } = useJourneyWithExperiences(journeyId);
   const addExpToJourney = useAddExperienceToJourney();
@@ -243,6 +250,14 @@ const JourneyDetail = ({
           ← Back
         </button>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => onToggleFav.mutate({ journeyId, isFavorite: isFav })}
+            className="text-xs text-muted-foreground hover:text-amber-500 flex items-center gap-1 transition-colors"
+            title={isFav ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Star className={`w-3 h-3 ${isFav ? "fill-amber-400 text-amber-400" : ""}`} />
+            {isFav ? "Favorited" : "Favorite"}
+          </button>
           {journey.privacy !== "private" && (
             <button
               onClick={() => onShare({

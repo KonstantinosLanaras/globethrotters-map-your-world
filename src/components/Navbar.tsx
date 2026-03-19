@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Map, MapPin, Heart, User, Menu, X, LogOut, Users, MessageSquare } from "lucide-react";
+import { Map, MapPin, Heart, User, Menu, X, LogOut, Users, MessageSquare, Star } from "lucide-react";
 import GlobethrottersLogo from "@/components/GlobethrottersLogo";
 import PeopleSearch from "@/components/PeopleSearch";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -108,6 +108,19 @@ const Navbar = ({ searchMode = "places", onSearchModeChange }: NavbarProps) => {
         >
           <Heart className="w-4 h-4" />
           Wishlist
+        </button>
+
+        {/* Favorites */}
+        <button
+          onClick={() => navigate("/favorites")}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+            location.pathname === "/favorites"
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          <Star className="w-4 h-4" />
+          Favorites
         </button>
 
       </div>

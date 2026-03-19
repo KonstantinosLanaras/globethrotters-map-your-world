@@ -11,6 +11,7 @@ import ShareModal, { ShareableItem } from "@/components/ShareModal";
 import { useExperiencesWithPhotos, useDeleteExperience, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { useExperienceLocations, useDiscoverExperiences, DiscoverExperience } from "@/hooks/useDiscoverExperiences";
 import ExperienceComposer from "@/components/ExperienceComposer";
+import { useFavoriteExperienceIds, useToggleFavoriteExperience } from "@/hooks/useFavorites";
 import { toast } from "sonner";
 
 const ACTIVITY_FILTERS = [
@@ -38,6 +39,8 @@ const Experiences = () => {
   const { data: locations } = useExperienceLocations();
   const [showComposer, setShowComposer] = useState(false);
   const [shareItem, setShareItem] = useState<ShareableItem | null>(null);
+  const { data: favIds = new Set<string>() } = useFavoriteExperienceIds();
+  const toggleFav = useToggleFavoriteExperience();
 
   const [viewMode, setViewMode] = useState<"mine" | "discover">("discover");
 
@@ -532,7 +535,7 @@ const Experiences = () => {
             ) : (
               <div className="space-y-4">
                 {discoveredExperiences.map(exp => (
-                  <DiscoverCard key={exp.id} exp={exp} onShare={setShareItem} />
+                  <DiscoverCard key={exp.id} exp={exp} onShare={setShareItem} isFav={favIds.has(exp.id)} onToggleFav={toggleFav} />
                 ))}
               </div>
             )}
@@ -560,7 +563,7 @@ const Experiences = () => {
             ) : (
               <div className="space-y-4">
                 {myExperiences.map(exp => (
-                  <MyExperienceCard key={exp.id} exp={exp} onDelete={handleDelete} onShare={setShareItem} />
+                  <MyExperienceCard key={exp.id} exp={exp} onDelete={handleDelete} onShare={setShareItem} isFav={favIds.has(exp.id)} onToggleFav={toggleFav} />
                 ))}
               </div>
             )}
@@ -577,7 +580,7 @@ const Experiences = () => {
 };
 
 /* ── Discover Experience Card ── */
-const DiscoverCard = ({ exp, onShare }: { exp: DiscoverExperience; onShare: (item: ShareableItem) => void }) => {
+const DiscoverCard = ({ exp, onShare, isFav, onToggleFav }: { exp: DiscoverExperience; onShare: (item: ShareableItem) => void; isFav: boolean; onToggleFav: { mutate: (v: { experienceId: string; isFavorite: boolean }) => void } }) => {
   const [showGallery, setShowGallery] = useState(false);
 
   const handleShare = () => {
@@ -672,14 +675,24 @@ const DiscoverCard = ({ exp, onShare }: { exp: DiscoverExperience; onShare: (ite
               </span>
             )}
           </div>
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
-            title="Share with a friend"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            Share
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onToggleFav.mutate({ experienceId: exp.id, isFavorite: isFav })}
+              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-amber-500 transition-colors"
+              title={isFav ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Star className={`w-3.5 h-3.5 ${isFav ? "fill-amber-400 text-amber-400" : ""}`} />
+              {isFav ? "Favorited" : "Favorite"}
+            </button>
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
+              title="Share with a friend"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Share
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -687,7 +700,7 @@ const DiscoverCard = ({ exp, onShare }: { exp: DiscoverExperience; onShare: (ite
 };
 
 /* ── My Experience Card ── */
-const MyExperienceCard = ({ exp, onDelete, onShare }: { exp: ExperienceWithPhotos; onDelete: (id: string) => void; onShare: (item: ShareableItem) => void }) => {
+const MyExperienceCard = ({ exp, onDelete, onShare, isFav, onToggleFav }: { exp: ExperienceWithPhotos; onDelete: (id: string) => void; onShare: (item: ShareableItem) => void; isFav: boolean; onToggleFav: { mutate: (v: { experienceId: string; isFavorite: boolean }) => void } }) => {
   const [showGallery, setShowGallery] = useState(false);
 
   const handleShare = () => {
@@ -771,13 +784,19 @@ const MyExperienceCard = ({ exp, onDelete, onShare }: { exp: ExperienceWithPhoto
             )}
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => onToggleFav.mutate({ experienceId: exp.id, isFavorite: isFav })}
+              className="text-[10px] text-muted-foreground hover:text-amber-500 transition-colors flex items-center gap-0.5"
+              title={isFav ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Star className={`w-3 h-3 ${isFav ? "fill-amber-400 text-amber-400" : ""}`} />
+            </button>
             {exp.visibility !== "private" && (
               <button
                 onClick={handleShare}
                 className="text-[10px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-0.5"
               >
                 <Share2 className="w-3 h-3" />
-                Share
               </button>
             )}
             <button

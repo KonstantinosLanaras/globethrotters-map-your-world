@@ -1,3 +1,5 @@
+export type DestinationType = "city" | "region" | "island" | "park" | "landmark";
+
 export interface City {
   name: string;
   country: string;
@@ -5,10 +7,11 @@ export interface City {
   lng: number;
   population?: number;
   continent: string;
+  type?: DestinationType;
 }
 
 export const worldCities: City[] = [
-  // Europe
+  // Europe — Cities
   { name: "London", country: "United Kingdom", lat: 51.5074, lng: -0.1278, continent: "Europe", population: 8982000 },
   { name: "Paris", country: "France", lat: 48.8566, lng: 2.3522, continent: "Europe", population: 2161000 },
   { name: "Berlin", country: "Germany", lat: 52.52, lng: 13.405, continent: "Europe", population: 3645000 },
@@ -28,18 +31,29 @@ export const worldCities: City[] = [
   { name: "Budapest", country: "Hungary", lat: 47.4979, lng: 19.0402, continent: "Europe", population: 1756000 },
   { name: "Reykjavik", country: "Iceland", lat: 64.1466, lng: -21.9426, continent: "Europe", population: 131136 },
   { name: "Dubrovnik", country: "Croatia", lat: 42.6507, lng: 18.0944, continent: "Europe", population: 42615 },
-  { name: "Santorini", country: "Greece", lat: 36.3932, lng: 25.4615, continent: "Europe", population: 15550 },
   { name: "Florence", country: "Italy", lat: 43.7696, lng: 11.2558, continent: "Europe", population: 382258 },
   { name: "Munich", country: "Germany", lat: 48.1351, lng: 11.582, continent: "Europe", population: 1472000 },
   { name: "Zurich", country: "Switzerland", lat: 47.3769, lng: 8.5417, continent: "Europe", population: 434008 },
-  // Asia
+  // Europe — Islands & Regions
+  { name: "Santorini", country: "Greece", lat: 36.3932, lng: 25.4615, continent: "Europe", population: 15550, type: "island" },
+  { name: "Amalfi Coast", country: "Italy", lat: 40.6333, lng: 14.6029, continent: "Europe", type: "region" },
+  { name: "Cinque Terre", country: "Italy", lat: 44.1461, lng: 9.6439, continent: "Europe", type: "region" },
+  { name: "Scottish Highlands", country: "United Kingdom", lat: 57.12, lng: -4.71, continent: "Europe", type: "region" },
+  { name: "Azores", country: "Portugal", lat: 37.7412, lng: -25.6756, continent: "Europe", type: "island" },
+  { name: "Canary Islands", country: "Spain", lat: 28.2916, lng: -16.6291, continent: "Europe", type: "island" },
+  { name: "Crete", country: "Greece", lat: 35.2401, lng: 24.8093, continent: "Europe", type: "island" },
+  { name: "Dolomites", country: "Italy", lat: 46.41, lng: 11.84, continent: "Europe", type: "region" },
+  { name: "Swiss Alps", country: "Switzerland", lat: 46.818, lng: 8.2275, continent: "Europe", type: "region" },
+  { name: "Lofoten Islands", country: "Norway", lat: 68.2, lng: 14.4, continent: "Europe", type: "island" },
+  { name: "Provence", country: "France", lat: 43.9493, lng: 6.0679, continent: "Europe", type: "region" },
+  { name: "Corsica", country: "France", lat: 42.0396, lng: 9.0129, continent: "Europe", type: "island" },
+  // Asia — Cities
   { name: "Tokyo", country: "Japan", lat: 35.6762, lng: 139.6503, continent: "Asia", population: 13960000 },
   { name: "Kyoto", country: "Japan", lat: 35.0116, lng: 135.7681, continent: "Asia", population: 1475000 },
   { name: "Bangkok", country: "Thailand", lat: 13.7563, lng: 100.5018, continent: "Asia", population: 10539000 },
   { name: "Singapore", country: "Singapore", lat: 1.3521, lng: 103.8198, continent: "Asia", population: 5454000 },
   { name: "Hong Kong", country: "China", lat: 22.3193, lng: 114.1694, continent: "Asia", population: 7482000 },
   { name: "Seoul", country: "South Korea", lat: 37.5665, lng: 126.978, continent: "Asia", population: 9776000 },
-  { name: "Bali", country: "Indonesia", lat: -8.3405, lng: 115.092, continent: "Asia", population: 4225000 },
   { name: "Dubai", country: "United Arab Emirates", lat: 25.2048, lng: 55.2708, continent: "Asia", population: 3331000 },
   { name: "Mumbai", country: "India", lat: 19.076, lng: 72.8777, continent: "Asia", population: 20411000 },
   { name: "Delhi", country: "India", lat: 28.7041, lng: 77.1025, continent: "Asia", population: 16787941 },
@@ -50,7 +64,16 @@ export const worldCities: City[] = [
   { name: "Taipei", country: "Taiwan", lat: 25.033, lng: 121.5654, continent: "Asia", population: 2646000 },
   { name: "Kathmandu", country: "Nepal", lat: 27.7172, lng: 85.324, continent: "Asia", population: 1442271 },
   { name: "Siem Reap", country: "Cambodia", lat: 13.3671, lng: 103.8448, continent: "Asia", population: 250798 },
-  // North America
+  // Asia — Islands & Regions
+  { name: "Bali", country: "Indonesia", lat: -8.3405, lng: 115.092, continent: "Asia", population: 4225000, type: "island" },
+  { name: "Maldives", country: "Maldives", lat: 3.2028, lng: 73.2207, continent: "Asia", type: "island" },
+  { name: "Sri Lanka", country: "Sri Lanka", lat: 7.8731, lng: 80.7718, continent: "Asia", type: "island" },
+  { name: "Cappadocia", country: "Turkey", lat: 38.6431, lng: 34.8289, continent: "Asia", type: "region" },
+  { name: "Rajasthan", country: "India", lat: 27.0238, lng: 74.2179, continent: "Asia", type: "region" },
+  { name: "Ha Long Bay", country: "Vietnam", lat: 20.9101, lng: 107.1839, continent: "Asia", type: "region" },
+  { name: "Borneo", country: "Malaysia", lat: 1.0, lng: 114.0, continent: "Asia", type: "island" },
+  { name: "Komodo Islands", country: "Indonesia", lat: -8.55, lng: 119.48, continent: "Asia", type: "island" },
+  // North America — Cities
   { name: "New York", country: "United States", lat: 40.7128, lng: -74.006, continent: "North America", population: 8336817 },
   { name: "Los Angeles", country: "United States", lat: 34.0522, lng: -118.2437, continent: "North America", population: 3979576 },
   { name: "San Francisco", country: "United States", lat: 37.7749, lng: -122.4194, continent: "North America", population: 873965 },
@@ -64,7 +87,16 @@ export const worldCities: City[] = [
   { name: "Oaxaca", country: "Mexico", lat: 17.0732, lng: -96.7266, continent: "North America", population: 300050 },
   { name: "Austin", country: "United States", lat: 30.2672, lng: -97.7431, continent: "North America", population: 978908 },
   { name: "Nashville", country: "United States", lat: 36.1627, lng: -86.7816, continent: "North America", population: 689447 },
-  // South America
+  // North America — Parks & Regions
+  { name: "Yellowstone", country: "United States", lat: 44.428, lng: -110.5885, continent: "North America", type: "park" },
+  { name: "Grand Canyon", country: "United States", lat: 36.1069, lng: -112.1129, continent: "North America", type: "park" },
+  { name: "Yosemite", country: "United States", lat: 37.8651, lng: -119.5383, continent: "North America", type: "park" },
+  { name: "Banff", country: "Canada", lat: 51.1784, lng: -115.5708, continent: "North America", type: "park" },
+  { name: "Hawaiian Islands", country: "United States", lat: 20.7984, lng: -156.3319, continent: "North America", type: "island" },
+  { name: "Alaska", country: "United States", lat: 64.2008, lng: -152.4937, continent: "North America", type: "region" },
+  { name: "Tulum", country: "Mexico", lat: 20.2145, lng: -87.4292, continent: "North America", type: "region" },
+  { name: "Baja California", country: "Mexico", lat: 28.0, lng: -113.5, continent: "North America", type: "region" },
+  // South America — Cities
   { name: "Buenos Aires", country: "Argentina", lat: -34.6037, lng: -58.3816, continent: "South America", population: 3054000 },
   { name: "Rio de Janeiro", country: "Brazil", lat: -22.9068, lng: -43.1729, continent: "South America", population: 6748000 },
   { name: "São Paulo", country: "Brazil", lat: -23.5505, lng: -46.6333, continent: "South America", population: 12325000 },
@@ -74,7 +106,15 @@ export const worldCities: City[] = [
   { name: "Cartagena", country: "Colombia", lat: 10.3932, lng: -75.5144, continent: "South America", population: 1028736 },
   { name: "Cusco", country: "Peru", lat: -13.5319, lng: -71.9675, continent: "South America", population: 428450 },
   { name: "Santiago", country: "Chile", lat: -33.4489, lng: -70.6693, continent: "South America", population: 6310000 },
-  // Africa
+  // South America — Regions & Parks
+  { name: "Patagonia", country: "Argentina", lat: -46.0, lng: -69.0, continent: "South America", type: "region" },
+  { name: "Galápagos Islands", country: "Ecuador", lat: -0.9538, lng: -90.9656, continent: "South America", type: "island" },
+  { name: "Amazon Rainforest", country: "Brazil", lat: -3.4653, lng: -62.2159, continent: "South America", type: "region" },
+  { name: "Atacama Desert", country: "Chile", lat: -23.8634, lng: -69.1328, continent: "South America", type: "region" },
+  { name: "Torres del Paine", country: "Chile", lat: -51.2538, lng: -72.3462, continent: "South America", type: "park" },
+  { name: "Iguazu Falls", country: "Argentina", lat: -25.6953, lng: -54.4367, continent: "South America", type: "landmark" },
+  { name: "Salar de Uyuni", country: "Bolivia", lat: -20.1338, lng: -67.4891, continent: "South America", type: "landmark" },
+  // Africa — Cities
   { name: "Cape Town", country: "South Africa", lat: -33.9249, lng: 18.4241, continent: "Africa", population: 4618000 },
   { name: "Marrakech", country: "Morocco", lat: 31.6295, lng: -7.9811, continent: "Africa", population: 928850 },
   { name: "Cairo", country: "Egypt", lat: 30.0444, lng: 31.2357, continent: "Africa", population: 20076000 },
@@ -83,10 +123,22 @@ export const worldCities: City[] = [
   { name: "Lagos", country: "Nigeria", lat: 6.5244, lng: 3.3792, continent: "Africa", population: 15388000 },
   { name: "Zanzibar City", country: "Tanzania", lat: -6.1659, lng: 39.2026, continent: "Africa", population: 223033 },
   { name: "Dakar", country: "Senegal", lat: 14.7167, lng: -17.4677, continent: "Africa", population: 1146053 },
-  // Oceania
+  // Africa — Regions & Parks
+  { name: "Serengeti", country: "Tanzania", lat: -2.3333, lng: 34.8333, continent: "Africa", type: "park" },
+  { name: "Kruger National Park", country: "South Africa", lat: -24.0, lng: 31.5, continent: "Africa", type: "park" },
+  { name: "Sahara Desert", country: "Morocco", lat: 23.4162, lng: 25.6628, continent: "Africa", type: "region" },
+  { name: "Madagascar", country: "Madagascar", lat: -18.7669, lng: 46.8691, continent: "Africa", type: "island" },
+  { name: "Zanzibar", country: "Tanzania", lat: -6.1659, lng: 39.1884, continent: "Africa", type: "island" },
+  { name: "Mount Kilimanjaro", country: "Tanzania", lat: -3.0674, lng: 37.3556, continent: "Africa", type: "landmark" },
+  // Oceania — Cities
   { name: "Sydney", country: "Australia", lat: -33.8688, lng: 151.2093, continent: "Oceania", population: 5312000 },
   { name: "Melbourne", country: "Australia", lat: -37.8136, lng: 144.9631, continent: "Oceania", population: 5078000 },
   { name: "Auckland", country: "New Zealand", lat: -36.8485, lng: 174.7633, continent: "Oceania", population: 1657000 },
   { name: "Queenstown", country: "New Zealand", lat: -45.0312, lng: 168.6626, continent: "Oceania", population: 15800 },
-  { name: "Fiji", country: "Fiji", lat: -17.7134, lng: 178.065, continent: "Oceania", population: 93970 },
+  // Oceania — Islands & Regions
+  { name: "Fiji", country: "Fiji", lat: -17.7134, lng: 178.065, continent: "Oceania", population: 93970, type: "island" },
+  { name: "Great Barrier Reef", country: "Australia", lat: -18.2871, lng: 147.6992, continent: "Oceania", type: "landmark" },
+  { name: "Bora Bora", country: "French Polynesia", lat: -16.5004, lng: -151.7415, continent: "Oceania", type: "island" },
+  { name: "Tasmania", country: "Australia", lat: -42.0409, lng: 146.8087, continent: "Oceania", type: "island" },
+  { name: "Milford Sound", country: "New Zealand", lat: -44.6718, lng: 167.9264, continent: "Oceania", type: "region" },
 ];

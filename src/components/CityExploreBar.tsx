@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Search, SlidersHorizontal, X, Star, Shield, Users, Heart, TreePine, Utensils, Music, Palette, Mountain, Sparkles, Compass, Camera, Bookmark, MapPin, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { worldCities, City } from "@/data/cities";
+import { worldCities, City, DestinationType } from "@/data/cities";
 import {
   cityScores,
   CityScore,
@@ -359,7 +359,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
             }}
             placeholder={
               mode === "places"
-                ? "Search cities (Barcelona, Tokyo, Lisbon…)"
+                ? "Search destinations (Patagonia, Bali, Yellowstone…)"
                 : "Search experiences, tags, places…"
             }
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
@@ -837,6 +837,15 @@ function CityResultCard({
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-foreground truncate">{city.cityName}</span>
           <span className="text-xs text-muted-foreground truncate">{city.country}</span>
+          {(() => {
+            const dest = worldCities.find(c => c.name === city.cityName);
+            const dtype = dest?.type;
+            if (!dtype) return null;
+            const typeLabels: Record<DestinationType, string> = { region: "Region", island: "Island", park: "Park", landmark: "Landmark", city: "" };
+            return typeLabels[dtype] ? (
+              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-accent text-accent-foreground">{typeLabels[dtype]}</span>
+            ) : null;
+          })()}
         </div>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className="text-xs text-muted-foreground font-medium">{budgetLabels[city.budget]}</span>

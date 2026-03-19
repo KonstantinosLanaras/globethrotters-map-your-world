@@ -654,6 +654,28 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                           </FilterChip>
                         </div>
                       </div>
+                      {/* Contributor quality */}
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                          <ShieldCheck className="w-3 h-3" /> Contributor quality
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {([
+                            { key: "all" as ContributorFilter, label: "All contributors" },
+                            { key: "community_approved" as ContributorFilter, label: "Community-approved" },
+                            { key: "verified" as ContributorFilter, label: "Verified only" },
+                          ]).map(({ key, label }) => (
+                            <FilterChip
+                              key={key}
+                              active={expFilters.contributorQuality === key}
+                              onClick={() => setExpFilters(prev => ({ ...prev, contributorQuality: key }))}
+                              icon={key === "all" ? undefined : ShieldCheck}
+                            >
+                              {label}
+                            </FilterChip>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50 bg-muted/20 flex-shrink-0">
                       <p className="text-[10px] text-muted-foreground/60 leading-tight max-w-[200px]">

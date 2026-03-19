@@ -577,8 +577,23 @@ const Experiences = () => {
 };
 
 /* ── Discover Experience Card ── */
-const DiscoverCard = ({ exp }: { exp: DiscoverExperience }) => {
+const DiscoverCard = ({ exp, onShare }: { exp: DiscoverExperience; onShare: (item: ShareableItem) => void }) => {
   const [showGallery, setShowGallery] = useState(false);
+
+  const handleShare = () => {
+    if (exp.visibility !== "public") return;
+    onShare({
+      type: "experience",
+      id: exp.id,
+      title: exp.title,
+      city: exp.city,
+      country: exp.country,
+      category: exp.category,
+      rating: exp.rating,
+      photo: exp.photos[0] || null,
+      caption: exp.caption,
+    });
+  };
 
   return (
     <motion.div
@@ -639,22 +654,32 @@ const DiscoverCard = ({ exp }: { exp: DiscoverExperience }) => {
             ))}
           </div>
         )}
-        <div className="flex items-center gap-3 mt-2.5 flex-wrap">
-          {exp.saves_count > 0 && (
-            <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <Heart className="w-3 h-3" /> {exp.saves_count} save{exp.saves_count !== 1 ? "s" : ""}
-            </span>
-          )}
-          {exp.rating_avg >= 4 && (
-            <span className="flex items-center gap-1 text-[10px] text-amber-600 font-medium">
-              <Award className="w-3 h-3" /> Highly rated
-            </span>
-          )}
-          {exp.engagement_score >= 50 && (
-            <span className="flex items-center gap-1 text-[10px] text-primary font-medium">
-              <TrendingUp className="w-3 h-3" /> Popular
-            </span>
-          )}
+        <div className="flex items-center justify-between mt-2.5">
+          <div className="flex items-center gap-3 flex-wrap">
+            {exp.saves_count > 0 && (
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <Heart className="w-3 h-3" /> {exp.saves_count} save{exp.saves_count !== 1 ? "s" : ""}
+              </span>
+            )}
+            {exp.rating_avg >= 4 && (
+              <span className="flex items-center gap-1 text-[10px] text-amber-600 font-medium">
+                <Award className="w-3 h-3" /> Highly rated
+              </span>
+            )}
+            {exp.engagement_score >= 50 && (
+              <span className="flex items-center gap-1 text-[10px] text-primary font-medium">
+                <TrendingUp className="w-3 h-3" /> Popular
+              </span>
+            )}
+          </div>
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
+            title="Share with a friend"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            Share
+          </button>
         </div>
       </div>
     </motion.div>

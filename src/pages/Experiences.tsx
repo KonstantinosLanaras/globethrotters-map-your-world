@@ -560,7 +560,7 @@ const Experiences = () => {
             ) : (
               <div className="space-y-4">
                 {myExperiences.map(exp => (
-                  <MyExperienceCard key={exp.id} exp={exp} onDelete={handleDelete} />
+                  <MyExperienceCard key={exp.id} exp={exp} onDelete={handleDelete} onShare={setShareItem} />
                 ))}
               </div>
             )}

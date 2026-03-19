@@ -784,13 +784,19 @@ const MyExperienceCard = ({ exp, onDelete, onShare, isFav, onToggleFav }: { exp:
             )}
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => onToggleFav.mutate({ experienceId: exp.id, isFavorite: isFav })}
+              className="text-[10px] text-muted-foreground hover:text-amber-500 transition-colors flex items-center gap-0.5"
+              title={isFav ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Star className={`w-3 h-3 ${isFav ? "fill-amber-400 text-amber-400" : ""}`} />
+            </button>
             {exp.visibility !== "private" && (
               <button
                 onClick={handleShare}
                 className="text-[10px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-0.5"
               >
                 <Share2 className="w-3 h-3" />
-                Share
               </button>
             )}
             <button

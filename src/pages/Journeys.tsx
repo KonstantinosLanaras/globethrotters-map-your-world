@@ -201,12 +201,13 @@ const Journeys = () => {
 
 /* Journey detail with timeline */
 const JourneyDetail = ({
-  journeyId, allExperiences, onBack, onDelete,
+  journeyId, allExperiences, onBack, onDelete, onShare,
 }: {
   journeyId: string;
   allExperiences: ExperienceWithPhotos[];
   onBack: () => void;
   onDelete: (id: string) => void;
+  onShare: (item: ShareableItem) => void;
 }) => {
   const { data: journey, isLoading } = useJourneyWithExperiences(journeyId);
   const addExpToJourney = useAddExperienceToJourney();

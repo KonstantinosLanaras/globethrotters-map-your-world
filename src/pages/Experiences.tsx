@@ -569,6 +569,9 @@ const Experiences = () => {
       </div>
 
       <ExperienceComposer open={showComposer} onClose={() => setShowComposer(false)} />
+      {shareItem && (
+        <ShareModal open={!!shareItem} onClose={() => setShareItem(null)} item={shareItem} />
+      )}
     </div>
   );
 };

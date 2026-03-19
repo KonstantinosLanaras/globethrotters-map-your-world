@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { Search, SlidersHorizontal, X, Star, Shield, Users, Heart, TreePine, Utensils, Music, Palette, Mountain, Sparkles, Compass, Camera, Bookmark, MapPin, ChevronDown } from "lucide-react";
+import { Search, SlidersHorizontal, X, Star, Shield, Users, Heart, TreePine, Utensils, Music, Palette, Mountain, Sparkles, Compass, Camera, Bookmark, MapPin, ChevronDown, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { worldCities, City, DestinationType } from "@/data/cities";
 import {
@@ -61,6 +61,8 @@ const climateGradeColor: Record<string, string> = {
 type CrowdFilter = "low" | "moderate" | "high";
 const crowdLabels: Record<CrowdFilter, string> = { low: "Quiet", moderate: "Moderate", high: "Busy" };
 
+type ContributorFilter = "all" | "community_approved" | "verified";
+
 interface ExpFilters {
   categories: string[];
   country: string | null;
@@ -69,6 +71,7 @@ interface ExpFilters {
   withPhotos: boolean;
   recent: boolean;
   tags: string[];
+  contributorQuality: ContributorFilter;
 }
 
 const defaultExpFilters: ExpFilters = {
@@ -79,6 +82,7 @@ const defaultExpFilters: ExpFilters = {
   withPhotos: false,
   recent: false,
   tags: [],
+  contributorQuality: "all",
 };
 
 const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProps) => {
@@ -120,7 +124,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
   });
 
   const hasActiveExpFilters = useMemo(() => {
-    return expFilters.categories.length > 0 || expFilters.country !== null || expFilters.city !== null || expFilters.minRating !== null || expFilters.withPhotos || expFilters.recent;
+    return expFilters.categories.length > 0 || expFilters.country !== null || expFilters.city !== null || expFilters.minRating !== null || expFilters.withPhotos || expFilters.recent || expFilters.contributorQuality !== "all";
   }, [expFilters]);
 
   const hasActiveFilters = useMemo(() => {
@@ -136,6 +140,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
       if (expFilters.minRating !== null) count++;
       if (expFilters.withPhotos) count++;
       if (expFilters.recent) count++;
+      if (expFilters.contributorQuality !== "all") count++;
       return count;
     }
     let count = 0;
@@ -647,6 +652,28 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
                           >
                             Recent (30 days)
                           </FilterChip>
+                        </div>
+                      </div>
+                      {/* Contributor quality */}
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                          <ShieldCheck className="w-3 h-3" /> Contributor quality
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {([
+                            { key: "all" as ContributorFilter, label: "All contributors" },
+                            { key: "community_approved" as ContributorFilter, label: "Community-approved" },
+                            { key: "verified" as ContributorFilter, label: "Verified only" },
+                          ]).map(({ key, label }) => (
+                            <FilterChip
+                              key={key}
+                              active={expFilters.contributorQuality === key}
+                              onClick={() => setExpFilters(prev => ({ ...prev, contributorQuality: key }))}
+                              icon={key === "all" ? undefined : ShieldCheck}
+                            >
+                              {label}
+                            </FilterChip>
+                          ))}
                         </div>
                       </div>
                     </div>

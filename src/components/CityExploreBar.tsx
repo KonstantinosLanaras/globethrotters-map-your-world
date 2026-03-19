@@ -131,6 +131,8 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
   const activeFilterCount = useMemo(() => {
     if (mode === "experiences") {
       let count = expFilters.categories.length;
+      if (expFilters.country) count++;
+      if (expFilters.city) count++;
       if (expFilters.minRating !== null) count++;
       if (expFilters.withPhotos) count++;
       if (expFilters.recent) count++;

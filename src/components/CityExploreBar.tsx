@@ -181,15 +181,32 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
     return ranked.slice(0, 15);
   }, [query, filters, hasActiveFilters, crowdFilter, mode]);
 
+  // Extract unique countries and cities from experiences for geo filters
+  const geoOptions = useMemo(() => {
+    const countries = new Set<string>();
+    const citiesByCountry: Record<string, Set<string>> = {};
+    communityExperiences.forEach(e => {
+      if (e.country) {
+        countries.add(e.country);
+        if (e.city) {
+          if (!citiesByCountry[e.country]) citiesByCountry[e.country] = new Set();
+          citiesByCountry[e.country].add(e.city);
+        }
+      }
+    });
+    return {
+      countries: Array.from(countries).sort(),
+      citiesForCountry: (country: string) => Array.from(citiesByCountry[country] || []).sort(),
+    };
+  }, [communityExperiences]);
+
   // Experiences mode results
   const experienceResults = useMemo(() => {
     if (mode !== "experiences") return [];
     const q = query.toLowerCase().trim();
     const hasCatFilter = expFilters.categories.length > 0;
-    if (!q && !hasCatFilter && !expFilters.minRating && !expFilters.withPhotos && !expFilters.recent) return [];
-    
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const hasGeoFilter = !!expFilters.country || !!expFilters.city;
+    if (!q && !hasCatFilter && !hasGeoFilter && !expFilters.minRating && !expFilters.withPhotos && !expFilters.recent) return [];
     
     return communityExperiences
       .filter(e => {
@@ -200,10 +217,12 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
           e.caption?.toLowerCase().includes(q) ||
           e.tags?.some((t: string) => t.toLowerCase().includes(q));
         const matchesCat = !hasCatFilter || expFilters.categories.some(c => e.category.toLowerCase() === c.toLowerCase());
+        const matchesCountry = !expFilters.country || e.country?.toLowerCase() === expFilters.country.toLowerCase();
+        const matchesCity = !expFilters.city || e.city?.toLowerCase() === expFilters.city.toLowerCase();
         const matchesRating = !expFilters.minRating || (e.rating && e.rating >= expFilters.minRating);
-        return matchesSearch && matchesCat && matchesRating;
+        return matchesSearch && matchesCat && matchesCountry && matchesCity && matchesRating;
       })
-      .slice(0, 15);
+      .slice(0, 20);
   }, [query, mode, expFilters, communityExperiences]);
 
   // Group experiences by location

@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import {
   Plus, MapPin, Star, Calendar, ChevronRight, Trash2, X, Check,
-  Image, Plane, Loader2
+  Image, Plane, Loader2, Share2
 } from "lucide-react";
 import { useJourneys, useAddJourney, useDeleteJourney, useJourneyWithExperiences, useAddExperienceToJourney, useRemoveExperienceFromJourney, Journey } from "@/hooks/useJourneys";
 import { useExperiencesWithPhotos, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { toast } from "sonner";
+import ShareModal, { ShareableItem } from "@/components/ShareModal";
 
 const Journeys = () => {
   const { data: journeys = [], isLoading } = useJourneys();

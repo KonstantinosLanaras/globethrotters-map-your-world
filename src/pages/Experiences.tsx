@@ -563,7 +563,7 @@ const Experiences = () => {
             ) : (
               <div className="space-y-4">
                 {myExperiences.map(exp => (
-                  <MyExperienceCard key={exp.id} exp={exp} onDelete={handleDelete} onShare={setShareItem} />
+                  <MyExperienceCard key={exp.id} exp={exp} onDelete={handleDelete} onShare={setShareItem} isFav={favIds.has(exp.id)} onToggleFav={toggleFav} />
                 ))}
               </div>
             )}

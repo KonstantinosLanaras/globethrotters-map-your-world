@@ -687,8 +687,23 @@ const DiscoverCard = ({ exp, onShare }: { exp: DiscoverExperience; onShare: (ite
 };
 
 /* ── My Experience Card ── */
-const MyExperienceCard = ({ exp, onDelete }: { exp: ExperienceWithPhotos; onDelete: (id: string) => void }) => {
+const MyExperienceCard = ({ exp, onDelete, onShare }: { exp: ExperienceWithPhotos; onDelete: (id: string) => void; onShare: (item: ShareableItem) => void }) => {
   const [showGallery, setShowGallery] = useState(false);
+
+  const handleShare = () => {
+    if (exp.visibility === "private") return;
+    onShare({
+      type: "experience",
+      id: exp.id,
+      title: exp.title,
+      city: exp.city,
+      country: exp.country,
+      category: exp.category,
+      rating: exp.rating,
+      photo: exp.photos[0] || null,
+      caption: exp.caption,
+    });
+  };
 
   return (
     <motion.div
@@ -750,19 +765,31 @@ const MyExperienceCard = ({ exp, onDelete }: { exp: ExperienceWithPhotos; onDele
           </div>
         )}
         <div className="flex items-center justify-between mt-3">
-          {exp.experience_date && (
-            <p className="text-[10px] text-muted-foreground">{new Date(exp.experience_date).toLocaleDateString()}</p>
-          )}
-          <button
-            onClick={() => onDelete(exp.id)}
-            className="text-[10px] text-muted-foreground hover:text-destructive transition-colors flex items-center gap-0.5"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
+          <div className="flex items-center gap-2">
+            {exp.experience_date && (
+              <p className="text-[10px] text-muted-foreground">{new Date(exp.experience_date).toLocaleDateString()}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {exp.visibility !== "private" && (
+              <button
+                onClick={handleShare}
+                className="text-[10px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-0.5"
+              >
+                <Share2 className="w-3 h-3" />
+                Share
+              </button>
+            )}
+            <button
+              onClick={() => onDelete(exp.id)}
+              className="text-[10px] text-muted-foreground hover:text-destructive transition-colors flex items-center gap-0.5"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
   );
 };
-
 export default Experiences;

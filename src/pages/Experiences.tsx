@@ -2,27 +2,26 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import {
-  MapPin, Globe, Search, Star, Image, Camera, Plus, Filter, X,
-  Heart, Award, TrendingUp, Users, ChevronDown, SlidersHorizontal,
-  Trash2, Lock, Eye
+  MapPin, Globe, Search, Star, Image, Camera, Plus, X,
+  Heart, Award, TrendingUp, Users, SlidersHorizontal,
+  Trash2, Check,
+  Utensils, Landmark, TreePine, Mountain, Moon, Compass, Building2, Gem, Home
 } from "lucide-react";
 import { useExperiencesWithPhotos, useDeleteExperience, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { useExperienceLocations, useDiscoverExperiences, DiscoverExperience } from "@/hooks/useDiscoverExperiences";
 import ExperienceComposer from "@/components/ExperienceComposer";
 import { toast } from "sonner";
 
-const categories = [
-  { id: null, label: "All", emoji: "🌍" },
-  { id: "food", label: "Food", emoji: "🍽️" },
-  { id: "culture", label: "Culture", emoji: "🏛️" },
-  { id: "nature", label: "Nature", emoji: "🌿" },
-  { id: "hike", label: "Hiking", emoji: "🥾" },
-  { id: "nightlife", label: "Nightlife", emoji: "🌙" },
-  { id: "beach", label: "Beach", emoji: "🏖️" },
-  { id: "museum", label: "Museum", emoji: "🎨" },
-  { id: "hotel", label: "Stay", emoji: "🏨" },
-  { id: "hidden_gem", label: "Hidden Gem", emoji: "💎" },
-  { id: "city_walk", label: "City Walk", emoji: "🚶" },
+const ACTIVITY_FILTERS = [
+  { id: "food", label: "Food", icon: Utensils, emoji: "🍽️" },
+  { id: "culture", label: "Culture", icon: Landmark, emoji: "🏛️" },
+  { id: "nature", label: "Nature", icon: TreePine, emoji: "🌿" },
+  { id: "hike", label: "Hiking", icon: Mountain, emoji: "🥾" },
+  { id: "nightlife", label: "Nightlife", icon: Moon, emoji: "🌙" },
+  { id: "beach", label: "Beach", icon: Compass, emoji: "🏖️" },
+  { id: "museum", label: "Museum", icon: Building2, emoji: "🎨" },
+  { id: "hidden_gem", label: "Hidden Gem", icon: Gem, emoji: "💎" },
+  { id: "stay", label: "Stay", icon: Home, emoji: "🏨" },
 ];
 
 const sortOptions = [
@@ -38,41 +37,43 @@ const Experiences = () => {
   const { data: locations } = useExperienceLocations();
   const [showComposer, setShowComposer] = useState(false);
 
-  // View mode
   const [viewMode, setViewMode] = useState<"mine" | "discover">("discover");
 
-  // Place filters
+  // Filters
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [placeSearch, setPlaceSearch] = useState("");
-  const [showPlacePicker, setShowPlacePicker] = useState(true);
-
-  // Secondary filters
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [minRating, setMinRating] = useState(0);
   const [withPhotos, setWithPhotos] = useState(false);
   const [connectionsOnly, setConnectionsOnly] = useState(false);
   const [sortBy, setSortBy] = useState<"recent" | "rating" | "helpful" | "engagement">("recent");
-  const [showFilters, setShowFilters] = useState(false);
+
+  // UI state
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [showPlacePicker, setShowPlacePicker] = useState(true);
+  const [placeSearch, setPlaceSearch] = useState("");
+
+  const hasPlaceSelected = !!(selectedCountry || selectedCity);
+  const hasAnyFilter = hasPlaceSelected || selectedActivities.length > 0 || searchQuery.length > 0;
+  const activeFilterCount = (selectedCountry ? 1 : 0) + (selectedCity ? 1 : 0) + selectedActivities.length + (minRating > 0 ? 1 : 0) + (withPhotos ? 1 : 0) + (connectionsOnly ? 1 : 0);
 
   const { data: discoveredExperiences = [], isLoading: discoverLoading } = useDiscoverExperiences({
     country: selectedCountry,
     city: selectedCity,
-    category: selectedCategory,
+    category: null,
+    categories: selectedActivities,
     minRating,
     withPhotos,
     sortBy,
     connectionsOnly,
+    searchQuery,
   });
 
-  const hasPlaceSelected = !!(selectedCountry || selectedCity);
-
-  // Filter countries/cities by search
   const filteredCountries = useMemo(() => {
     if (!locations) return [];
     const q = placeSearch.toLowerCase();
     if (!q) return locations.countries;
-    // Check both country names and city names
     return locations.countries.filter(c =>
       c.toLowerCase().includes(q) ||
       (locations.citiesByCountry[c] || []).some(ci => ci.toLowerCase().includes(q))
@@ -103,6 +104,24 @@ const Experiences = () => {
   const clearPlace = () => {
     setSelectedCountry(null);
     setSelectedCity(null);
+    setShowPlacePicker(true);
+    setPlaceSearch("");
+  };
+
+  const toggleActivity = (id: string) => {
+    setSelectedActivities(prev =>
+      prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setSelectedCountry(null);
+    setSelectedCity(null);
+    setSelectedActivities([]);
+    setSearchQuery("");
+    setMinRating(0);
+    setWithPhotos(false);
+    setConnectionsOnly(false);
     setShowPlacePicker(true);
     setPlaceSearch("");
   };
@@ -157,191 +176,238 @@ const Experiences = () => {
 
         {viewMode === "discover" ? (
           <>
-            {/* ═══════ PLACE PICKER ═══════ */}
-            {hasPlaceSelected && !showPlacePicker ? (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-primary/5 border border-primary/15"
+            {/* ═══════ SEARCH BAR + FILTER TOGGLE ═══════ */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search experiences..."
+                  className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/40"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => setShowFilterPanel(!showFilterPanel)}
+                className={`relative flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                  showFilterPanel || activeFilterCount > 0
+                    ? "border-primary/30 bg-primary/5 text-primary"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
               >
-                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">
-                    {selectedCity ? `${selectedCity}, ${selectedCountry}` : selectedCountry}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {discoveredExperiences.length} experience{discoveredExperiences.length !== 1 ? "s" : ""} found
-                  </p>
-                </div>
-                <button onClick={() => setShowPlacePicker(true)} className="text-xs text-primary font-medium hover:underline">
-                  Change
-                </button>
-                <button onClick={clearPlace} className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                  <X className="w-3 h-3 text-muted-foreground" />
-                </button>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mb-4 p-5 rounded-2xl bg-card border border-border"
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <h3 className="text-sm font-semibold text-foreground">
-                    {selectedCountry ? `Cities in ${selectedCountry}` : "Choose a destination"}
-                  </h3>
-                  {selectedCountry && (
-                    <button onClick={() => { setSelectedCountry(null); setSelectedCity(null); }} className="ml-auto text-xs text-muted-foreground hover:text-foreground">
-                      ← All countries
-                    </button>
-                  )}
-                </div>
+                <SlidersHorizontal className="w-4 h-4" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </div>
 
-                {/* Search */}
-                <div className="relative mb-3">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                  <input
-                    value={placeSearch}
-                    onChange={(e) => setPlaceSearch(e.target.value)}
-                    placeholder={selectedCountry ? "Search cities..." : "Search countries or cities..."}
-                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40"
-                    autoFocus
-                  />
-                </div>
-
-                {/* Country/City list */}
-                <div className="max-h-[220px] overflow-y-auto space-y-1">
-                  {!selectedCountry ? (
-                    filteredCountries.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-4">
-                        No destinations found. Try a different search or add an experience.
-                      </p>
-                    ) : (
-                      filteredCountries.map(country => {
-                        const cities = locations?.citiesByCountry[country] || [];
-                        return (
-                          <button
-                            key={country}
-                            onClick={() => handleSelectCountry(country)}
-                            className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-                              <span className="text-sm font-medium text-foreground">{country}</span>
-                            </div>
-                            <span className="text-[10px] text-muted-foreground">
-                              {cities.length} {cities.length === 1 ? "city" : "cities"}
-                            </span>
-                          </button>
-                        );
-                      })
-                    )
-                  ) : (
-                    <>
-                      {/* All in country option */}
-                      <button
-                        onClick={() => { setSelectedCity(null); setShowPlacePicker(false); }}
-                        className={`w-full flex items-center gap-2 p-2.5 rounded-lg transition-colors text-left ${
-                          !selectedCity ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/60"
-                        }`}
-                      >
-                        <Globe className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-sm font-medium text-foreground">All of {selectedCountry}</span>
-                      </button>
-                      {availableCities
-                        .filter(c => !placeSearch || c.toLowerCase().includes(placeSearch.toLowerCase()))
-                        .map(city => (
-                          <button
-                            key={city}
-                            onClick={() => handleSelectCity(city)}
-                            className="w-full flex items-center gap-2 p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left"
-                          >
-                            <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                            <span className="text-sm font-medium text-foreground">{city}</span>
-                          </button>
-                        ))
-                      }
-                    </>
-                  )}
-                </div>
-              </motion.div>
+            {/* Active filter chips */}
+            {activeFilterCount > 0 && !showFilterPanel && (
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {selectedCountry && (
+                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                    <Globe className="w-3 h-3" /> {selectedCountry}
+                    <button onClick={() => { setSelectedCountry(null); setSelectedCity(null); }}><X className="w-3 h-3" /></button>
+                  </span>
+                )}
+                {selectedCity && (
+                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                    <MapPin className="w-3 h-3" /> {selectedCity}
+                    <button onClick={() => setSelectedCity(null)}><X className="w-3 h-3" /></button>
+                  </span>
+                )}
+                {selectedActivities.map(a => {
+                  const af = ACTIVITY_FILTERS.find(f => f.id === a);
+                  return (
+                    <span key={a} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                      {af?.emoji} {af?.label}
+                      <button onClick={() => toggleActivity(a)}><X className="w-3 h-3" /></button>
+                    </span>
+                  );
+                })}
+                {minRating > 0 && (
+                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                    <Star className="w-3 h-3" /> {minRating}+
+                    <button onClick={() => setMinRating(0)}><X className="w-3 h-3" /></button>
+                  </span>
+                )}
+                {withPhotos && (
+                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                    <Image className="w-3 h-3" /> Photos
+                    <button onClick={() => setWithPhotos(false)}><X className="w-3 h-3" /></button>
+                  </span>
+                )}
+                {connectionsOnly && (
+                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                    <Users className="w-3 h-3" /> Connections
+                    <button onClick={() => setConnectionsOnly(false)}><X className="w-3 h-3" /></button>
+                  </span>
+                )}
+                <button onClick={clearAllFilters} className="text-xs text-muted-foreground hover:text-foreground underline">
+                  Clear all
+                </button>
+              </div>
             )}
 
-            {/* ═══════ SECONDARY FILTERS (once place selected) ═══════ */}
-            {hasPlaceSelected && !showPlacePicker && (
-              <>
-                {/* Category bar */}
-                <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
-                  {categories.map(c => (
-                    <button
-                      key={c.id ?? "all"}
-                      onClick={() => setSelectedCategory(c.id)}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 ${
-                        selectedCategory === c.id
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                    >
-                      <span>{c.emoji}</span>
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
+            {/* ═══════ FILTER PANEL ═══════ */}
+            <AnimatePresence>
+              {showFilterPanel && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="rounded-2xl bg-card border border-border mb-4 overflow-hidden">
+                    <div className="max-h-[60vh] overflow-y-auto p-4 space-y-5">
 
-                {/* Filter row */}
-                <div className="flex items-center gap-2 mb-4">
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                      showFilters || minRating > 0 || withPhotos || connectionsOnly
-                        ? "border-primary/30 bg-primary/5 text-primary"
-                        : "border-border text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <SlidersHorizontal className="w-3 h-3" />
-                    Filters
-                    {(minRating > 0 || withPhotos || connectionsOnly) && (
-                      <span className="w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center">
-                        {(minRating > 0 ? 1 : 0) + (withPhotos ? 1 : 0) + (connectionsOnly ? 1 : 0)}
-                      </span>
-                    )}
-                  </button>
+                      {/* Section 1: Location */}
+                      <div>
+                        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                          <Globe className="w-3.5 h-3.5" /> Location
+                        </h4>
 
-                  <div className="flex-1" />
+                        {/* Selected location display */}
+                        {hasPlaceSelected && (
+                          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-primary/5 border border-primary/15 mb-2">
+                            <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                            <span className="text-sm font-medium text-foreground flex-1">
+                              {selectedCity ? `${selectedCity}, ${selectedCountry}` : selectedCountry}
+                            </span>
+                            <button onClick={() => { setShowPlacePicker(true); }} className="text-xs text-primary font-medium hover:underline">Change</button>
+                            <button onClick={clearPlace} className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
+                              <X className="w-3 h-3 text-muted-foreground" />
+                            </button>
+                          </div>
+                        )}
 
-                  {/* Sort dropdown */}
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
-                    className="px-2.5 py-1.5 rounded-lg border border-border bg-background text-xs text-foreground focus:outline-none focus:border-primary/40"
-                  >
-                    {sortOptions.map(s => (
-                      <option key={s.id} value={s.id}>{s.label}</option>
-                    ))}
-                  </select>
-                </div>
+                        {/* Place picker inline */}
+                        {(!hasPlaceSelected || showPlacePicker) && (
+                          <div>
+                            <div className="relative mb-2">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                              <input
+                                value={placeSearch}
+                                onChange={(e) => setPlaceSearch(e.target.value)}
+                                placeholder={selectedCountry ? "Search cities..." : "Search countries or cities..."}
+                                className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40"
+                              />
+                            </div>
+                            <div className="max-h-[160px] overflow-y-auto space-y-0.5">
+                              {!selectedCountry ? (
+                                filteredCountries.length === 0 ? (
+                                  <p className="text-xs text-muted-foreground text-center py-3">No destinations found</p>
+                                ) : (
+                                  filteredCountries.map(country => {
+                                    const cities = locations?.citiesByCountry[country] || [];
+                                    return (
+                                      <button
+                                        key={country}
+                                        onClick={() => handleSelectCountry(country)}
+                                        className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                                          <span className="text-sm font-medium text-foreground">{country}</span>
+                                        </div>
+                                        <span className="text-[10px] text-muted-foreground">{cities.length} cities</span>
+                                      </button>
+                                    );
+                                  })
+                                )
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => { setSelectedCity(null); setShowPlacePicker(false); }}
+                                    className="w-full flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/20 text-left"
+                                  >
+                                    <Globe className="w-3.5 h-3.5 text-primary" />
+                                    <span className="text-sm font-medium text-foreground">All of {selectedCountry}</span>
+                                  </button>
+                                  {availableCities
+                                    .filter(c => !placeSearch || c.toLowerCase().includes(placeSearch.toLowerCase()))
+                                    .map(city => (
+                                      <button
+                                        key={city}
+                                        onClick={() => handleSelectCity(city)}
+                                        className={`w-full flex items-center gap-2 p-2 rounded-lg transition-colors text-left ${
+                                          selectedCity === city ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/60"
+                                        }`}
+                                      >
+                                        <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                                        <span className="text-sm font-medium text-foreground">{city}</span>
+                                      </button>
+                                    ))}
+                                  <button
+                                    onClick={() => { setSelectedCountry(null); setSelectedCity(null); setPlaceSearch(""); }}
+                                    className="text-xs text-muted-foreground hover:text-foreground mt-1"
+                                  >
+                                    ← All countries
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
-                {/* Expanded filters */}
-                <AnimatePresence>
-                  {showFilters && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="p-4 rounded-xl bg-card border border-border mb-4 space-y-3">
+                      <div className="h-px bg-border" />
+
+                      {/* Section 2: Activity Type */}
+                      <div>
+                        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                          <Compass className="w-3.5 h-3.5" /> Activity Type
+                        </h4>
+                        <div className="flex flex-wrap gap-1.5">
+                          {ACTIVITY_FILTERS.map(af => {
+                            const isActive = selectedActivities.includes(af.id);
+                            const Icon = af.icon;
+                            return (
+                              <button
+                                key={af.id}
+                                onClick={() => toggleActivity(af.id)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                                  isActive
+                                    ? "border-primary/30 bg-primary/10 text-primary"
+                                    : "border-border text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                                }`}
+                              >
+                                <Icon className="w-3.5 h-3.5" />
+                                {af.label}
+                                {isActive && <Check className="w-3 h-3" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="h-px bg-border" />
+
+                      {/* Section 3: Additional Filters */}
+                      <div>
+                        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                          <SlidersHorizontal className="w-3.5 h-3.5" /> Additional Filters
+                        </h4>
+
                         {/* Min rating */}
-                        <div>
-                          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Minimum Rating</p>
+                        <div className="mb-3">
+                          <p className="text-xs text-muted-foreground mb-1.5">Minimum Rating</p>
                           <div className="flex gap-1.5">
                             {[0, 1, 2, 3, 4, 5].map(n => (
                               <button
                                 key={n}
                                 onClick={() => setMinRating(n)}
                                 className={`flex items-center gap-0.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                                  minRating === n ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                  minRating === n ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
                                 }`}
                               >
                                 {n === 0 ? "Any" : <><Star className="w-3 h-3" /> {n}+</>}
@@ -350,8 +416,8 @@ const Experiences = () => {
                           </div>
                         </div>
 
-                        {/* Toggle filters */}
-                        <div className="flex gap-2">
+                        {/* Toggle options */}
+                        <div className="flex flex-wrap gap-2">
                           <button
                             onClick={() => setWithPhotos(!withPhotos)}
                             className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
@@ -360,6 +426,7 @@ const Experiences = () => {
                           >
                             <Image className="w-3 h-3" />
                             With photos
+                            {withPhotos && <Check className="w-3 h-3" />}
                           </button>
                           <button
                             onClick={() => setConnectionsOnly(!connectionsOnly)}
@@ -369,51 +436,103 @@ const Experiences = () => {
                           >
                             <Users className="w-3 h-3" />
                             Connections only
+                            {connectionsOnly && <Check className="w-3 h-3" />}
                           </button>
                         </div>
-
-                        {/* Clear */}
-                        {(minRating > 0 || withPhotos || connectionsOnly) && (
-                          <button
-                            onClick={() => { setMinRating(0); setWithPhotos(false); setConnectionsOnly(false); }}
-                            className="text-xs text-muted-foreground hover:text-foreground"
-                          >
-                            Clear all filters
-                          </button>
-                        )}
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </div>
 
-                {/* ═══════ RESULTS ═══════ */}
-                {discoverLoading ? (
-                  <div className="text-center py-12">
-                    <div className="w-8 h-8 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin mx-auto" />
+                    {/* Panel footer */}
+                    <div className="flex items-center justify-between p-3 border-t border-border bg-muted/30">
+                      <button
+                        onClick={clearAllFilters}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Clear all
+                      </button>
+                      <div className="flex items-center gap-2">
+                        {/* Sort */}
+                        <select
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value as any)}
+                          className="px-2.5 py-1.5 rounded-lg border border-border bg-background text-xs text-foreground focus:outline-none"
+                        >
+                          {sortOptions.map(s => (
+                            <option key={s.id} value={s.id}>{s.label}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => setShowFilterPanel(false)}
+                          className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                ) : discoveredExperiences.length === 0 ? (
-                  <div className="text-center py-16">
-                    <Camera className="w-10 h-10 text-muted-foreground/30 mx-auto mb-4" />
-                    <h3 className="font-display text-lg font-medium text-foreground mb-2">No experiences found</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Be the first to share an experience in {selectedCity || selectedCountry}
-                    </p>
-                    <button
-                      onClick={() => setShowComposer(true)}
-                      className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add Experience
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {discoveredExperiences.map(exp => (
-                      <DiscoverCard key={exp.id} exp={exp} />
-                    ))}
-                  </div>
-                )}
-              </>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Sort row (when filter panel is closed) */}
+            {!showFilterPanel && hasAnyFilter && (
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-muted-foreground">
+                  {discoveredExperiences.length} result{discoveredExperiences.length !== 1 ? "s" : ""}
+                </p>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="px-2.5 py-1.5 rounded-lg border border-border bg-background text-xs text-foreground focus:outline-none"
+                >
+                  {sortOptions.map(s => (
+                    <option key={s.id} value={s.id}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* ═══════ RESULTS ═══════ */}
+            {!hasAnyFilter ? (
+              <div className="text-center py-16">
+                <Globe className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+                <h3 className="font-display text-lg font-medium text-foreground mb-2">Start exploring</h3>
+                <p className="text-sm text-muted-foreground mb-4 max-w-xs mx-auto">
+                  Use the filters above to discover experiences by country, city, or activity type.
+                </p>
+                <button
+                  onClick={() => setShowFilterPanel(true)}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  Open Filters
+                </button>
+              </div>
+            ) : discoverLoading ? (
+              <div className="text-center py-12">
+                <div className="w-8 h-8 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin mx-auto" />
+              </div>
+            ) : discoveredExperiences.length === 0 ? (
+              <div className="text-center py-16">
+                <Camera className="w-10 h-10 text-muted-foreground/30 mx-auto mb-4" />
+                <h3 className="font-display text-lg font-medium text-foreground mb-2">No experiences found</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Try adjusting your filters or be the first to share
+                </p>
+                <button
+                  onClick={() => setShowComposer(true)}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Experience
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {discoveredExperiences.map(exp => (
+                  <DiscoverCard key={exp.id} exp={exp} />
+                ))}
+              </div>
             )}
           </>
         ) : (

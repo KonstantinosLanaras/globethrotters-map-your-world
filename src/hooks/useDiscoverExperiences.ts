@@ -56,22 +56,24 @@ export const useExperienceLocations = () => {
   });
 };
 
-interface Filters {
+export interface DiscoverFilters {
   country: string | null;
   city: string | null;
   category: string | null;
+  categories: string[];
   minRating: number;
   withPhotos: boolean;
   sortBy: "recent" | "rating" | "helpful" | "engagement";
   connectionsOnly: boolean;
+  searchQuery: string;
 }
 
-export const useDiscoverExperiences = (filters: Filters) => {
+export const useDiscoverExperiences = (filters: DiscoverFilters) => {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: ["discover-experiences", filters],
-    enabled: !!(filters.country || filters.city),
+    enabled: !!(filters.country || filters.city || filters.searchQuery),
     queryFn: async () => {
       let query = supabase
         .from("experiences")
@@ -90,8 +92,10 @@ export const useDiscoverExperiences = (filters: Filters) => {
       if (filters.minRating > 0) {
         query = query.gte("rating", filters.minRating);
       }
+      if (filters.searchQuery) {
+        query = query.or(`title.ilike.%${filters.searchQuery}%,caption.ilike.%${filters.searchQuery}%`);
+      }
 
-      // Sort
       switch (filters.sortBy) {
         case "rating":
           query = query.order("rating_avg", { ascending: false });
@@ -113,7 +117,6 @@ export const useDiscoverExperiences = (filters: Filters) => {
 
       const expIds = (experiences ?? []).map(e => e.id);
 
-      // Fetch photos
       let attachments: any[] = [];
       if (expIds.length > 0) {
         const { data: atts } = await supabase
@@ -124,7 +127,6 @@ export const useDiscoverExperiences = (filters: Filters) => {
         attachments = atts ?? [];
       }
 
-      // Fetch author profiles
       const userIds = [...new Set((experiences ?? []).map(e => e.user_id))];
       let profiles: any[] = [];
       if (userIds.length > 0) {
@@ -135,7 +137,6 @@ export const useDiscoverExperiences = (filters: Filters) => {
         profiles = profs ?? [];
       }
 
-      // If connections only, get connection ids
       let connectionIds: Set<string> | null = null;
       if (filters.connectionsOnly && user) {
         const { data: conns } = await supabase
@@ -169,6 +170,14 @@ export const useDiscoverExperiences = (filters: Filters) => {
         photos: attachments.filter(a => a.experience_id === exp.id).map(a => a.url),
         author_name: profileMap.get(exp.user_id) || "Traveler",
       }));
+
+      // Client-side multi-category filter
+      if (filters.categories.length > 0) {
+        results = results.filter(e =>
+          filters.categories.includes(e.category) ||
+          e.tags.some(t => filters.categories.includes(t.toLowerCase()))
+        );
+      }
 
       if (filters.withPhotos) {
         results = results.filter(e => e.photos.length > 0);

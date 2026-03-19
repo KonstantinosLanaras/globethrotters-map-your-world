@@ -140,6 +140,7 @@ const Journeys = () => {
             allExperiences={experiences}
             onBack={() => setSelectedJourney(null)}
             onDelete={handleDelete}
+            onShare={setShareItem}
           />
         ) : (
           <>

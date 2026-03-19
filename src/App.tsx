@@ -15,6 +15,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Connections from "./pages/Connections";
 import Messages from "./pages/Messages";
+import Favorites from "./pages/Favorites";
 
 const queryClient = new QueryClient();
 

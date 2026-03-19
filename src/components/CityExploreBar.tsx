@@ -32,7 +32,7 @@ const categoryEmoji: Record<string, string> = {
   general: "📍",
 };
 
-const experienceCategories = ["Food", "Culture", "Nature", "Hiking", "Nightlife"] as const;
+const experienceCategories = ["Food", "Culture", "Nature", "Hiking", "Nightlife", "Beach", "Museum", "Hidden Gem", "Stay"] as const;
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 

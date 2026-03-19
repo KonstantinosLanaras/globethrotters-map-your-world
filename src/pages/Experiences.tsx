@@ -37,6 +37,7 @@ const Experiences = () => {
   const deleteExperience = useDeleteExperience();
   const { data: locations } = useExperienceLocations();
   const [showComposer, setShowComposer] = useState(false);
+  const [shareItem, setShareItem] = useState<ShareableItem | null>(null);
 
   const [viewMode, setViewMode] = useState<"mine" | "discover">("discover");
 

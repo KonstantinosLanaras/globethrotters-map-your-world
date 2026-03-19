@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, MessageSquare, User } from "lucide-react";
+import { ArrowLeft, Send, MessageSquare, User, MapPin, Star, Plane } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useConversations,

@@ -140,6 +140,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProp
       if (expFilters.minRating !== null) count++;
       if (expFilters.withPhotos) count++;
       if (expFilters.recent) count++;
+      if (expFilters.contributorQuality !== "all") count++;
       return count;
     }
     let count = 0;

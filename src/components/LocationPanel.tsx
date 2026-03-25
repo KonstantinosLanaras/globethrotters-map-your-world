@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MapPin, Star, Heart, Calendar, Tag, Flag, Bookmark, Utensils, Mountain, Landmark, Camera, Train, Gem, Loader2, Clock, Gauge, Share2, ShieldCheck } from "lucide-react";
+import {
+  X, MapPin, Star, Heart, Calendar, Tag, Flag, Bookmark,
+  Utensils, Mountain, Landmark, Camera, Train, Gem,
+  Loader2, Clock, Gauge, Share2, Plane, Info, ShieldCheck, Sparkles, CheckCircle2,
+} from "lucide-react";
 import { Pin } from "@/types/travel";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,9 +13,12 @@ import ReportDialog from "@/components/ReportDialog";
 import AddToListDialog from "@/components/AddToListDialog";
 import RatingModal from "@/components/RatingModal";
 import ShareModal, { ShareableExperience } from "@/components/ShareModal";
+import AddToTripDialog from "@/components/AddToTripDialog";
+import FeaturedTooltip from "@/components/FeaturedTooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { useAddPlace } from "@/hooks/usePlaces";
 import { useActivities, Activity } from "@/hooks/useActivities";
+import { usePromotedPlaces, PromotedPlace } from "@/hooks/usePromotedPlaces";
 import { toast } from "sonner";
 
 interface LocationPanelProps {
@@ -40,6 +47,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
   const [showAddToList, setShowAddToList] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showTripDialog, setShowTripDialog] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const { user } = useAuth();
   const addPlace = useAddPlace();
@@ -48,6 +56,8 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
     pin?.name ?? null,
     pin?.country ?? null
   );
+
+  const { data: promotedPlaces = [] } = usePromotedPlaces();
 
   const { data: reviewScore } = useQuery({
     queryKey: ["review-score", pin?.id],
@@ -82,63 +92,49 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
   const isVisited = pin.type === "visited";
   const isWishlist = pin.type === "wishlist";
 
+  // Get sponsored places that match the active category
+  const sponsoredForCategory = promotedPlaces
+    .filter((p) => p.is_active && p.quality_score >= 4.5)
+    .slice(0, 2);
+
   const handleMarkVisited = async () => {
-    if (!user) return;
+    if (!user) { toast.error("Sign in to mark as visited"); return; }
     try {
       await addPlace.mutateAsync({
-        name: pin.name,
-        country: pin.country,
-        city: pin.name,
-        lat: pin.lat,
-        lng: pin.lng,
-        type: "visited",
-        tags: pin.tags,
-        rating: 0,
-        notes: "",
+        name: pin.name, country: pin.country, city: pin.name,
+        lat: pin.lat, lng: pin.lng, type: "visited",
+        tags: pin.tags, rating: 0, notes: "",
         date_visited: new Date().toISOString().split("T")[0],
       });
       toast.success(`Marked ${pin.name} as visited!`);
-    } catch {
-      toast.error("Failed to mark as visited");
-    }
+    } catch { toast.error("Failed to mark as visited"); }
   };
 
   const handleMarkWishlist = async () => {
-    if (!user) return;
+    if (!user) { toast.error("Sign in to add to wishlist"); return; }
     try {
       await addPlace.mutateAsync({
-        name: pin.name,
-        country: pin.country,
-        city: pin.name,
-        lat: pin.lat,
-        lng: pin.lng,
-        type: "wishlist",
-        tags: pin.tags,
-        rating: 0,
-        notes: "",
-        date_visited: null,
+        name: pin.name, country: pin.country, city: pin.name,
+        lat: pin.lat, lng: pin.lng, type: "wishlist",
+        tags: pin.tags, rating: 0, notes: "", date_visited: null,
       });
       toast.success(`Added ${pin.name} to wishlist!`);
-    } catch {
-      toast.error("Failed to add to wishlist");
-    }
+    } catch { toast.error("Failed to add to wishlist"); }
   };
 
   const handleRateClick = () => {
-    if (!isVisited) {
-      toast.info("You can rate this after marking it as Visited.");
-      return;
-    }
+    if (!isVisited) { toast.info("You can rate this after marking it as Visited."); return; }
     setShowRating(true);
   };
 
+  const handleAddToTrip = () => {
+    if (!user) { toast.error("Sign in to add to a trip"); return; }
+    setShowTripDialog(true);
+  };
+
   const shareItem: ShareableExperience = {
-    type: "experience",
-    id: pin.id,
-    title: pin.name,
-    city: pin.name,
-    country: pin.country,
-    category: "destination",
+    type: "experience", id: pin.id, title: pin.name,
+    city: pin.name, country: pin.country, category: "destination",
     rating: pin.rating > 0 ? pin.rating : undefined,
   };
 
@@ -173,48 +169,33 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
           {/* Header */}
           <div className="relative p-5 pb-3">
             <div className="absolute top-3 right-3 flex items-center gap-1.5">
-              <button
-                onClick={() => setShowReport(true)}
-                className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors"
-                title="Report"
-              >
+              <button onClick={() => setShowReport(true)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors" title="Report">
                 <Flag className="w-3 h-3 text-muted-foreground" />
               </button>
-              <button
-                onClick={onClose}
-                className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
-              >
+              <button onClick={onClose} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors">
                 <X className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
             </div>
 
             <div className="flex items-start gap-3 pr-16">
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                  isVisited ? "bg-visited/15 text-visited" : "bg-wishlist/15 text-wishlist"
-                }`}
-              >
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isVisited ? "bg-visited/15 text-visited" : "bg-wishlist/15 text-wishlist"}`}>
                 <MapPin className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="font-display text-xl font-semibold text-foreground leading-tight">
-                  {pin.name}
-                </h2>
+                <h2 className="font-display text-xl font-semibold text-foreground leading-tight">{pin.name}</h2>
                 <p className="text-sm text-muted-foreground">{pin.country}</p>
               </div>
             </div>
           </div>
 
           {/* ===== Primary Action Row ===== */}
-          <div className="px-5 pb-3 flex items-center gap-1.5">
+          <div className="px-5 pb-3 flex items-center gap-1.5 flex-wrap">
             {/* Visited */}
             <button
               onClick={handleMarkVisited}
               disabled={addPlace.isPending}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                isVisited
-                  ? "bg-visited text-white"
-                  : "bg-visited/10 text-visited hover:bg-visited/20"
+                isVisited ? "bg-visited text-white" : "bg-visited/10 text-visited hover:bg-visited/20"
               }`}
             >
               <Star className="w-3 h-3" />
@@ -226,9 +207,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
               onClick={handleMarkWishlist}
               disabled={addPlace.isPending}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                isWishlist
-                  ? "bg-wishlist text-white"
-                  : "bg-wishlist/10 text-wishlist hover:bg-wishlist/20"
+                isWishlist ? "bg-wishlist text-white" : "bg-wishlist/10 text-wishlist hover:bg-wishlist/20"
               }`}
             >
               <Heart className="w-3 h-3" />
@@ -239,14 +218,22 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
             <button
               onClick={handleRateClick}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                isVisited
-                  ? "bg-gold/10 text-gold hover:bg-gold/20"
-                  : "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+                isVisited ? "bg-gold/10 text-gold hover:bg-gold/20" : "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
               }`}
               title={isVisited ? "Rate this place" : "You can rate this after marking it as Visited."}
             >
               <Star className="w-3 h-3" />
               Rate
+            </button>
+
+            {/* Add to Trip — NEW */}
+            <button
+              onClick={handleAddToTrip}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-all"
+              title="Plan it with friends"
+            >
+              <Plane className="w-3 h-3" />
+              Trip
             </button>
 
             <div className="flex-1" />
@@ -263,9 +250,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
 
           {/* Secondary actions */}
           <div className="px-5 pb-3 flex items-center gap-2">
-            {reviewScore && (
-              <AuthenticityMeter score={reviewScore.authenticity_score} compact />
-            )}
+            {reviewScore && <AuthenticityMeter score={reviewScore.authenticity_score} compact />}
             <div className="flex-1" />
             <button
               onClick={() => setShowAddToList(true)}
@@ -282,12 +267,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
             {isVisited && pin.rating > 0 && (
               <div className="flex items-center gap-1">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${
-                      i < pin.rating ? "text-gold fill-gold" : "text-muted"
-                    }`}
-                  />
+                  <Star key={i} className={`w-4 h-4 ${i < pin.rating ? "text-gold fill-gold" : "text-muted"}`} />
                 ))}
               </div>
             )}
@@ -296,28 +276,18 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
             {pin.dateVisited && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="w-3.5 h-3.5" />
-                <span>
-                  {new Date(pin.dateVisited).toLocaleDateString("en-US", {
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </span>
+                <span>{new Date(pin.dateVisited).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
               </div>
             )}
 
             {/* Notes */}
-            {pin.notes && (
-              <p className="text-sm leading-relaxed text-foreground/80">{pin.notes}</p>
-            )}
+            {pin.notes && <p className="text-sm leading-relaxed text-foreground/80">{pin.notes}</p>}
 
             {/* Tags */}
             {pin.tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {pin.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-muted text-xs font-medium text-muted-foreground"
-                  >
+                  <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-muted text-xs font-medium text-muted-foreground">
                     <Tag className="w-2.5 h-2.5" />
                     {tag}
                   </span>
@@ -343,11 +313,39 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
               </div>
             )}
 
-            {/* AI Activity Discovery */}
+            {/* ══════ FEATURED / SPONSORED SECTION ══════ */}
+            {sponsoredForCategory.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs font-semibold text-foreground">Featured</span>
+                  <FeaturedTooltip />
+                </div>
+
+                {sponsoredForCategory.map((sp) => (
+                  <SponsoredActivityCard key={sp.id} place={sp} onWishlist={() => {}} onVisited={() => {}} />
+                ))}
+
+                <p className="text-[10px] text-muted-foreground/50 italic px-1">
+                  We highlight quality — not just popularity.
+                </p>
+              </div>
+            )}
+
+            {/* ══════ THINGS TO DO ══════ */}
             <div className="pt-2 space-y-3">
-              <h3 className="font-display text-base font-medium text-foreground">
-                Things to do in {pin.name}
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-display text-base font-medium text-foreground">
+                  Things to do in {pin.name}
+                </h3>
+                <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">
+                  Community + AI
+                </span>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground -mt-1">
+                Explore places around you 🌍 — powered by local discovery, with trusted recommendations on top.
+              </p>
 
               {activitiesLoading && (
                 <div className="flex items-center gap-2 py-6 justify-center text-muted-foreground">
@@ -357,9 +355,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
               )}
 
               {activitiesError && (
-                <div className="p-3 rounded-xl bg-destructive/5 text-destructive text-xs">
-                  {activitiesError}
-                </div>
+                <div className="p-3 rounded-xl bg-destructive/5 text-destructive text-xs">{activitiesError}</div>
               )}
 
               {!activitiesLoading && activities.length > 0 && (
@@ -369,9 +365,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
                     <button
                       onClick={() => setActiveCategory(null)}
                       className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
-                        activeCategory === null
-                          ? "bg-foreground text-background"
-                          : "bg-muted text-muted-foreground hover:text-foreground"
+                        activeCategory === null ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       All ({activities.length})
@@ -396,11 +390,19 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
                     })}
                   </div>
 
-                  {/* Activity cards */}
+                  {/* Activity cards — with Wishlist + Visited + Trip buttons */}
                   <div className="space-y-2">
                     {filteredActivities.map((activity, i) => (
-                      <ActivityCard key={`${activity.name}-${i}`} activity={activity} index={i} />
+                      <ActivityCard key={`${activity.name}-${i}`} activity={activity} index={i} pinName={pin.name} pinCountry={pin.country} pinLat={pin.lat} pinLng={pin.lng} />
                     ))}
+                  </div>
+
+                  {/* Google Maps expansion note */}
+                  <div className="flex items-center gap-2 px-1 py-2">
+                    <MapPin className="w-3 h-3 text-muted-foreground/40" />
+                    <p className="text-[10px] text-muted-foreground/50">
+                      More places coming soon via Google Maps integration
+                    </p>
                   </div>
                 </>
               )}
@@ -411,42 +413,134 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
                 </p>
               )}
             </div>
+
+            {/* Trust footer */}
+            <div className="flex items-center gap-1.5 pt-2">
+              <ShieldCheck className="w-3 h-3 text-muted-foreground/40" />
+              <span className="text-[10px] text-muted-foreground/50">
+                Every recommendation is curated — featured places still have to earn their spot.
+              </span>
+            </div>
           </div>
         </motion.div>
       </AnimatePresence>
 
-      {showReport && (
-        <ReportDialog placeId={pin.id} onClose={() => setShowReport(false)} />
-      )}
-
-      {showAddToList && (
-        <AddToListDialog
-          placeId={pin.id}
-          placeName={pin.name}
-          onClose={() => setShowAddToList(false)}
+      {showReport && <ReportDialog placeId={pin.id} onClose={() => setShowReport(false)} />}
+      {showAddToList && <AddToListDialog placeId={pin.id} placeName={pin.name} onClose={() => setShowAddToList(false)} />}
+      {showRating && <RatingModal open={showRating} onClose={() => setShowRating(false)} placeId={pin.id} placeName={pin.name} />}
+      <ShareModal open={showShare} onClose={() => setShowShare(false)} item={shareItem} />
+      {showTripDialog && (
+        <AddToTripDialog
+          open={showTripDialog}
+          onOpenChange={setShowTripDialog}
+          experienceId={pin.id}
+          experienceTitle={pin.name}
         />
       )}
-
-      {showRating && (
-        <RatingModal
-          open={showRating}
-          onClose={() => setShowRating(false)}
-          placeId={pin.id}
-          placeName={pin.name}
-        />
-      )}
-
-      <ShareModal
-        open={showShare}
-        onClose={() => setShowShare(false)}
-        item={shareItem}
-      />
     </>
   );
 };
 
-const ActivityCard = ({ activity, index }: { activity: Activity; index: number }) => {
+/* ═══════════════════════════════════════════════
+   Sponsored / Featured Activity Card
+   ═══════════════════════════════════════════════ */
+const SponsoredActivityCard = ({ place, onWishlist, onVisited }: { place: PromotedPlace; onWishlist: () => void; onVisited: () => void }) => {
+  const typeIcons: Record<string, React.ReactNode> = {
+    restaurant: <Utensils className="w-3.5 h-3.5" />,
+    experience: <Camera className="w-3.5 h-3.5" />,
+    hotel: <Landmark className="w-3.5 h-3.5" />,
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-3 rounded-xl bg-primary/[0.03] border border-primary/10 hover:border-primary/20 transition-colors"
+    >
+      <div className="flex items-start gap-2.5">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-primary/10 text-primary">
+          {typeIcons[place.business_type] || <MapPin className="w-3.5 h-3.5" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-foreground truncate">{place.business_name}</p>
+            {place.quality_score > 0 && (
+              <div className="flex items-center gap-0.5 flex-shrink-0">
+                <Star className="w-3 h-3 text-gold fill-gold" />
+                <span className="text-[11px] font-medium text-foreground">{place.quality_score.toFixed(1)}</span>
+              </div>
+            )}
+          </div>
+          {place.description && (
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{place.description}</p>
+          )}
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full capitalize">
+              {place.business_type}
+            </span>
+            {place.impressions > 0 && (
+              <span className="text-[10px] text-muted-foreground">{place.impressions} reviews</span>
+            )}
+            <CheckCircle2 className="w-3 h-3 text-primary" />
+            <span className="text-[10px] text-primary font-medium">Verified</span>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-1.5 mt-2">
+            <button
+              onClick={onWishlist}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-wishlist/10 text-wishlist hover:bg-wishlist/20 transition-colors"
+            >
+              <Heart className="w-2.5 h-2.5" />
+              Wishlist
+            </button>
+            <button
+              onClick={onVisited}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-visited/10 text-visited hover:bg-visited/20 transition-colors"
+            >
+              <CheckCircle2 className="w-2.5 h-2.5" />
+              Visited
+            </button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+/* ═══════════════════════════════════════════════
+   Activity Card — with Wishlist + Visited buttons
+   ═══════════════════════════════════════════════ */
+const ActivityCard = ({ activity, index, pinName, pinCountry, pinLat, pinLng }: { activity: Activity; index: number; pinName: string; pinCountry: string; pinLat: number; pinLng: number }) => {
   const config = categoryConfig[activity.category] || categoryConfig.culture;
+  const { user } = useAuth();
+  const addPlace = useAddPlace();
+
+  const handleWishlist = async () => {
+    if (!user) { toast.error("Sign in to add to wishlist"); return; }
+    try {
+      await addPlace.mutateAsync({
+        name: activity.name, country: pinCountry, city: pinName,
+        lat: pinLat, lng: pinLng, type: "wishlist",
+        tags: [activity.category], rating: 0, notes: activity.description,
+        date_visited: null,
+      });
+      toast.success("Added to wishlist 🤍");
+    } catch { toast.error("Failed to add"); }
+  };
+
+  const handleVisited = async () => {
+    if (!user) { toast.error("Sign in to mark as visited"); return; }
+    try {
+      await addPlace.mutateAsync({
+        name: activity.name, country: pinCountry, city: pinName,
+        lat: pinLat, lng: pinLng, type: "visited",
+        tags: [activity.category], rating: 0, notes: activity.description,
+        date_visited: new Date().toISOString().split("T")[0],
+      });
+      toast.success("Marked as visited ✓");
+    } catch { toast.error("Failed to mark"); }
+  };
 
   return (
     <motion.div
@@ -462,10 +556,14 @@ const ActivityCard = ({ activity, index }: { activity: Activity; index: number }
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-foreground truncate">{activity.name}</p>
+            {activity.rating && activity.rating > 0 && (
+              <div className="flex items-center gap-0.5 flex-shrink-0">
+                <Star className="w-3 h-3 text-gold fill-gold" />
+                <span className="text-[11px] font-medium">{activity.rating.toFixed(1)}</span>
+              </div>
+            )}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
-            {activity.description}
-          </p>
+          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{activity.description}</p>
           <div className="flex items-center gap-3 mt-1.5">
             <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
               <Clock className="w-2.5 h-2.5" />
@@ -477,6 +575,27 @@ const ActivityCard = ({ activity, index }: { activity: Activity; index: number }
                 {activity.difficulty}
               </span>
             )}
+            {activity.review_count && activity.review_count > 0 && (
+              <span className="text-[10px] text-muted-foreground">{activity.review_count} reviews</span>
+            )}
+          </div>
+
+          {/* ── Wishlist + Visited action row ── */}
+          <div className="flex items-center gap-1.5 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={handleWishlist}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-wishlist/10 text-wishlist hover:bg-wishlist/20 transition-colors"
+            >
+              <Heart className="w-2.5 h-2.5" />
+              Wishlist
+            </button>
+            <button
+              onClick={handleVisited}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-visited/10 text-visited hover:bg-visited/20 transition-colors"
+            >
+              <CheckCircle2 className="w-2.5 h-2.5" />
+              Visited
+            </button>
           </div>
         </div>
       </div>

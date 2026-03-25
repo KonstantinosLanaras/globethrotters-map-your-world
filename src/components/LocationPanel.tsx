@@ -433,13 +433,13 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
       {showReport && <ReportDialog placeId={pin.id} onClose={() => setShowReport(false)} />}
       {showAddToList && <AddToListDialog placeId={pin.id} placeName={pin.name} onClose={() => setShowAddToList(false)} />}
       {showRating && <RatingModal open={showRating} onClose={() => setShowRating(false)} placeId={pin.id} placeName={pin.name} />}
-      <ShareModal open={showShare} onClose={() => setShowShare(false)} item={shareItem} />
+      <ShareModal open={showShare} onClose={() => { setShowShare(false); setShareActivityName(null); }} item={shareItem} />
       {showTripDialog && (
         <AddToTripDialog
           open={showTripDialog}
-          onOpenChange={setShowTripDialog}
+          onOpenChange={(open) => { setShowTripDialog(open); if (!open) setTripActivityName(null); }}
           experienceId={pin.id}
-          experienceTitle={pin.name}
+          experienceTitle={currentTripTitle}
         />
       )}
     </>

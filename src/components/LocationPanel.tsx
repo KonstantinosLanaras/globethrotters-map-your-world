@@ -487,19 +487,17 @@ const SponsoredActivityCard = ({ place, onWishlist, onVisited, onShare, onTrip }
 
           {/* Action buttons */}
           <div className="flex items-center gap-1.5 mt-2">
-            <button
-              onClick={onWishlist}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-wishlist/10 text-wishlist hover:bg-wishlist/20 transition-colors"
-            >
-              <Heart className="w-2.5 h-2.5" />
-              Wishlist
+            <button onClick={onWishlist} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-wishlist/10 text-wishlist hover:bg-wishlist/20 transition-colors">
+              <Heart className="w-2.5 h-2.5" /> Wishlist
             </button>
-            <button
-              onClick={onVisited}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-visited/10 text-visited hover:bg-visited/20 transition-colors"
-            >
-              <CheckCircle2 className="w-2.5 h-2.5" />
-              Visited
+            <button onClick={onVisited} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-visited/10 text-visited hover:bg-visited/20 transition-colors">
+              <CheckCircle2 className="w-2.5 h-2.5" /> Visited
+            </button>
+            <button onClick={onShare} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
+              <Send className="w-2.5 h-2.5" /> Chat
+            </button>
+            <button onClick={onTrip} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+              <Plane className="w-2.5 h-2.5" /> Trip
             </button>
           </div>
         </div>

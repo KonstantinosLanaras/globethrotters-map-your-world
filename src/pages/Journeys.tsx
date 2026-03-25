@@ -373,8 +373,12 @@ const TripHub = ({
       type: "experience",
       id: exp.id,
       title: exp.title,
-      description: exp.caption || undefined,
-      coverImage: exp.photos?.[0] || undefined,
+      city: exp.city,
+      country: exp.country,
+      category: exp.category || "general",
+      rating: exp.rating,
+      photo: exp.photos?.[0] || null,
+      caption: exp.caption,
     });
   };
 

@@ -28,7 +28,7 @@ export const useTripPosts = (journeyId?: string) => {
         .eq("journey_id", journeyId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as TripPost[];
+      return (data ?? []) as unknown as TripPost[];
     },
   });
 };

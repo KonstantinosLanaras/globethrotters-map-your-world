@@ -325,7 +325,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
                 </div>
 
                 {sponsoredForCategory.map((sp) => (
-                  <SponsoredActivityCard key={sp.id} place={sp} onWishlist={() => {}} onVisited={() => {}} />
+                  <SponsoredActivityCard key={sp.id} place={sp} onWishlist={() => {}} onVisited={() => {}} onShare={() => { setShareActivityName(sp.business_name); setShowShare(true); }} onTrip={() => { setTripActivityName(sp.business_name); setShowTripDialog(true); }} />
                 ))}
 
                 <p className="text-[10px] text-muted-foreground/50 italic px-1">

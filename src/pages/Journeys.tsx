@@ -869,7 +869,7 @@ const PeopleTab = ({
             🔔 Join Requests ({joinRequests.length})
           </h3>
           {joinRequests.map((req: any) => (
-            <div key={req.id} className="flex items-center gap-3 p-3 rounded-xl bg-card border border-amber-200/50">
+            <div key={req.id} className="flex items-center gap-3 p-3 rounded-xl bg-card border border-accent">
               <div className="w-8 h-8 rounded-full bg-muted overflow-hidden flex-shrink-0">
                 {req.profile?.avatar_url ? (
                   <img src={req.profile.avatar_url} alt="" className="w-full h-full object-cover" />

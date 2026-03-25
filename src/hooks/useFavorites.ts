@@ -103,6 +103,8 @@ export interface FavoriteExperience {
   experience_date: string | null;
   created_at: string;
   favorited_at: string;
+  publish_status: "draft" | "published";
+  published_at: string | null;
 }
 
 export interface FavoriteJourney {

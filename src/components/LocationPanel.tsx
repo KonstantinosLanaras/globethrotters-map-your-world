@@ -48,6 +48,8 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
   const [showRating, setShowRating] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showTripDialog, setShowTripDialog] = useState(false);
+  const [shareActivityName, setShareActivityName] = useState<string | null>(null);
+  const [tripActivityName, setTripActivityName] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const { user } = useAuth();
   const addPlace = useAddPlace();

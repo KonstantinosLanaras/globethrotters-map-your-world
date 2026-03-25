@@ -58,7 +58,7 @@ export const useAddTripPost = () => {
         .select()
         .single();
       if (error) throw error;
-      return data as TripPost;
+      return data as unknown as TripPost;
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["trip-posts", vars.journey_id] });

@@ -4,19 +4,21 @@ import Navbar from "@/components/Navbar";
 import {
   Plus, MapPin, Star, Calendar, ChevronRight, Trash2, X, Check,
   Plane, Loader2, Share2, Camera, Users, Lock, Globe, Send, Tag,
-  MessageSquare, DollarSign, Sparkles, Eye, Heart
+  MessageSquare, DollarSign, Sparkles, Eye, Heart, UserPlus, LogIn
 } from "lucide-react";
 import { useJourneys, useAddJourney, useDeleteJourney, useJourneyWithExperiences, useAddExperienceToJourney, useRemoveExperienceFromJourney, Journey } from "@/hooks/useJourneys";
 import { useExperiencesWithPhotos, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { useFavoriteJourneyIds, useToggleFavoriteJourney } from "@/hooks/useFavorites";
 import { useTripPosts, useAddTripPost, useDeleteTripPost, TripPost } from "@/hooks/useTripPosts";
 import { useConnections } from "@/hooks/useShareConnections";
+import { useJourneyMembers, useInviteToJourney, useRemoveJourneyMember, useJourneyJoinRequests, useRespondToJoinRequest } from "@/hooks/useJourneyMembers";
+import { useMessages, useSendMessage, useStartConversation } from "@/hooks/useMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ShareModal, { ShareableItem } from "@/components/ShareModal";
 
-type TripTab = "plan" | "moments" | "share";
+type TripTab = "plan" | "people" | "chat" | "moments" | "share";
 
 const Journeys = () => {
   const { data: journeys = [], isLoading } = useJourneys();
@@ -145,8 +147,8 @@ const Journeys = () => {
                     {[
                       { icon: <MapPin className="w-3 h-3" />, label: "Add experiences" },
                       { icon: <Users className="w-3 h-3" />, label: "Invite friends" },
+                      { icon: <MessageSquare className="w-3 h-3" />, label: "Group chat" },
                       { icon: <Camera className="w-3 h-3" />, label: "Capture moments" },
-                      { icon: <DollarSign className="w-3 h-3" />, label: "Track budget" },
                     ].map(f => (
                       <div key={f.label} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                         {f.icon} {f.label}
@@ -269,6 +271,9 @@ const TripHub = ({
   const addPost = useAddTripPost();
   const deletePost = useDeleteTripPost();
   const { data: connections = [] } = useConnections();
+  const { data: members = [] } = useJourneyMembers(journeyId);
+  const inviteToJourney = useInviteToJourney();
+  const removeMember = useRemoveJourneyMember();
 
   const [activeTab, setActiveTab] = useState<TripTab>("plan");
   const [showAddExp, setShowAddExp] = useState(false);
@@ -361,8 +366,22 @@ const TripHub = ({
     setPostTaggedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
+  const handleShareExpToChat = async (exp: ExperienceWithPhotos) => {
+    // Share experience as a message to the trip's conversation
+    // For now, use the ShareModal which sends to connections
+    onShare({
+      type: "experience",
+      id: exp.id,
+      title: exp.title,
+      description: exp.caption || undefined,
+      coverImage: exp.photos?.[0] || undefined,
+    });
+  };
+
   const tabs: { id: TripTab; icon: React.ReactNode; label: string }[] = [
     { id: "plan", icon: <MapPin className="w-3.5 h-3.5" />, label: "Plan" },
+    { id: "people", icon: <Users className="w-3.5 h-3.5" />, label: "People" },
+    { id: "chat", icon: <MessageSquare className="w-3.5 h-3.5" />, label: "Chat" },
     { id: "moments", icon: <Camera className="w-3.5 h-3.5" />, label: "Moments" },
     { id: "share", icon: <Globe className="w-3.5 h-3.5" />, label: "Share" },
   ];
@@ -399,7 +418,7 @@ const TripHub = ({
             {journey.description && <p className="text-sm text-muted-foreground truncate">{journey.description}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
           {(journey.start_date || journey.end_date) && (
             <span className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
@@ -411,18 +430,39 @@ const TripHub = ({
           <span>{journey.experiences.length} exp</span>
           <span>{posts.length} moment{posts.length !== 1 ? "s" : ""}</span>
           <span className="flex items-center gap-0.5">
+            <Users className="w-2.5 h-2.5" /> {members.filter(m => m.status === "accepted").length + 1}
+          </span>
+          <span className="flex items-center gap-0.5">
             <Lock className="w-2.5 h-2.5" /> {journey.privacy}
           </span>
         </div>
+
+        {/* Member avatars row */}
+        {members.filter(m => m.status === "accepted").length > 0 && (
+          <div className="flex items-center gap-1 mt-2">
+            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[9px] font-semibold text-primary">You</div>
+            {members.filter(m => m.status === "accepted").slice(0, 5).map(m => (
+              <div key={m.id} className="w-6 h-6 rounded-full bg-muted overflow-hidden flex-shrink-0">
+                {m.profile?.avatar_url ? (
+                  <img src={m.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[9px] font-medium text-muted-foreground">
+                    {(m.profile?.display_name || "?")[0]}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Tab navigation */}
-      <div className="flex gap-1 p-1 rounded-xl bg-muted/40">
+      <div className="flex gap-0.5 p-1 rounded-xl bg-muted/40 overflow-x-auto">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[11px] font-medium transition-all whitespace-nowrap min-w-0 ${
               activeTab === tab.id
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -444,6 +484,29 @@ const TripHub = ({
               onToggleAddExp={() => setShowAddExp(!showAddExp)}
               onAdd={handleAdd}
               onRemove={handleRemove}
+              onShareExp={handleShareExpToChat}
+            />
+          </motion.div>
+        )}
+        {activeTab === "people" && (
+          <motion.div key="people" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+            <PeopleTab
+              journeyId={journeyId}
+              members={members}
+              connections={connections}
+              inviteToJourney={inviteToJourney}
+              removeMember={removeMember}
+              journey={journey}
+            />
+          </motion.div>
+        )}
+        {activeTab === "chat" && (
+          <motion.div key="chat" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+            <ChatTab
+              journeyId={journeyId}
+              journey={journey}
+              members={members}
+              connections={connections}
             />
           </motion.div>
         )}
@@ -472,7 +535,7 @@ const TripHub = ({
               onClearPhoto={() => { setPostPhoto(null); setPostPhotoPreview(null); }}
               onPost={handlePost}
               onReset={resetComposer}
-              onDeletePost={(id) => deletePost.mutate({ id, journeyId })}
+              onDeletePost={(id: string) => deletePost.mutate({ id, journeyId })}
               journeyId={journeyId}
             />
           </motion.div>
@@ -484,6 +547,7 @@ const TripHub = ({
               journeyId={journeyId}
               posts={posts}
               onShare={onShare}
+              members={members}
             />
           </motion.div>
         )}
@@ -494,7 +558,7 @@ const TripHub = ({
 
 /* ========== PLAN TAB ========== */
 const PlanTab = ({
-  journey, available, showAddExp, onToggleAddExp, onAdd, onRemove,
+  journey, available, showAddExp, onToggleAddExp, onAdd, onRemove, onShareExp,
 }: {
   journey: any;
   available: ExperienceWithPhotos[];
@@ -502,6 +566,7 @@ const PlanTab = ({
   onToggleAddExp: () => void;
   onAdd: (id: string) => void;
   onRemove: (id: string) => void;
+  onShareExp: (exp: ExperienceWithPhotos) => void;
 }) => (
   <>
     {/* Section header */}
@@ -599,9 +664,17 @@ const PlanTab = ({
                         ))}
                       </span>
                     )}
+                    {/* Share to chat icon */}
+                    <button
+                      onClick={() => onShareExp(exp)}
+                      className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+                      title="Share to chat"
+                    >
+                      <Share2 className="w-3 h-3 text-muted-foreground" />
+                    </button>
                     <button
                       onClick={() => onRemove(exp.id)}
-                      className="ml-1 w-5 h-5 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+                      className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
                     >
                       <X className="w-3 h-3 text-muted-foreground" />
                     </button>
@@ -623,6 +696,356 @@ const PlanTab = ({
     )}
   </>
 );
+
+/* ========== PEOPLE TAB ========== */
+const PeopleTab = ({
+  journeyId, members, connections, inviteToJourney, removeMember, journey,
+}: {
+  journeyId: string;
+  members: any[];
+  connections: any[];
+  inviteToJourney: any;
+  removeMember: any;
+  journey: any;
+}) => {
+  const [showInvite, setShowInvite] = useState(false);
+  const { data: joinRequests = [] } = useJourneyJoinRequests(journeyId);
+  const respondToJoin = useRespondToJoinRequest();
+  const { user } = useAuth();
+  const [updatingOpenToJoin, setUpdatingOpenToJoin] = useState(false);
+
+  const memberUserIds = new Set(members.map(m => m.user_id));
+  const invitable = connections.filter(c => !memberUserIds.has(c.user_id));
+
+  const handleInvite = (userId: string) => {
+    inviteToJourney.mutate({ journeyId, userId }, {
+      onSuccess: () => toast.success("Friend added to trip! 🎉"),
+      onError: () => toast.error("Failed to invite"),
+    });
+  };
+
+  const handleRemove = (memberId: string) => {
+    removeMember.mutate({ id: memberId, journeyId }, {
+      onSuccess: () => toast.success("Removed from trip"),
+      onError: () => toast.error("Failed to remove"),
+    });
+  };
+
+  const toggleOpenToJoin = async () => {
+    setUpdatingOpenToJoin(true);
+    try {
+      const newValue = !(journey as any).open_to_join;
+      await supabase.from("journeys" as any).update({ open_to_join: newValue } as any).eq("id", journeyId);
+      toast.success(newValue ? "Trip is now open to join requests" : "Join requests disabled");
+    } catch {
+      toast.error("Failed to update");
+    } finally {
+      setUpdatingOpenToJoin(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="rounded-xl bg-muted/30 border border-border p-3">
+        <p className="text-xs font-medium text-foreground/80">Your travel crew 👥</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">
+          Add friends to plan together, chat, and share the journey.
+        </p>
+      </div>
+
+      <button
+        onClick={() => setShowInvite(!showInvite)}
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
+      >
+        <UserPlus className="w-4 h-4" />
+        Add Friends
+      </button>
+
+      {/* Invite picker */}
+      <AnimatePresence>
+        {showInvite && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <div className="p-3 rounded-2xl bg-muted/30 border border-border space-y-2 max-h-[250px] overflow-y-auto">
+              <p className="text-xs font-medium text-muted-foreground px-1">Select from your connections:</p>
+              {invitable.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  {connections.length === 0 ? "No connections yet — connect with travelers first" : "All connections already added"}
+                </p>
+              ) : (
+                invitable.map(c => (
+                  <button
+                    key={c.user_id}
+                    onClick={() => handleInvite(c.user_id)}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-card hover:bg-card/80 transition-colors text-left"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-muted overflow-hidden flex-shrink-0">
+                      {c.avatar_url ? <img src={c.avatar_url} alt="" className="w-full h-full object-cover" /> : <Users className="w-4 h-4 text-muted-foreground m-auto mt-2" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{c.display_name || c.username || "Traveler"}</p>
+                      {c.username && <p className="text-[10px] text-muted-foreground">@{c.username}</p>}
+                    </div>
+                    <Plus className="w-4 h-4 text-primary flex-shrink-0" />
+                  </button>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Current members */}
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          👥 Trip Members ({members.filter(m => m.status === "accepted").length + 1})
+        </h3>
+
+        {/* Owner */}
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border">
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+            <Star className="w-3.5 h-3.5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">You</p>
+            <p className="text-[10px] text-muted-foreground">Trip organizer</p>
+          </div>
+        </div>
+
+        {/* Members */}
+        {members.filter(m => m.status === "accepted").map(m => (
+          <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border">
+            <div className="w-8 h-8 rounded-full bg-muted overflow-hidden flex-shrink-0">
+              {m.profile?.avatar_url ? (
+                <img src={m.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xs font-medium text-muted-foreground">
+                  {(m.profile?.display_name || "?")[0]}
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{m.profile?.display_name || "Traveler"}</p>
+              <p className="text-[10px] text-muted-foreground">Member</p>
+            </div>
+            <button
+              onClick={() => handleRemove(m.id)}
+              className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+            >
+              <X className="w-3 h-3 text-muted-foreground" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Open to join toggle */}
+      <div className="rounded-xl bg-muted/30 border border-border p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-foreground/80 flex items-center gap-1">
+              <LogIn className="w-3 h-3" /> Open to Join
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Allow other travelers to request to join this trip</p>
+          </div>
+          <button
+            onClick={toggleOpenToJoin}
+            disabled={updatingOpenToJoin}
+            className={`w-10 h-5 rounded-full transition-colors relative ${(journey as any).open_to_join ? "bg-primary" : "bg-muted"}`}
+          >
+            <div className={`w-4 h-4 rounded-full bg-background shadow-sm absolute top-0.5 transition-all ${(journey as any).open_to_join ? "left-5.5 right-0.5" : "left-0.5"}`} 
+              style={{ left: (journey as any).open_to_join ? '22px' : '2px' }}
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* Join requests */}
+      {joinRequests.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            🔔 Join Requests ({joinRequests.length})
+          </h3>
+          {joinRequests.map((req: any) => (
+            <div key={req.id} className="flex items-center gap-3 p-3 rounded-xl bg-card border border-amber-200/50">
+              <div className="w-8 h-8 rounded-full bg-muted overflow-hidden flex-shrink-0">
+                {req.profile?.avatar_url ? (
+                  <img src={req.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <Users className="w-4 h-4 text-muted-foreground m-auto mt-2" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{req.profile?.display_name || "Traveler"}</p>
+                <p className="text-[10px] text-muted-foreground">Wants to join</p>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => respondToJoin.mutate({ requestId: req.id, journeyId, userId: req.user_id, accept: true })}
+                  className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+                >
+                  <Check className="w-3.5 h-3.5 text-primary" />
+                </button>
+                <button
+                  onClick={() => respondToJoin.mutate({ requestId: req.id, journeyId, userId: req.user_id, accept: false })}
+                  className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-destructive/10 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+};
+
+/* ========== CHAT TAB ========== */
+const ChatTab = ({
+  journeyId, journey, members, connections,
+}: {
+  journeyId: string;
+  journey: any;
+  members: any[];
+  connections: any[];
+}) => {
+  const { user } = useAuth();
+  const [message, setMessage] = useState("");
+  const sendMessage = useSendMessage();
+  const startConversation = useStartConversation();
+  const [chatConvoId, setChatConvoId] = useState<string | null>((journey as any).conversation_id || null);
+  const { data: messages = [] } = useMessages(chatConvoId || undefined);
+  const [starting, setStarting] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const acceptedMembers = members.filter(m => m.status === "accepted");
+
+  // Auto-scroll to bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const initChat = async () => {
+    if (!user || acceptedMembers.length === 0) return;
+    setStarting(true);
+    try {
+      // For group chat, create a conversation with the first member
+      // In a real app this would be a group conversation table
+      const firstMember = acceptedMembers[0];
+      const convoId = await startConversation.mutateAsync(firstMember.user_id);
+      
+      // Save conversation_id to journey
+      await supabase.from("journeys" as any).update({ conversation_id: convoId } as any).eq("id", journeyId);
+      setChatConvoId(convoId);
+      toast.success("Trip chat started! 💬");
+    } catch {
+      toast.error("Failed to start chat");
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  const handleSend = () => {
+    if (!message.trim() || !chatConvoId) return;
+    sendMessage.mutate({ conversationId: chatConvoId, content: message.trim() }, {
+      onSuccess: () => {
+        setMessage("");
+        setTimeout(scrollToBottom, 100);
+      },
+    });
+  };
+
+  if (!chatConvoId && acceptedMembers.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <MessageSquare className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+        <p className="text-sm text-muted-foreground">Add friends first to start chatting</p>
+        <p className="text-xs text-muted-foreground/70 mt-1">Go to the People tab to invite your travel crew</p>
+      </div>
+    );
+  }
+
+  if (!chatConvoId) {
+    return (
+      <div className="text-center py-8 space-y-3">
+        <MessageSquare className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+        <p className="text-sm text-muted-foreground">Start planning together 💬</p>
+        <p className="text-xs text-muted-foreground/70">Chat with your trip crew about plans, ideas, and logistics.</p>
+        <button
+          onClick={initChat}
+          disabled={starting}
+          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90"
+        >
+          {starting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><MessageSquare className="w-4 h-4" /> Start Trip Chat</>}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="rounded-xl bg-muted/30 border border-border p-3">
+        <p className="text-xs font-medium text-foreground/80">Trip Chat 💬</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">
+          Plan, share ideas, and coordinate with your crew.
+        </p>
+      </div>
+
+      {/* Messages */}
+      <div className="rounded-2xl bg-card border border-border overflow-hidden">
+        <div className="h-[300px] overflow-y-auto p-3 space-y-2">
+          {messages.length === 0 ? (
+            <p className="text-center text-xs text-muted-foreground py-8">Say hello! 👋</p>
+          ) : (
+            messages.map((msg: any) => {
+              const isMine = msg.sender_id === user?.id;
+              const senderProfile = members.find(m => m.user_id === msg.sender_id)?.profile;
+              return (
+                <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[75%] ${isMine ? "order-2" : ""}`}>
+                    {!isMine && (
+                      <p className="text-[9px] text-muted-foreground mb-0.5 px-1">
+                        {senderProfile?.display_name || "Traveler"}
+                      </p>
+                    )}
+                    <div className={`px-3 py-2 rounded-2xl text-sm ${
+                      isMine 
+                        ? "bg-primary text-primary-foreground rounded-br-md" 
+                        : "bg-muted text-foreground rounded-bl-md"
+                    }`}>
+                      {msg.content}
+                    </div>
+                    <p className="text-[8px] text-muted-foreground mt-0.5 px-1">
+                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+              );
+            })
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="border-t border-border p-2 flex gap-2">
+          <input
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()}
+            placeholder="Type a message…"
+            className="flex-1 px-3 py-2 rounded-xl bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!message.trim() || sendMessage.isPending}
+            className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 hover:opacity-90 transition-opacity"
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 /* ========== MOMENTS TAB ========== */
 const MomentsTab = ({
@@ -675,7 +1098,7 @@ const MomentsTab = ({
                 <span className="text-[10px] text-muted-foreground">Add a photo</span>
               </button>
             )}
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => onPhotoSelect(e.target.files)} />
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e: any) => onPhotoSelect(e.target.files)} />
 
             {/* Caption */}
             <textarea
@@ -803,29 +1226,76 @@ const MomentsTab = ({
 
 /* ========== SHARE TAB ========== */
 const ShareTab = ({
-  journey, journeyId, posts, onShare,
+  journey, journeyId, posts, onShare, members,
 }: {
   journey: any;
   journeyId: string;
   posts: TripPost[];
   onShare: (item: ShareableItem) => void;
+  members: any[];
 }) => {
   const publicPosts = posts.filter(p => p.visibility === "public");
+  const { user } = useAuth();
+  const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
+
+  const handlePrivacyChange = async (privacy: string) => {
+    setUpdatingPrivacy(true);
+    try {
+      await supabase.from("journeys" as any).update({ privacy } as any).eq("id", journeyId);
+      toast.success(`Trip visibility set to ${privacy}`);
+    } catch {
+      toast.error("Failed to update");
+    } finally {
+      setUpdatingPrivacy(false);
+    }
+  };
 
   return (
     <>
       {/* Section header */}
       <div className="rounded-xl bg-muted/30 border border-border p-3 space-y-1">
-        <p className="text-xs font-medium text-foreground/80">Going somewhere exciting? 🌍</p>
+        <p className="text-xs font-medium text-foreground/80">Share your trip to your profile 🌍</p>
         <p className="text-[10px] text-muted-foreground">
-          Share your trip — let your network follow along or get inspired.
+          Control who sees this trip on your profile — friends, followers, or everyone.
         </p>
         <p className="text-[10px] text-muted-foreground/60 pt-1 border-t border-border/50">
-          🔒 Your trip stays private unless you choose to share it.
+          🔒 Nothing is shared unless you choose to.
         </p>
       </div>
 
-      {/* Share trip button */}
+      {/* Privacy selector */}
+      <div className="rounded-2xl bg-card border border-border p-4 space-y-3">
+        <p className="text-xs font-medium text-foreground/80">Trip Visibility on Profile</p>
+        <div className="space-y-2">
+          {[
+            { id: "private", icon: <Lock className="w-3.5 h-3.5" />, label: "Private", desc: "Only you can see this trip" },
+            { id: "friends", icon: <Users className="w-3.5 h-3.5" />, label: "Friends", desc: "Visible to your connections" },
+            { id: "public", icon: <Globe className="w-3.5 h-3.5" />, label: "Public", desc: "Visible to everyone on your profile" },
+          ].map(opt => (
+            <button
+              key={opt.id}
+              onClick={() => handlePrivacyChange(opt.id)}
+              disabled={updatingPrivacy}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                journey.privacy === opt.id 
+                  ? "border-primary/30 bg-primary/5" 
+                  : "border-border hover:border-primary/10"
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${journey.privacy === opt.id ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
+                {opt.icon}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">{opt.label}</p>
+                <p className="text-[10px] text-muted-foreground">{opt.desc}</p>
+              </div>
+              {journey.privacy === opt.id && <Check className="w-4 h-4 text-primary" />}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Share to network button */}
       <button
         onClick={() => onShare({
           type: "journey",
@@ -837,29 +1307,32 @@ const ShareTab = ({
           experienceCount: journey.experiences.length,
           coverImage: journey.cover_image_url,
         })}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
       >
         <Share2 className="w-4 h-4" />
-        Share Trip with Network
+        Share Trip with Friends
       </button>
 
-      {/* Trip summary for sharing */}
+      {/* Trip summary */}
       <div className="rounded-2xl bg-card border border-border p-4 space-y-3">
-        <p className="text-xs font-medium text-foreground/80">Share what matters 🤍</p>
-        <p className="text-[10px] text-muted-foreground">Turn your trip into something others can discover.</p>
+        <p className="text-xs font-medium text-foreground/80">Trip Summary 🤍</p>
 
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="p-3 rounded-xl bg-muted/30">
+        <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="p-2.5 rounded-xl bg-muted/30">
             <p className="text-lg font-semibold text-foreground">{journey.experiences.length}</p>
-            <p className="text-[10px] text-muted-foreground">Experiences</p>
+            <p className="text-[9px] text-muted-foreground">Experiences</p>
           </div>
-          <div className="p-3 rounded-xl bg-muted/30">
+          <div className="p-2.5 rounded-xl bg-muted/30">
             <p className="text-lg font-semibold text-foreground">{posts.length}</p>
-            <p className="text-[10px] text-muted-foreground">Moments</p>
+            <p className="text-[9px] text-muted-foreground">Moments</p>
           </div>
-          <div className="p-3 rounded-xl bg-muted/30">
+          <div className="p-2.5 rounded-xl bg-muted/30">
+            <p className="text-lg font-semibold text-foreground">{members.filter((m: any) => m.status === "accepted").length + 1}</p>
+            <p className="text-[9px] text-muted-foreground">People</p>
+          </div>
+          <div className="p-2.5 rounded-xl bg-muted/30">
             <p className="text-lg font-semibold text-foreground">{publicPosts.length}</p>
-            <p className="text-[10px] text-muted-foreground">Public</p>
+            <p className="text-[9px] text-muted-foreground">Public</p>
           </div>
         </div>
 

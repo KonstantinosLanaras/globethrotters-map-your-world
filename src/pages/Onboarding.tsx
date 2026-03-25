@@ -134,9 +134,10 @@ const Onboarding = () => {
           >
             <Sparkles className="w-6 h-6 text-gold mx-auto mb-4" />
             <h2 className="font-display text-3xl font-semibold text-foreground mb-2">
-              What kind of traveler are you?
+              Let's get to know you 🌿
             </h2>
-            <p className="text-muted-foreground mb-8">Choose the one that resonates most</p>
+            <p className="text-muted-foreground mb-2">Tell us what you love, and we'll shape your journey around it.</p>
+            <p className="text-muted-foreground/70 text-sm mb-8">You can always update your preferences anytime.</p>
             <div className="grid grid-cols-2 gap-3">
               {personalities.map((p, i) => (
                 <motion.button

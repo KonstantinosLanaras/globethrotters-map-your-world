@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import {
   Plus, MapPin, Star, Calendar, ChevronRight, Trash2, X, Check,
-  Image, Plane, Loader2, Share2
+  Image, Plane, Loader2, Share2, Camera, Users, Lock, Globe, Eye, Send, Tag
 } from "lucide-react";
 import { useJourneys, useAddJourney, useDeleteJourney, useJourneyWithExperiences, useAddExperienceToJourney, useRemoveExperienceFromJourney, Journey } from "@/hooks/useJourneys";
 import { useExperiencesWithPhotos, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { useFavoriteJourneyIds, useToggleFavoriteJourney } from "@/hooks/useFavorites";
+import { useTripPosts, useAddTripPost, useDeleteTripPost, TripPost } from "@/hooks/useTripPosts";
+import { useConnections } from "@/hooks/useShareConnections";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ShareModal, { ShareableItem } from "@/components/ShareModal";
 

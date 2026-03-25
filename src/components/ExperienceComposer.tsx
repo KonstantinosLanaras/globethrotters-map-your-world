@@ -223,7 +223,7 @@ const ExperienceComposer = ({ open, onClose, defaultCity, defaultCountry }: Expe
     setPhotos([]);
     setPhotoPreviewUrls([]);
     setCaption("");
-    setVisibility("public");
+    setVisibility("private");
     setExperienceDate("");
   };
 

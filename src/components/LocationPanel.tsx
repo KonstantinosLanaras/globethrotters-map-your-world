@@ -444,7 +444,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
 /* ═══════════════════════════════════════════════
    Sponsored / Featured Activity Card
    ═══════════════════════════════════════════════ */
-const SponsoredActivityCard = ({ place, onWishlist, onVisited }: { place: PromotedPlace; onWishlist: () => void; onVisited: () => void }) => {
+const SponsoredActivityCard = ({ place, onWishlist, onVisited, onShare, onTrip }: { place: PromotedPlace; onWishlist: () => void; onVisited: () => void; onShare: () => void; onTrip: () => void }) => {
   const typeIcons: Record<string, React.ReactNode> = {
     restaurant: <Utensils className="w-3.5 h-3.5" />,
     experience: <Camera className="w-3.5 h-3.5" />,

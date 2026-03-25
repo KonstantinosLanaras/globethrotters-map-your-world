@@ -395,7 +395,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
                   {/* Activity cards — with Wishlist + Visited + Trip buttons */}
                   <div className="space-y-2">
                     {filteredActivities.map((activity, i) => (
-                      <ActivityCard key={`${activity.name}-${i}`} activity={activity} index={i} pinName={pin.name} pinCountry={pin.country} pinLat={pin.lat} pinLng={pin.lng} />
+                      <ActivityCard key={`${activity.name}-${i}`} activity={activity} index={i} pinName={pin.name} pinCountry={pin.country} pinLat={pin.lat} pinLng={pin.lng} onShare={(name) => { setShareActivityName(name); setShowShare(true); }} onTrip={(name) => { setTripActivityName(name); setShowTripDialog(true); }} />
                     ))}
                   </div>
 

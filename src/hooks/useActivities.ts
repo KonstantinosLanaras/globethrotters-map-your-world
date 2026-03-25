@@ -7,6 +7,12 @@ export interface Activity {
   description: string;
   difficulty: "easy" | "moderate" | "challenging" | "none";
   duration: string;
+  // Extended fields for Google Maps integration (future)
+  source?: "community" | "google" | "ai";
+  rating?: number;
+  review_count?: number;
+  is_sponsored?: boolean;
+  place_id_google?: string;
 }
 
 interface UseActivitiesResult {
@@ -41,7 +47,11 @@ export const useActivities = (placeName: string | null, country: string | null):
           .maybeSingle();
 
         if (cached && !cancelled) {
-          setActivities(cached.activities as unknown as Activity[]);
+          const cachedActivities = (cached.activities as unknown as Activity[]).map((a) => ({
+            ...a,
+            source: a.source || ("ai" as const),
+          }));
+          setActivities(cachedActivities);
           setLoading(false);
           return;
         }
@@ -61,7 +71,11 @@ export const useActivities = (placeName: string | null, country: string | null):
           throw new Error(data.error);
         }
 
-        setActivities(data?.activities || []);
+        const fetched = (data?.activities || []).map((a: Activity) => ({
+          ...a,
+          source: "ai" as const,
+        }));
+        setActivities(fetched);
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "Failed to load activities");

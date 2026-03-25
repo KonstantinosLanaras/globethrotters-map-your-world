@@ -230,7 +230,7 @@ const Journeys = () => {
   );
 };
 
-/* Journey detail with timeline */
+/* Journey detail with timeline + trip posts */
 const JourneyDetail = ({
   journeyId, allExperiences, onBack, onDelete, onShare, isFav, onToggleFav,
 }: {
@@ -242,10 +242,27 @@ const JourneyDetail = ({
   isFav: boolean;
   onToggleFav: { mutate: (v: { journeyId: string; isFavorite: boolean }) => void };
 }) => {
+  const { user } = useAuth();
   const { data: journey, isLoading } = useJourneyWithExperiences(journeyId);
   const addExpToJourney = useAddExperienceToJourney();
   const removeExpFromJourney = useRemoveExperienceFromJourney();
+  const { data: posts = [] } = useTripPosts(journeyId);
+  const addPost = useAddTripPost();
+  const deletePost = useDeleteTripPost();
+  const { data: connections = [] } = useConnections();
   const [showAddExp, setShowAddExp] = useState(false);
+  const [showPostComposer, setShowPostComposer] = useState(false);
+
+  // Post composer state
+  const [postCaption, setPostCaption] = useState("");
+  const [postPhoto, setPostPhoto] = useState<File | null>(null);
+  const [postPhotoPreview, setPostPhotoPreview] = useState<string | null>(null);
+  const [postExpId, setPostExpId] = useState<string | null>(null);
+  const [postTaggedIds, setPostTaggedIds] = useState<string[]>([]);
+  const [postVisibility, setPostVisibility] = useState("private");
+  const [posting, setPosting] = useState(false);
+  const [showTagPicker, setShowTagPicker] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   if (isLoading || !journey) {
     return <div className="text-center py-12"><div className="w-8 h-8 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin mx-auto" /></div>;
@@ -266,6 +283,61 @@ const JourneyDetail = ({
       onSuccess: () => toast.success("Removed from journey"),
       onError: () => toast.error("Failed to remove"),
     });
+  };
+
+  const handlePhotoSelect = (files: FileList | null) => {
+    if (!files || !files[0]) return;
+    const file = files[0];
+    setPostPhoto(file);
+    const reader = new FileReader();
+    reader.onload = () => setPostPhotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const resetComposer = () => {
+    setPostCaption("");
+    setPostPhoto(null);
+    setPostPhotoPreview(null);
+    setPostExpId(null);
+    setPostTaggedIds([]);
+    setPostVisibility("private");
+    setShowPostComposer(false);
+    setShowTagPicker(false);
+  };
+
+  const handlePost = async () => {
+    if (!postCaption.trim() && !postPhoto) { toast.error("Add a caption or photo"); return; }
+    if (!user) return;
+    setPosting(true);
+    try {
+      let photoUrl: string | null = null;
+      if (postPhoto) {
+        const ext = postPhoto.name.split(".").pop();
+        const path = `${user.id}/${journeyId}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("experience-photos").upload(path, postPhoto);
+        if (upErr) throw upErr;
+        const { data: urlData } = supabase.storage.from("experience-photos").getPublicUrl(path);
+        photoUrl = urlData.publicUrl;
+      }
+      await addPost.mutateAsync({
+        journey_id: journeyId,
+        caption: postCaption.trim(),
+        photo_url: photoUrl,
+        experience_id: postExpId,
+        tagged_user_ids: postTaggedIds,
+        visibility: postVisibility,
+      });
+      toast.success("Post shared!");
+      resetComposer();
+    } catch {
+      toast.error("Failed to post");
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  const toggleTag = (id: string) => {
+    setPostTaggedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
   return (
@@ -310,6 +382,7 @@ const JourneyDetail = ({
         </div>
       </div>
 
+      {/* Journey info card */}
       <div className="p-5 rounded-2xl bg-card border border-border">
         <div className="flex items-center gap-3 mb-2">
           <span className="text-3xl">{journey.emoji}</span>
@@ -326,17 +399,173 @@ const JourneyDetail = ({
             {journey.end_date ? new Date(journey.end_date).toLocaleDateString() : ""}
           </p>
         )}
-        <p className="text-xs text-muted-foreground mt-2">{journey.experiences.length} experience{journey.experiences.length !== 1 ? "s" : ""}</p>
+        <p className="text-xs text-muted-foreground mt-2">{journey.experiences.length} experience{journey.experiences.length !== 1 ? "s" : ""} · {posts.length} post{posts.length !== 1 ? "s" : ""}</p>
       </div>
 
-      {/* Add experience button */}
-      <button
-        onClick={() => setShowAddExp(!showAddExp)}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
-      >
-        <Plus className="w-4 h-4" />
-        Add Experience
-      </button>
+      {/* Action buttons row */}
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={() => setShowAddExp(!showAddExp)}
+          className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Add Experience
+        </button>
+        <button
+          onClick={() => setShowPostComposer(!showPostComposer)}
+          className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          <Camera className="w-4 h-4" />
+          Share a Moment
+        </button>
+      </div>
+
+      {/* Post composer */}
+      <AnimatePresence>
+        {showPostComposer && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-4 rounded-2xl bg-card border border-border space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Capture it as you live it 📸</h3>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Turn your trip into a story — add photos, notes, and the people who made it special.
+                  </p>
+                </div>
+                <button onClick={resetComposer} className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </button>
+              </div>
+
+              {/* Photo */}
+              {postPhotoPreview ? (
+                <div className="relative rounded-xl overflow-hidden">
+                  <img src={postPhotoPreview} alt="" className="w-full h-40 object-cover" />
+                  <button
+                    onClick={() => { setPostPhoto(null); setPostPhotoPreview(null); }}
+                    className="absolute top-2 right-2 w-6 h-6 rounded-full bg-foreground/60 flex items-center justify-center"
+                  >
+                    <X className="w-3 h-3 text-background" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="w-full h-28 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 hover:border-primary/30 transition-colors"
+                >
+                  <Camera className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground">Add a photo</span>
+                </button>
+              )}
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => handlePhotoSelect(e.target.files)} />
+
+              {/* Caption */}
+              <textarea
+                value={postCaption}
+                onChange={e => setPostCaption(e.target.value.slice(0, 300))}
+                placeholder="What happened? Share the moment…"
+                rows={2}
+                className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:border-primary/40"
+              />
+
+              {/* Link experience */}
+              <div>
+                <p className="text-[10px] font-medium text-muted-foreground mb-1.5">📍 Link an experience (optional)</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    onClick={() => setPostExpId(null)}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-medium border transition-all ${
+                      !postExpId ? "border-primary/30 bg-primary/10 text-primary" : "border-border text-muted-foreground"
+                    }`}
+                  >
+                    None
+                  </button>
+                  {journey.experiences.slice(0, 6).map(exp => (
+                    <button
+                      key={exp.id}
+                      onClick={() => setPostExpId(postExpId === exp.id ? null : exp.id)}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-medium border transition-all truncate max-w-[140px] ${
+                        postExpId === exp.id ? "border-primary/30 bg-primary/10 text-primary" : "border-border text-muted-foreground"
+                      }`}
+                    >
+                      {exp.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tag friends */}
+              <div>
+                <button
+                  onClick={() => setShowTagPicker(!showTagPicker)}
+                  className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Tag className="w-3 h-3" />
+                  {postTaggedIds.length > 0 ? `${postTaggedIds.length} friend${postTaggedIds.length > 1 ? "s" : ""} tagged` : "Tag friends — who was there? 🤍"}
+                </button>
+                {showTagPicker && (
+                  <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
+                    {connections.length === 0 ? (
+                      <p className="text-[10px] text-muted-foreground py-2">No connections yet</p>
+                    ) : (
+                      connections.map(c => {
+                        const isTagged = postTaggedIds.includes(c.user_id);
+                        return (
+                          <button
+                            key={c.user_id}
+                            onClick={() => toggleTag(c.user_id)}
+                            className={`w-full flex items-center gap-2 p-2 rounded-lg text-left transition-all ${
+                              isTagged ? "bg-primary/10" : "hover:bg-muted/60"
+                            }`}
+                          >
+                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                              {c.avatar_url ? <img src={c.avatar_url} alt="" className="w-full h-full object-cover" /> : <Users className="w-3 h-3 text-muted-foreground" />}
+                            </div>
+                            <span className="text-xs text-foreground truncate flex-1">{c.display_name || "Traveler"}</span>
+                            {isTagged && <Check className="w-3 h-3 text-primary flex-shrink-0" />}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Visibility */}
+              <div className="flex items-center gap-2">
+                <p className="text-[10px] font-medium text-muted-foreground">Visibility:</p>
+                {[
+                  { id: "private", icon: <Lock className="w-3 h-3" />, label: "Private" },
+                  { id: "public", icon: <Globe className="w-3 h-3" />, label: "Public" },
+                ].map(v => (
+                  <button
+                    key={v.id}
+                    onClick={() => setPostVisibility(v.id)}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium border transition-all ${
+                      postVisibility === v.id ? "border-primary/30 bg-primary/10 text-primary" : "border-border text-muted-foreground"
+                    }`}
+                  >
+                    {v.icon} {v.label}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={handlePost}
+                disabled={posting || (!postCaption.trim() && !postPhoto)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
+              >
+                {posting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> Post to Trip</>}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Add experience picker */}
       <AnimatePresence>
@@ -380,15 +609,73 @@ const JourneyDetail = ({
         )}
       </AnimatePresence>
 
-      {/* Timeline */}
-      {journey.experiences.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-sm text-muted-foreground">No experiences in this journey yet</p>
+      {/* Trip posts feed */}
+      {posts.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            📸 Trip moments
+          </h3>
+          {posts.map((post, i) => {
+            const linkedExp = journey.experiences.find(e => e.id === post.experience_id);
+            const taggedNames = connections
+              .filter(c => post.tagged_user_ids.includes(c.user_id))
+              .map(c => c.display_name || "Traveler");
+
+            return (
+              <motion.div
+                key={post.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+                className="rounded-2xl bg-card border border-border overflow-hidden"
+              >
+                {post.photo_url && (
+                  <img src={post.photo_url} alt="" className="w-full h-44 object-cover" />
+                )}
+                <div className="p-3 space-y-1.5">
+                  {post.caption && <p className="text-sm text-foreground">{post.caption}</p>}
+                  {linkedExp && (
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                      <MapPin className="w-2.5 h-2.5" /> {linkedExp.title}
+                    </p>
+                  )}
+                  {taggedNames.length > 0 && (
+                    <p className="text-[10px] text-muted-foreground">
+                      🤍 with {taggedNames.join(", ")}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[9px] text-muted-foreground">
+                      {new Date(post.created_at).toLocaleDateString()}
+                      {post.visibility === "private" && <> · <Lock className="w-2.5 h-2.5 inline" /></>}
+                    </span>
+                    <button
+                      onClick={() => deletePost.mutate({ id: post.id, journeyId })}
+                      className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+                    >
+                      <Trash2 className="w-3 h-3 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
-      ) : (
+      )}
+
+      {/* Experience timeline */}
+      {journey.experiences.length === 0 && posts.length === 0 ? (
+        <div className="text-center py-8">
+          <Camera className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">No experiences or posts yet</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">Add experiences or share a moment to bring this trip to life</p>
+        </div>
+      ) : journey.experiences.length > 0 && (
         <div className="relative">
-          {/* Timeline line */}
-          <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-border" />
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+            ✨ Experiences
+          </h3>
+          <div className="absolute left-5 top-8 bottom-0 w-0.5 bg-border" />
 
           {journey.experiences.map((exp, i) => (
             <motion.div
@@ -398,11 +685,9 @@ const JourneyDetail = ({
               transition={{ delay: i * 0.05 }}
               className="relative pl-12 pb-6"
             >
-              {/* Timeline dot */}
               <div className="absolute left-[14px] top-1 w-3 h-3 rounded-full bg-primary border-2 border-background" />
 
               <div className="rounded-2xl bg-card border border-border overflow-hidden">
-                {/* Photo */}
                 {exp.photos.length > 0 && (
                   <img src={exp.photos[0]} alt="" className="w-full h-32 object-cover" />
                 )}

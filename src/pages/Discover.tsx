@@ -1,17 +1,19 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import { Compass, Search, TrendingUp, MapPin, Star, Bookmark, Eye, MessageSquare, Filter, X, ThumbsUp } from "lucide-react";
+import { Compass, Search, TrendingUp, MapPin, Star, Bookmark, Eye, MessageSquare, X, ThumbsUp, Heart, CheckCircle2, Plane, Sparkles, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToggleHelpful, useUserHelpfulMarks } from "@/hooks/useReputation";
-import { format } from "date-fns";
+import { useFavoriteExperienceIds, useToggleFavoriteExperience } from "@/hooks/useFavorites";
+import FeaturedTooltip from "@/components/FeaturedTooltip";
+import AddToTripDialog from "@/components/AddToTripDialog";
 import { toast } from "sonner";
 
 const categories = ["All", "Food", "Culture", "Nature", "Hiking", "Nightlife"] as const;
-type Category = typeof categories[number];
+type Category = (typeof categories)[number];
 
 interface DiscoverExperience {
   id: string;
@@ -33,11 +35,10 @@ interface DiscoverExperience {
   author: { display_name: string | null; avatar_url: string | null; username: string | null } | null;
 }
 
-const useDiscoverExperiences = () => {
+const useDiscoverExperiencesLocal = () => {
   return useQuery({
     queryKey: ["discover-experiences"],
     queryFn: async () => {
-      // Fetch public experiences ordered by engagement
       const { data: experiences, error } = await supabase
         .from("experiences")
         .select("*")
@@ -47,23 +48,15 @@ const useDiscoverExperiences = () => {
 
       if (error) throw error;
 
-      // Fetch attachments and profiles in parallel
       const userIds = [...new Set((experiences || []).map((e) => e.user_id))];
       const expIds = (experiences || []).map((e) => e.id);
 
       const [attachRes, profileRes] = await Promise.all([
         expIds.length > 0
-          ? supabase
-              .from("experience_attachments")
-              .select("experience_id, url, thumbnail_url")
-              .in("experience_id", expIds)
-              .eq("attachment_type", "photo")
+          ? supabase.from("experience_attachments").select("experience_id, url, thumbnail_url").in("experience_id", expIds).eq("attachment_type", "photo")
           : { data: [], error: null },
         userIds.length > 0
-          ? supabase
-              .from("profiles")
-              .select("user_id, display_name, avatar_url, username")
-              .in("user_id", userIds)
+          ? supabase.from("profiles").select("user_id, display_name, avatar_url, username").in("user_id", userIds)
           : { data: [], error: null },
       ]);
 
@@ -105,11 +98,8 @@ const useTrendingCities = () => {
         if (!e.city) return;
         const key = `${e.city}-${e.country}`;
         const existing = cityCount.get(key);
-        if (existing) {
-          existing.count++;
-        } else {
-          cityCount.set(key, { city: e.city, country: e.country || "", count: 1 });
-        }
+        if (existing) existing.count++;
+        else cityCount.set(key, { city: e.city, country: e.country || "", count: 1 });
       });
 
       return Array.from(cityCount.values())
@@ -128,7 +118,23 @@ const categoryEmoji: Record<string, string> = {
   general: "📍",
 };
 
-const ExperienceCard = ({ exp, index, isHelpful, onToggleHelpful }: { exp: DiscoverExperience; index: number; isHelpful: boolean; onToggleHelpful: (id: string, current: boolean) => void }) => {
+const ExperienceCard = ({
+  exp,
+  index,
+  isHelpful,
+  isFavorited,
+  onToggleHelpful,
+  onToggleFavorite,
+  onAddToTrip,
+}: {
+  exp: DiscoverExperience;
+  index: number;
+  isHelpful: boolean;
+  isFavorited: boolean;
+  onToggleHelpful: (id: string, current: boolean) => void;
+  onToggleFavorite: (id: string, current: boolean) => void;
+  onAddToTrip: (exp: DiscoverExperience) => void;
+}) => {
   const photo = exp.photos[0];
 
   return (
@@ -136,10 +142,10 @@ const ExperienceCard = ({ exp, index, isHelpful, onToggleHelpful }: { exp: Disco
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3 }}
-      className="group bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/20 hover:shadow-lg transition-all duration-300 cursor-pointer"
+      className="group bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/20 hover:shadow-lg transition-all duration-300"
     >
       {/* Photo */}
-      {photo && (
+      {photo ? (
         <div className="relative h-40 overflow-hidden bg-muted">
           <img
             src={photo.thumbnail_url || photo.url}
@@ -148,22 +154,22 @@ const ExperienceCard = ({ exp, index, isHelpful, onToggleHelpful }: { exp: Disco
             loading="lazy"
           />
           {exp.is_sponsored && (
-            <span className="absolute top-2 left-2 text-[9px] font-semibold text-primary-foreground bg-primary/80 backdrop-blur-sm px-2 py-0.5 rounded-full">
-              Sponsored
+            <span className="absolute top-2 left-2 text-[9px] font-semibold text-primary-foreground bg-primary/80 backdrop-blur-sm px-2 py-0.5 rounded-full flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5" />
+              Featured
             </span>
           )}
           <span className="absolute top-2 right-2 text-[10px] font-medium text-foreground bg-card/80 backdrop-blur-sm px-2 py-0.5 rounded-full">
             {categoryEmoji[exp.category] || "📍"} {exp.category}
           </span>
         </div>
-      )}
-
-      {!photo && (
+      ) : (
         <div className="relative h-24 bg-gradient-to-br from-primary/5 to-accent/10 flex items-center justify-center">
           <span className="text-4xl">{categoryEmoji[exp.category] || "📍"}</span>
           {exp.is_sponsored && (
-            <span className="absolute top-2 left-2 text-[9px] font-semibold text-primary-foreground bg-primary/80 px-2 py-0.5 rounded-full">
-              Sponsored
+            <span className="absolute top-2 left-2 text-[9px] font-semibold text-primary-foreground bg-primary/80 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5" />
+              Featured
             </span>
           )}
         </div>
@@ -178,15 +184,11 @@ const ExperienceCard = ({ exp, index, isHelpful, onToggleHelpful }: { exp: Disco
         {(exp.city || exp.country) && (
           <div className="flex items-center gap-1 mt-1">
             <MapPin className="w-3 h-3 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              {[exp.city, exp.country].filter(Boolean).join(", ")}
-            </span>
+            <span className="text-xs text-muted-foreground">{[exp.city, exp.country].filter(Boolean).join(", ")}</span>
           </div>
         )}
 
-        {exp.caption && (
-          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{exp.caption}</p>
-        )}
+        {exp.caption && <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{exp.caption}</p>}
 
         {/* Tags */}
         {exp.tags && exp.tags.length > 0 && (
@@ -199,8 +201,68 @@ const ExperienceCard = ({ exp, index, isHelpful, onToggleHelpful }: { exp: Disco
           </div>
         )}
 
+        {/* ── Action buttons ── */}
+        <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border">
+          {/* Wishlist / Favorite */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(exp.id, isFavorited);
+            }}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+              isFavorited
+                ? "bg-primary/10 text-primary"
+                : "bg-muted/60 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+            }`}
+            title={isFavorited ? "Saved to Wishlist" : "Keep it for later"}
+          >
+            <Heart className={`w-3 h-3 ${isFavorited ? "fill-primary" : ""}`} />
+            {isFavorited ? "Saved" : "Wishlist"}
+          </button>
+
+          {/* Visited */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toast.info("Mark as visited coming soon!");
+            }}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-muted/60 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all"
+            title="Mark your experience"
+          >
+            <CheckCircle2 className="w-3 h-3" />
+            Visited
+          </button>
+
+          {/* Add to Trip */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToTrip(exp);
+            }}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-muted/60 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all"
+            title="Plan it with friends"
+          >
+            <Plane className="w-3 h-3" />
+            Trip
+          </button>
+
+          <div className="flex-1" />
+
+          {/* Helpful */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleHelpful(exp.id, isHelpful);
+            }}
+            className={`flex items-center gap-0.5 transition-colors ${isHelpful ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
+            title={isHelpful ? "Marked as helpful" : "Mark as helpful"}
+          >
+            <ThumbsUp className={`w-3 h-3 ${isHelpful ? "fill-primary" : ""}`} />
+          </button>
+        </div>
+
         {/* Engagement row */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+        <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-3">
             {exp.rating_avg > 0 && (
               <div className="flex items-center gap-0.5">
@@ -220,23 +282,6 @@ const ExperienceCard = ({ exp, index, isHelpful, onToggleHelpful }: { exp: Disco
                 <span className="text-[11px] text-muted-foreground">{exp.review_count}</span>
               </div>
             )}
-
-            {/* Helpful button — validation signal */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleHelpful(exp.id, isHelpful);
-              }}
-              className={`flex items-center gap-0.5 transition-colors ${
-                isHelpful
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-primary"
-              }`}
-              title={isHelpful ? "Marked as helpful" : "Mark as helpful"}
-            >
-              <ThumbsUp className={`w-3 h-3 ${isHelpful ? "fill-primary" : ""}`} />
-              <span className="text-[11px]">Helpful</span>
-            </button>
           </div>
 
           {/* Author */}
@@ -246,9 +291,7 @@ const ExperienceCard = ({ exp, index, isHelpful, onToggleHelpful }: { exp: Disco
                 <img src={exp.author.avatar_url} className="w-5 h-5 rounded-full object-cover" alt="" />
               ) : (
                 <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
-                  <span className="text-[9px] font-medium text-muted-foreground">
-                    {(exp.author.display_name || "?")[0]}
-                  </span>
+                  <span className="text-[9px] font-medium text-muted-foreground">{(exp.author.display_name || "?")[0]}</span>
                 </div>
               )}
               <span className="text-[11px] text-muted-foreground truncate max-w-[80px]">
@@ -266,28 +309,44 @@ const Discover = () => {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<Category>("All");
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [tripDialogExp, setTripDialogExp] = useState<DiscoverExperience | null>(null);
 
-  const { data: experiences = [], isLoading } = useDiscoverExperiences();
+  const { user } = useAuth();
+  const { data: experiences = [], isLoading } = useDiscoverExperiencesLocal();
   const { data: trendingCities = [] } = useTrendingCities();
   const { data: helpfulSet = new Set<string>() } = useUserHelpfulMarks();
+  const { data: favoriteIds = new Set<string>() } = useFavoriteExperienceIds();
   const toggleHelpful = useToggleHelpful();
+  const toggleFavorite = useToggleFavoriteExperience();
 
   const handleToggleHelpful = (experienceId: string, isHelpful: boolean) => {
-    toggleHelpful.mutate(
-      { experienceId, isHelpful },
+    if (!user) { toast.error("Sign in to mark as helpful"); return; }
+    toggleHelpful.mutate({ experienceId, isHelpful }, { onError: () => toast.error("Could not update") });
+  };
+
+  const handleToggleFavorite = (experienceId: string, isFavorited: boolean) => {
+    if (!user) { toast.error("Sign in to save experiences"); return; }
+    toggleFavorite.mutate(
+      { experienceId, isFavorite: isFavorited },
       {
+        onSuccess: () => toast.success(isFavorited ? "Removed from favorites" : "Saved to favorites 🤍"),
         onError: () => toast.error("Could not update"),
       }
     );
   };
 
+  const handleAddToTrip = (exp: DiscoverExperience) => {
+    if (!user) { toast.error("Sign in to add to a trip"); return; }
+    setTripDialogExp(exp);
+  };
+
   const filtered = useMemo(() => {
     let result = experiences;
 
-    // Sponsored first (max 2), then organic
-    const sponsored = result.filter((e) => e.is_sponsored).slice(0, 2);
+    // Featured first (max 2), then organic
+    const featured = result.filter((e) => e.is_sponsored).slice(0, 2);
     const organic = result.filter((e) => !e.is_sponsored);
-    result = [...sponsored, ...organic];
+    result = [...featured, ...organic];
 
     if (activeCategory !== "All") {
       result = result.filter((e) => e.category.toLowerCase() === activeCategory.toLowerCase());
@@ -312,32 +371,27 @@ const Discover = () => {
     return result;
   }, [experiences, activeCategory, selectedCity, search]);
 
+  const hasFeatured = filtered.some((e) => e.is_sponsored);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="pt-[72px] px-4 sm:px-6 pb-16 max-w-5xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6"
-        >
+        {/* Header — warm discovery copy */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <div className="flex items-center gap-2 mb-1">
             <Compass className="w-5 h-5 text-primary" />
             <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">Discover</h1>
           </div>
-          <p className="text-sm text-muted-foreground">Community experiences from around the world</p>
+          <p className="text-sm text-muted-foreground">
+            Find places worth experiencing 🌿 — save them, mark what you've done, or add them to your trip.
+          </p>
         </motion.div>
 
         {/* Search */}
         <div className="relative mb-5">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search experiences, cities, tags..."
-            className="pl-9 h-10 rounded-xl bg-card border-border"
-          />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search experiences, cities, tags..." className="pl-9 h-10 rounded-xl bg-card border-border" />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
               <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
@@ -363,7 +417,7 @@ const Discover = () => {
           ))}
         </div>
 
-        {/* City filter chips from trending */}
+        {/* Trending city chips */}
         {trendingCities.length > 0 && !search && activeCategory === "All" && (
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-3">
@@ -399,7 +453,20 @@ const Discover = () => {
           </div>
         )}
 
-        {/* Results */}
+        {/* Featured trust label — only when featured exist */}
+        {hasFeatured && !isLoading && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 mb-4 px-1">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span className="text-xs font-medium text-foreground">Featured</span>
+              <FeaturedTooltip />
+            </div>
+            <span className="text-[10px] text-muted-foreground">·</span>
+            <span className="text-[10px] text-muted-foreground italic">We highlight quality — not just popularity.</span>
+          </motion.div>
+        )}
+
+        {/* Results grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -413,11 +480,7 @@ const Discover = () => {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
             <Compass className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-muted-foreground font-medium">No experiences found</p>
             <p className="text-xs text-muted-foreground mt-1">Try a different search or category</p>
@@ -425,18 +488,43 @@ const Discover = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((exp, i) => (
-              <ExperienceCard key={exp.id} exp={exp} index={i} isHelpful={helpfulSet.has(exp.id)} onToggleHelpful={handleToggleHelpful} />
+              <ExperienceCard
+                key={exp.id}
+                exp={exp}
+                index={i}
+                isHelpful={helpfulSet.has(exp.id)}
+                isFavorited={favoriteIds.has(exp.id)}
+                onToggleHelpful={handleToggleHelpful}
+                onToggleFavorite={handleToggleFavorite}
+                onAddToTrip={handleAddToTrip}
+              />
             ))}
           </div>
         )}
 
-        {/* Result count */}
+        {/* Trust reassurance footer */}
         {!isLoading && filtered.length > 0 && (
-          <p className="text-center text-xs text-muted-foreground mt-6">
-            Showing {filtered.length} experience{filtered.length !== 1 ? "s" : ""}
-          </p>
+          <div className="text-center mt-8 space-y-1">
+            <p className="text-xs text-muted-foreground">
+              Showing {filtered.length} experience{filtered.length !== 1 ? "s" : ""}
+            </p>
+            <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground/60">
+              <Shield className="w-3 h-3" />
+              <span>Every recommendation is curated — featured places still have to earn their spot.</span>
+            </div>
+          </div>
         )}
       </div>
+
+      {/* Add to Trip dialog */}
+      {tripDialogExp && (
+        <AddToTripDialog
+          open={!!tripDialogExp}
+          onOpenChange={(open) => !open && setTripDialogExp(null)}
+          experienceId={tripDialogExp.id}
+          experienceTitle={tripDialogExp.title}
+        />
+      )}
     </div>
   );
 };

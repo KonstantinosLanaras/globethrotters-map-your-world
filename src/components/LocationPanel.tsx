@@ -134,11 +134,14 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
     setShowTripDialog(true);
   };
 
+  const currentShareTitle = shareActivityName || pin.name;
   const shareItem: ShareableExperience = {
-    type: "experience", id: pin.id, title: pin.name,
+    type: "experience", id: pin.id, title: currentShareTitle,
     city: pin.name, country: pin.country, category: "destination",
     rating: pin.rating > 0 ? pin.rating : undefined,
   };
+
+  const currentTripTitle = tripActivityName || pin.name;
 
   const filteredActivities = activeCategory
     ? activities.filter((a) => a.category === activeCategory)

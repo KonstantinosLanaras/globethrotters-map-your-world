@@ -64,7 +64,7 @@ const Journeys = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="font-display text-2xl font-semibold text-foreground">Journeys</h1>
-            <p className="text-sm text-muted-foreground">Group experiences into trips</p>
+            <p className="text-sm text-muted-foreground">Plan it together ✈️ — turn plans into shared memories</p>
           </div>
           <button
             onClick={() => setShowCreate(true)}
@@ -84,13 +84,19 @@ const Journeys = () => {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden mb-4"
             >
-              <div className="p-5 rounded-2xl bg-card border border-border space-y-3">
+              <div className="p-5 rounded-2xl bg-card border border-border space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-display text-base font-semibold text-foreground">New Journey</h3>
+                  <div>
+                    <h3 className="font-display text-base font-semibold text-foreground">Plan it together ✈️</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Create a trip with friends, organize every detail, and turn plans into shared memories.
+                    </p>
+                  </div>
                   <button onClick={() => setShowCreate(false)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
+
                 <div className="flex gap-2">
                   <input
                     value={newEmoji}
@@ -124,6 +130,17 @@ const Journeys = () => {
                       className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary/40" />
                   </div>
                 </div>
+
+                {/* Supporting context */}
+                <div className="rounded-xl bg-muted/30 border border-border p-3 space-y-1.5">
+                  <p className="text-[11px] text-muted-foreground">
+                    ✨ Invite friends, chat, choose experiences, and keep everything in one place.
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    🔒 Your trip stays private unless you choose to share it.
+                  </p>
+                </div>
+
                 <button
                   onClick={handleCreate}
                   disabled={!newTitle.trim() || addJourney.isPending}
@@ -156,8 +173,13 @@ const Journeys = () => {
             ) : journeys.length === 0 ? (
               <div className="text-center py-16">
                 <Plane className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-display text-lg font-medium text-foreground mb-2">No journeys yet</h3>
-                <p className="text-sm text-muted-foreground mb-4">Group your experiences into trips</p>
+                <h3 className="font-display text-lg font-medium text-foreground mb-1">Plan it together ✈️</h3>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Create a trip with friends, organize every detail, and turn plans into shared memories.
+                </p>
+                <p className="text-xs text-muted-foreground/70 mb-5">
+                  🔒 Your trip stays private unless you choose to share it.
+                </p>
                 <button onClick={() => setShowCreate(true)}
                   className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium">
                   <Plus className="w-4 h-4" /> Create Journey

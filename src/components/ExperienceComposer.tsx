@@ -102,7 +102,7 @@ const ExperienceComposer = ({ open, onClose, defaultCity, defaultCountry }: Expe
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [caption, setCaption] = useState("");
-  const [visibility, setVisibility] = useState("public");
+  const [visibility, setVisibility] = useState("private");
   const [experienceDate, setExperienceDate] = useState("");
   const [uploading, setUploading] = useState(false);
 
@@ -223,7 +223,7 @@ const ExperienceComposer = ({ open, onClose, defaultCity, defaultCountry }: Expe
     setPhotos([]);
     setPhotoPreviewUrls([]);
     setCaption("");
-    setVisibility("public");
+    setVisibility("private");
     setExperienceDate("");
   };
 

@@ -1,15 +1,20 @@
-import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { useState, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
+import ShareModal, { ShareableExperience } from "@/components/ShareModal";
 import {
   Star, MapPin, Calendar, Plane, Heart,
-  Utensils, Landmark, TreePine, Mountain, Moon, Compass, Building2, Gem, Home, Layers
+  Utensils, Landmark, TreePine, Mountain, Moon, Compass, Building2, Gem, Home, Layers,
+  Send, Image, Upload, X, Loader2, Eye, EyeOff, Camera, Pencil
 } from "lucide-react";
 import {
   useFavoriteExperiences, useFavoriteJourneys,
   useToggleFavoriteExperience, useToggleFavoriteJourney,
   FavoriteExperience, FavoriteJourney,
 } from "@/hooks/useFavorites";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 const CATEGORY_META: Record<string, { label: string; icon: any; emoji: string }> = {
@@ -26,6 +31,8 @@ const CATEGORY_META: Record<string, { label: string; icon: any; emoji: string }>
 };
 
 const Favorites = () => {
+  const { user } = useAuth();
+  const qc = useQueryClient();
   const { data: favExperiences = [], isLoading: loadingExp } = useFavoriteExperiences();
   const { data: favJourneys = [], isLoading: loadingJourneys } = useFavoriteJourneys();
   const toggleFavExp = useToggleFavoriteExperience();
@@ -33,9 +40,19 @@ const Favorites = () => {
   const [view, setView] = useState<"experiences" | "trips">("experiences");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
 
+  // Enrichment modal state
+  const [enriching, setEnriching] = useState<FavoriteExperience | null>(null);
+  const [enrichNote, setEnrichNote] = useState("");
+  const [enrichPhotos, setEnrichPhotos] = useState<File[]>([]);
+  const [enrichPhotoUrls, setEnrichPhotoUrls] = useState<string[]>([]);
+  const [publishing, setPublishing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Share modal state
+  const [shareItem, setShareItem] = useState<ShareableExperience | null>(null);
+
   const isLoading = loadingExp || loadingJourneys;
 
-  // Group experiences by category
   const grouped = useMemo(() => {
     const groups: Record<string, FavoriteExperience[]> = {};
     for (const exp of favExperiences) {
@@ -46,11 +63,9 @@ const Favorites = () => {
     return groups;
   }, [favExperiences]);
 
-  const categoryKeys = Object.keys(grouped).sort((a, b) => {
-    const aLabel = CATEGORY_META[a]?.label || a;
-    const bLabel = CATEGORY_META[b]?.label || b;
-    return aLabel.localeCompare(bLabel);
-  });
+  const categoryKeys = Object.keys(grouped).sort((a, b) =>
+    (CATEGORY_META[a]?.label || a).localeCompare(CATEGORY_META[b]?.label || b)
+  );
 
   const filteredGroups = filterCategory
     ? { [filterCategory]: grouped[filterCategory] || [] }
@@ -70,6 +85,95 @@ const Favorites = () => {
     );
   };
 
+  const openEnrich = (exp: FavoriteExperience) => {
+    setEnriching(exp);
+    setEnrichNote(exp.caption || "");
+    setEnrichPhotos([]);
+    setEnrichPhotoUrls(exp.photos || []);
+  };
+
+  const handleAddPhotos = (files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files).slice(0, 5 - enrichPhotos.length);
+    setEnrichPhotos(prev => [...prev, ...newFiles]);
+    newFiles.forEach(f => {
+      const reader = new FileReader();
+      reader.onload = () => setEnrichPhotoUrls(prev => [...prev, reader.result as string]);
+      reader.readAsDataURL(f);
+    });
+  };
+
+  const handlePublish = async () => {
+    if (!enriching || !user) return;
+    setPublishing(true);
+    try {
+      // Upload any new photos
+      for (const file of enrichPhotos) {
+        const ext = file.name.split(".").pop();
+        const path = `${user.id}/${enriching.id}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("experience-photos")
+          .upload(path, file);
+        if (upErr) throw upErr;
+        const { data: urlData } = supabase.storage.from("experience-photos").getPublicUrl(path);
+        await supabase.from("experience_attachments").insert({
+          experience_id: enriching.id,
+          attachment_type: "photo",
+          url: urlData.publicUrl,
+        });
+      }
+
+      // Update experience: set visibility to public + caption
+      await supabase
+        .from("experiences")
+        .update({ visibility: "public", caption: enrichNote.trim() || null })
+        .eq("id", enriching.id);
+
+      // Update favorite publish_status
+      await supabase
+        .from("favorite_experiences" as any)
+        .update({ publish_status: "published", published_at: new Date().toISOString(), publish_note: enrichNote.trim() } as any)
+        .eq("user_id", user.id)
+        .eq("experience_id", enriching.id);
+
+      qc.invalidateQueries({ queryKey: ["favorite-experiences"] });
+      qc.invalidateQueries({ queryKey: ["experiences"] });
+      toast.success("Published to your public profile!");
+      setEnriching(null);
+    } catch {
+      toast.error("Failed to publish");
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleUnpublish = async (expId: string) => {
+    if (!user) return;
+    await supabase.from("experiences").update({ visibility: "private" }).eq("id", expId);
+    await supabase
+      .from("favorite_experiences" as any)
+      .update({ publish_status: "draft", published_at: null } as any)
+      .eq("user_id", user.id)
+      .eq("experience_id", expId);
+    qc.invalidateQueries({ queryKey: ["favorite-experiences"] });
+    qc.invalidateQueries({ queryKey: ["experiences"] });
+    toast.success("Unpublished — now private");
+  };
+
+  const handleShare = (exp: FavoriteExperience) => {
+    setShareItem({
+      type: "experience",
+      id: exp.id,
+      title: exp.title,
+      city: exp.city,
+      country: exp.country,
+      category: exp.category,
+      rating: exp.rating,
+      photo: exp.photos[0] || null,
+      caption: exp.caption,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -80,7 +184,9 @@ const Favorites = () => {
             <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
             Favorites
           </h1>
-          <p className="text-sm text-muted-foreground">Your best travel memories, curated</p>
+          <p className="text-sm text-muted-foreground">
+            Your curated highlights — enrich and publish to share with the world
+          </p>
         </div>
 
         {/* View toggle */}
@@ -111,7 +217,6 @@ const Favorites = () => {
           </div>
         ) : view === "experiences" ? (
           <>
-            {/* Category filter chips */}
             {categoryKeys.length > 1 && (
               <div className="flex flex-wrap gap-1.5 mb-4">
                 <button
@@ -147,7 +252,7 @@ const Favorites = () => {
               <EmptyState
                 icon={<Star className="w-10 h-10 text-muted-foreground/20" />}
                 title="No favorite experiences yet"
-                subtitle="Star your best experiences to curate your travel highlights"
+                subtitle="Star your best experiences — then enrich and publish them to share"
               />
             ) : (
               <div className="space-y-6">
@@ -161,7 +266,15 @@ const Favorites = () => {
                       </h3>
                       <div className="space-y-2">
                         {exps.map((exp, i) => (
-                          <FavExpCard key={exp.id} exp={exp} index={i} onRemove={handleRemoveExp} />
+                          <FavExpCard
+                            key={exp.id}
+                            exp={exp}
+                            index={i}
+                            onRemove={handleRemoveExp}
+                            onEnrich={() => openEnrich(exp)}
+                            onShare={() => handleShare(exp)}
+                            onUnpublish={() => handleUnpublish(exp.id)}
+                          />
                         ))}
                       </div>
                     </div>
@@ -188,48 +301,213 @@ const Favorites = () => {
           </>
         )}
       </div>
+
+      {/* Enrichment + Publish Modal */}
+      <AnimatePresence>
+        {enriching && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={() => setEnriching(null)} />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-card rounded-t-2xl sm:rounded-2xl border border-border shadow-xl max-h-[85vh] flex flex-col overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="font-display text-base font-semibold text-foreground">
+                  Enrich & Publish
+                </h2>
+                <button
+                  onClick={() => setEnriching(null)}
+                  className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80"
+                >
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {/* Preview */}
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border">
+                  {enriching.photos[0] ? (
+                    <img src={enriching.photos[0]} alt="" className="w-12 h-12 rounded-lg object-cover" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{enriching.title}</p>
+                    <p className="text-[10px] text-muted-foreground">{enriching.city}{enriching.country ? `, ${enriching.country}` : ""}</p>
+                  </div>
+                </div>
+
+                {/* Photos */}
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                    Photos ({enrichPhotoUrls.length}/5)
+                  </p>
+                  <div className="flex gap-2 flex-wrap">
+                    {enrichPhotoUrls.map((url, i) => (
+                      <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                    {enrichPhotoUrls.length < 5 && (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-16 h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center hover:border-primary/30 transition-colors"
+                      >
+                        <Camera className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleAddPhotos(e.target.files)}
+                  />
+                </div>
+
+                {/* Review note */}
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                    Your review
+                  </p>
+                  <textarea
+                    value={enrichNote}
+                    onChange={(e) => setEnrichNote(e.target.value.slice(0, 300))}
+                    placeholder="Share why this experience was special…"
+                    className="w-full h-24 px-3 py-2 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:border-primary/40"
+                  />
+                  <p className="text-[10px] text-muted-foreground text-right">{enrichNote.length}/300</p>
+                </div>
+
+                <div className="bg-muted/30 rounded-xl p-3 border border-border">
+                  <p className="text-xs text-muted-foreground">
+                    <Eye className="w-3 h-3 inline mr-1" />
+                    Publishing makes this experience visible on your public profile. Your other activity stays private.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-border bg-muted/30">
+                <button
+                  onClick={handlePublish}
+                  disabled={publishing}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
+                >
+                  {publishing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Eye className="w-4 h-4" />
+                      Publish to Profile
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Share modal */}
+      {shareItem && (
+        <ShareModal open={!!shareItem} onClose={() => setShareItem(null)} item={shareItem} />
+      )}
     </div>
   );
 };
 
-const FavExpCard = ({ exp, index, onRemove }: { exp: FavoriteExperience; index: number; onRemove: (id: string) => void }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 6 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: index * 0.03 }}
-    className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-primary/10 transition-colors"
-  >
-    {exp.photos[0] ? (
-      <img src={exp.photos[0]} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
-    ) : (
-      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-        <MapPin className="w-4 h-4 text-muted-foreground" />
-      </div>
-    )}
-    <div className="flex-1 min-w-0">
-      <p className="text-sm font-semibold text-foreground truncate">{exp.title}</p>
-      <p className="text-[10px] text-muted-foreground truncate">
-        {exp.city}{exp.country ? `, ${exp.country}` : ""}
-        {exp.experience_date ? ` · ${new Date(exp.experience_date).toLocaleDateString()}` : ""}
-      </p>
-    </div>
-    <div className="flex items-center gap-1.5 flex-shrink-0">
-      {exp.rating > 0 && (
-        <div className="flex items-center gap-0.5">
-          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-          <span className="text-[10px] font-medium text-foreground">{exp.rating}</span>
+interface FavExpCardProps {
+  exp: FavoriteExperience;
+  index: number;
+  onRemove: (id: string) => void;
+  onEnrich: () => void;
+  onShare: () => void;
+  onUnpublish: () => void;
+}
+
+const FavExpCard = ({ exp, index, onRemove, onEnrich, onShare, onUnpublish }: FavExpCardProps) => {
+  const isPublished = (exp as any).publish_status === "published";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.03 }}
+      className="p-3 rounded-xl bg-card border border-border hover:border-primary/10 transition-colors"
+    >
+      <div className="flex items-center gap-3">
+        {exp.photos[0] ? (
+          <img src={exp.photos[0]} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+        ) : (
+          <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+            <MapPin className="w-4 h-4 text-muted-foreground" />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-semibold text-foreground truncate">{exp.title}</p>
+            {isPublished && (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                Published
+              </span>
+            )}
+          </div>
+          <p className="text-[10px] text-muted-foreground truncate">
+            {exp.city}{exp.country ? `, ${exp.country}` : ""}
+            {exp.experience_date ? ` · ${new Date(exp.experience_date).toLocaleDateString()}` : ""}
+          </p>
         </div>
-      )}
-      <button
-        onClick={() => onRemove(exp.id)}
-        className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
-        title="Remove from favorites"
-      >
-        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-      </button>
-    </div>
-  </motion.div>
-);
+        {exp.rating > 0 && (
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+            <span className="text-[10px] font-medium text-foreground">{exp.rating}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Action row */}
+      <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">
+        {isPublished ? (
+          <>
+            <button
+              onClick={onUnpublish}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-medium text-muted-foreground hover:bg-muted transition-colors"
+            >
+              <EyeOff className="w-3 h-3" /> Unpublish
+            </button>
+            <button
+              onClick={onShare}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Send className="w-3 h-3" /> Share
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={onEnrich}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors"
+          >
+            <Pencil className="w-3 h-3" /> Enrich & Publish
+          </button>
+        )}
+        <div className="flex-1" />
+        <button
+          onClick={() => onRemove(exp.id)}
+          className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+          title="Remove from favorites"
+        >
+          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+        </button>
+      </div>
+    </motion.div>
+  );
+};
 
 const FavJourneyCard = ({ journey: j, index, onRemove }: { journey: FavoriteJourney; index: number; onRemove: (id: string) => void }) => (
   <motion.div

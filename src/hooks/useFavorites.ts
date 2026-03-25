@@ -103,6 +103,8 @@ export interface FavoriteExperience {
   experience_date: string | null;
   created_at: string;
   favorited_at: string;
+  publish_status: "draft" | "published";
+  published_at: string | null;
 }
 
 export interface FavoriteJourney {
@@ -125,7 +127,7 @@ export const useFavoriteExperiences = () => {
     queryFn: async (): Promise<FavoriteExperience[]> => {
       const { data: favs, error } = await supabase
         .from("favorite_experiences" as any)
-        .select("experience_id, created_at")
+        .select("experience_id, created_at, publish_status, published_at")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -144,20 +146,25 @@ export const useFavoriteExperiences = () => {
         .in("experience_id", expIds)
         .eq("attachment_type", "photo");
 
-      return (exps ?? []).map((exp: any) => ({
-        id: exp.id,
-        title: exp.title,
-        caption: exp.caption,
-        city: exp.city,
-        country: exp.country,
-        category: exp.category,
-        rating: exp.rating ?? 0,
-        tags: exp.tags ?? [],
-        experience_date: exp.experience_date,
-        created_at: exp.created_at,
-        photos: (atts ?? []).filter((a: any) => a.experience_id === exp.id).map((a: any) => a.url),
-        favorited_at: (favs as any[]).find((f: any) => f.experience_id === exp.id)?.created_at,
-      }));
+      return (exps ?? []).map((exp: any) => {
+        const fav = (favs as any[]).find((f: any) => f.experience_id === exp.id);
+        return {
+          id: exp.id,
+          title: exp.title,
+          caption: exp.caption,
+          city: exp.city,
+          country: exp.country,
+          category: exp.category,
+          rating: exp.rating ?? 0,
+          tags: exp.tags ?? [],
+          experience_date: exp.experience_date,
+          created_at: exp.created_at,
+          photos: (atts ?? []).filter((a: any) => a.experience_id === exp.id).map((a: any) => a.url),
+          favorited_at: fav?.created_at,
+          publish_status: fav?.publish_status ?? "draft",
+          published_at: fav?.published_at ?? null,
+        };
+      });
     },
   });
 };

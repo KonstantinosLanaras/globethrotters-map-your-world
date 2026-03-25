@@ -127,7 +127,7 @@ export const useFavoriteExperiences = () => {
     queryFn: async (): Promise<FavoriteExperience[]> => {
       const { data: favs, error } = await supabase
         .from("favorite_experiences" as any)
-        .select("experience_id, created_at")
+        .select("experience_id, created_at, publish_status, published_at")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;

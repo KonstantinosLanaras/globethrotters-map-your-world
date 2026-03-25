@@ -509,7 +509,7 @@ const SponsoredActivityCard = ({ place, onWishlist, onVisited, onShare, onTrip }
 /* ═══════════════════════════════════════════════
    Activity Card — with Wishlist + Visited buttons
    ═══════════════════════════════════════════════ */
-const ActivityCard = ({ activity, index, pinName, pinCountry, pinLat, pinLng }: { activity: Activity; index: number; pinName: string; pinCountry: string; pinLat: number; pinLng: number }) => {
+const ActivityCard = ({ activity, index, pinName, pinCountry, pinLat, pinLng, onShare, onTrip }: { activity: Activity; index: number; pinName: string; pinCountry: string; pinLat: number; pinLng: number; onShare: (name: string) => void; onTrip: (name: string) => void }) => {
   const config = categoryConfig[activity.category] || categoryConfig.culture;
   const { user } = useAuth();
   const addPlace = useAddPlace();

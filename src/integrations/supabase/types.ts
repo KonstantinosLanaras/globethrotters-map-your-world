@@ -1081,6 +1081,60 @@ export type Database = {
           },
         ]
       }
+      trip_posts: {
+        Row: {
+          caption: string | null
+          created_at: string
+          experience_id: string | null
+          id: string
+          journey_id: string
+          photo_url: string | null
+          tagged_user_ids: string[] | null
+          updated_at: string
+          user_id: string
+          visibility: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          experience_id?: string | null
+          id?: string
+          journey_id: string
+          photo_url?: string | null
+          tagged_user_ids?: string[] | null
+          updated_at?: string
+          user_id: string
+          visibility?: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          experience_id?: string | null
+          id?: string
+          journey_id?: string
+          photo_url?: string | null
+          tagged_user_ids?: string[] | null
+          updated_at?: string
+          user_id?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_posts_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_posts_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_credits: {
         Row: {
           ad_opt_in: boolean

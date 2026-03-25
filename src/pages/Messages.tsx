@@ -1,15 +1,17 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft, Send, MessageSquare, User, MapPin, Star, Plane } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Send, MessageSquare, User, MapPin, Star, Plane, Plus, Search, X, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useConversations,
   useMessages,
   useSendMessage,
   useMarkMessagesRead,
+  useStartConversation,
   ConversationWithProfile,
 } from "@/hooks/useMessages";
+import { useConnections } from "@/hooks/useShareConnections";
 import Navbar from "@/components/Navbar";
 import { format, isToday, isYesterday } from "date-fns";
 
@@ -22,7 +24,6 @@ const formatTime = (dateStr: string) => {
 
 const Messages = () => {
   const { conversationId } = useParams<{ conversationId: string }>();
-  const navigate = useNavigate();
 
   if (conversationId) {
     return <ChatView conversationId={conversationId} />;
@@ -31,10 +32,110 @@ const Messages = () => {
   return <ConversationList />;
 };
 
+// ─── New Message Modal ───
+const NewMessageModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  const navigate = useNavigate();
+  const { data: connections = [], isLoading } = useConnections();
+  const startConversation = useStartConversation();
+  const [search, setSearch] = useState("");
+  const [starting, setStarting] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    if (!search) return connections;
+    const q = search.toLowerCase();
+    return connections.filter(
+      (c) => c.display_name?.toLowerCase().includes(q) || c.username?.toLowerCase().includes(q)
+    );
+  }, [connections, search]);
+
+  const handleSelect = async (userId: string) => {
+    setStarting(userId);
+    try {
+      const convId = await startConversation.mutateAsync(userId);
+      onClose();
+      navigate(`/messages/${convId}`);
+    } catch {
+      setStarting(null);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        className="relative w-full max-w-md bg-card rounded-t-2xl sm:rounded-2xl border border-border shadow-xl max-h-[75vh] flex flex-col overflow-hidden"
+      >
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h2 className="font-display text-base font-semibold text-foreground">New Message</h2>
+          <button onClick={onClose} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80">
+            <X className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
+        </div>
+
+        <div className="px-4 py-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search connections…"
+              autoFocus
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40"
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 pb-4 min-h-0">
+          {isLoading ? (
+            <div className="text-center py-8 text-sm text-muted-foreground animate-pulse">Loading…</div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-8">
+              <User className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+              <p className="text-xs text-muted-foreground">
+                {connections.length === 0 ? "No connections yet — follow travelers to connect" : "No matching connections"}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {filtered.map((c) => (
+                <button
+                  key={c.user_id}
+                  onClick={() => handleSelect(c.user_id)}
+                  disabled={starting === c.user_id}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/60 transition-all text-left disabled:opacity-60"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {c.avatar_url ? (
+                      <img src={c.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{c.display_name || "Traveler"}</p>
+                    {c.username && <p className="text-[10px] text-muted-foreground truncate">@{c.username}</p>}
+                  </div>
+                  {starting === c.user_id && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground flex-shrink-0" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 // ─── Conversation List ───
 const ConversationList = () => {
   const navigate = useNavigate();
   const { data: conversations = [], isLoading } = useConversations();
+  const [showNew, setShowNew] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,7 +145,16 @@ const ConversationList = () => {
           <ArrowLeft className="w-3.5 h-3.5" /> Back
         </button>
 
-        <h1 className="font-display text-xl font-semibold text-foreground mb-4">Messages</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="font-display text-xl font-semibold text-foreground">Messages</h1>
+          <button
+            onClick={() => setShowNew(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New message
+          </button>
+        </div>
 
         {isLoading ? (
           <div className="text-center py-12 text-sm text-muted-foreground animate-pulse">Loading…</div>
@@ -52,7 +162,12 @@ const ConversationList = () => {
           <div className="text-center py-12">
             <MessageSquare className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">No conversations yet</p>
-            <p className="text-xs text-muted-foreground mt-1">Start a conversation from a connection's profile</p>
+            <button
+              onClick={() => setShowNew(true)}
+              className="mt-3 text-xs text-primary font-medium hover:underline"
+            >
+              Start a new conversation
+            </button>
           </div>
         ) : (
           <div className="space-y-1">
@@ -62,6 +177,10 @@ const ConversationList = () => {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {showNew && <NewMessageModal open={showNew} onClose={() => setShowNew(false)} />}
+      </AnimatePresence>
     </div>
   );
 };
@@ -118,14 +237,12 @@ const ChatView = ({ conversationId }: { conversationId: string }) => {
   const conversation = conversations.find((c) => c.id === conversationId);
   const otherUser = conversation?.other_user;
 
-  // Mark messages as read when viewing
   useEffect(() => {
     if (conversationId) {
       markRead.mutate(conversationId);
     }
   }, [conversationId, messages.length]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;

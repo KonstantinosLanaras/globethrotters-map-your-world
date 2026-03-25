@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X, MapPin, Star, Heart, Calendar, Tag, Flag, Bookmark,
   Utensils, Mountain, Landmark, Camera, Train, Gem,
-  Loader2, Clock, Gauge, Share2, Plane, Info, ShieldCheck, Sparkles, CheckCircle2,
+  Loader2, Clock, Gauge, Share2, Plane, Info, ShieldCheck, Sparkles, CheckCircle2, Send,
 } from "lucide-react";
 import { Pin } from "@/types/travel";
 import { useQuery } from "@tanstack/react-query";

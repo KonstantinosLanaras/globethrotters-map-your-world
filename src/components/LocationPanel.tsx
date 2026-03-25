@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X, MapPin, Star, Heart, Calendar, Tag, Flag, Bookmark,
   Utensils, Mountain, Landmark, Camera, Train, Gem,
-  Loader2, Clock, Gauge, Share2, Plane, Info, ShieldCheck, Sparkles, CheckCircle2,
+  Loader2, Clock, Gauge, Share2, Plane, Info, ShieldCheck, Sparkles, CheckCircle2, Send,
 } from "lucide-react";
 import { Pin } from "@/types/travel";
 import { useQuery } from "@tanstack/react-query";
@@ -48,6 +48,8 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
   const [showRating, setShowRating] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showTripDialog, setShowTripDialog] = useState(false);
+  const [shareActivityName, setShareActivityName] = useState<string | null>(null);
+  const [tripActivityName, setTripActivityName] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const { user } = useAuth();
   const addPlace = useAddPlace();
@@ -132,11 +134,14 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
     setShowTripDialog(true);
   };
 
+  const currentShareTitle = shareActivityName || pin.name;
   const shareItem: ShareableExperience = {
-    type: "experience", id: pin.id, title: pin.name,
+    type: "experience", id: pin.id, title: currentShareTitle,
     city: pin.name, country: pin.country, category: "destination",
     rating: pin.rating > 0 ? pin.rating : undefined,
   };
+
+  const currentTripTitle = tripActivityName || pin.name;
 
   const filteredActivities = activeCategory
     ? activities.filter((a) => a.category === activeCategory)
@@ -323,7 +328,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
                 </div>
 
                 {sponsoredForCategory.map((sp) => (
-                  <SponsoredActivityCard key={sp.id} place={sp} onWishlist={() => {}} onVisited={() => {}} />
+                  <SponsoredActivityCard key={sp.id} place={sp} onWishlist={() => {}} onVisited={() => {}} onShare={() => { setShareActivityName(sp.business_name); setShowShare(true); }} onTrip={() => { setTripActivityName(sp.business_name); setShowTripDialog(true); }} />
                 ))}
 
                 <p className="text-[10px] text-muted-foreground/50 italic px-1">
@@ -393,7 +398,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
                   {/* Activity cards — with Wishlist + Visited + Trip buttons */}
                   <div className="space-y-2">
                     {filteredActivities.map((activity, i) => (
-                      <ActivityCard key={`${activity.name}-${i}`} activity={activity} index={i} pinName={pin.name} pinCountry={pin.country} pinLat={pin.lat} pinLng={pin.lng} />
+                      <ActivityCard key={`${activity.name}-${i}`} activity={activity} index={i} pinName={pin.name} pinCountry={pin.country} pinLat={pin.lat} pinLng={pin.lng} onShare={(name) => { setShareActivityName(name); setShowShare(true); }} onTrip={(name) => { setTripActivityName(name); setShowTripDialog(true); }} />
                     ))}
                   </div>
 
@@ -428,13 +433,13 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
       {showReport && <ReportDialog placeId={pin.id} onClose={() => setShowReport(false)} />}
       {showAddToList && <AddToListDialog placeId={pin.id} placeName={pin.name} onClose={() => setShowAddToList(false)} />}
       {showRating && <RatingModal open={showRating} onClose={() => setShowRating(false)} placeId={pin.id} placeName={pin.name} />}
-      <ShareModal open={showShare} onClose={() => setShowShare(false)} item={shareItem} />
+      <ShareModal open={showShare} onClose={() => { setShowShare(false); setShareActivityName(null); }} item={shareItem} />
       {showTripDialog && (
         <AddToTripDialog
           open={showTripDialog}
-          onOpenChange={setShowTripDialog}
+          onOpenChange={(open) => { setShowTripDialog(open); if (!open) setTripActivityName(null); }}
           experienceId={pin.id}
-          experienceTitle={pin.name}
+          experienceTitle={currentTripTitle}
         />
       )}
     </>
@@ -444,7 +449,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
 /* ═══════════════════════════════════════════════
    Sponsored / Featured Activity Card
    ═══════════════════════════════════════════════ */
-const SponsoredActivityCard = ({ place, onWishlist, onVisited }: { place: PromotedPlace; onWishlist: () => void; onVisited: () => void }) => {
+const SponsoredActivityCard = ({ place, onWishlist, onVisited, onShare, onTrip }: { place: PromotedPlace; onWishlist: () => void; onVisited: () => void; onShare: () => void; onTrip: () => void }) => {
   const typeIcons: Record<string, React.ReactNode> = {
     restaurant: <Utensils className="w-3.5 h-3.5" />,
     experience: <Camera className="w-3.5 h-3.5" />,
@@ -487,19 +492,17 @@ const SponsoredActivityCard = ({ place, onWishlist, onVisited }: { place: Promot
 
           {/* Action buttons */}
           <div className="flex items-center gap-1.5 mt-2">
-            <button
-              onClick={onWishlist}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-wishlist/10 text-wishlist hover:bg-wishlist/20 transition-colors"
-            >
-              <Heart className="w-2.5 h-2.5" />
-              Wishlist
+            <button onClick={onWishlist} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-wishlist/10 text-wishlist hover:bg-wishlist/20 transition-colors">
+              <Heart className="w-2.5 h-2.5" /> Wishlist
             </button>
-            <button
-              onClick={onVisited}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-visited/10 text-visited hover:bg-visited/20 transition-colors"
-            >
-              <CheckCircle2 className="w-2.5 h-2.5" />
-              Visited
+            <button onClick={onVisited} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-visited/10 text-visited hover:bg-visited/20 transition-colors">
+              <CheckCircle2 className="w-2.5 h-2.5" /> Visited
+            </button>
+            <button onClick={onShare} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
+              <Send className="w-2.5 h-2.5" /> Chat
+            </button>
+            <button onClick={onTrip} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+              <Plane className="w-2.5 h-2.5" /> Trip
             </button>
           </div>
         </div>
@@ -511,7 +514,7 @@ const SponsoredActivityCard = ({ place, onWishlist, onVisited }: { place: Promot
 /* ═══════════════════════════════════════════════
    Activity Card — with Wishlist + Visited buttons
    ═══════════════════════════════════════════════ */
-const ActivityCard = ({ activity, index, pinName, pinCountry, pinLat, pinLng }: { activity: Activity; index: number; pinName: string; pinCountry: string; pinLat: number; pinLng: number }) => {
+const ActivityCard = ({ activity, index, pinName, pinCountry, pinLat, pinLng, onShare, onTrip }: { activity: Activity; index: number; pinName: string; pinCountry: string; pinLat: number; pinLng: number; onShare: (name: string) => void; onTrip: (name: string) => void }) => {
   const config = categoryConfig[activity.category] || categoryConfig.culture;
   const { user } = useAuth();
   const addPlace = useAddPlace();
@@ -580,21 +583,19 @@ const ActivityCard = ({ activity, index, pinName, pinCountry, pinLat, pinLng }: 
             )}
           </div>
 
-          {/* ── Wishlist + Visited action row ── */}
+          {/* ── Wishlist + Visited + Share + Trip action row ── */}
           <div className="flex items-center gap-1.5 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={handleWishlist}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-wishlist/10 text-wishlist hover:bg-wishlist/20 transition-colors"
-            >
-              <Heart className="w-2.5 h-2.5" />
-              Wishlist
+            <button onClick={handleWishlist} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-wishlist/10 text-wishlist hover:bg-wishlist/20 transition-colors">
+              <Heart className="w-2.5 h-2.5" /> Wishlist
             </button>
-            <button
-              onClick={handleVisited}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-visited/10 text-visited hover:bg-visited/20 transition-colors"
-            >
-              <CheckCircle2 className="w-2.5 h-2.5" />
-              Visited
+            <button onClick={handleVisited} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-visited/10 text-visited hover:bg-visited/20 transition-colors">
+              <CheckCircle2 className="w-2.5 h-2.5" /> Visited
+            </button>
+            <button onClick={() => onShare(activity.name)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
+              <Send className="w-2.5 h-2.5" /> Chat
+            </button>
+            <button onClick={() => onTrip(activity.name)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+              <Plane className="w-2.5 h-2.5" /> Trip
             </button>
           </div>
         </div>

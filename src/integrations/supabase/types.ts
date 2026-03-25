@@ -482,8 +482,79 @@ export type Database = {
           },
         ]
       }
+      journey_join_requests: {
+        Row: {
+          created_at: string
+          id: string
+          journey_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          journey_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          journey_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_join_requests_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_members: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          journey_id: string
+          role: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          journey_id: string
+          role?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          journey_id?: string
+          role?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_members_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journeys: {
         Row: {
+          conversation_id: string | null
           cover_image_url: string | null
           created_at: string
           description: string | null
@@ -491,6 +562,7 @@ export type Database = {
           emoji: string | null
           end_date: string | null
           id: string
+          open_to_join: boolean
           privacy: string
           start_date: string | null
           title: string
@@ -498,6 +570,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          conversation_id?: string | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -505,6 +578,7 @@ export type Database = {
           emoji?: string | null
           end_date?: string | null
           id?: string
+          open_to_join?: boolean
           privacy?: string
           start_date?: string | null
           title: string
@@ -512,6 +586,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          conversation_id?: string | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -519,13 +594,22 @@ export type Database = {
           emoji?: string | null
           end_date?: string | null
           id?: string
+          open_to_join?: boolean
           privacy?: string
           start_date?: string | null
           title?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "journeys_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       list_places: {
         Row: {

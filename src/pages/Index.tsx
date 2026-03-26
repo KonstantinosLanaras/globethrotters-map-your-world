@@ -16,6 +16,7 @@ const Index = () => {
   const [activeTags, setActiveTags] = useState<ActivityTag[]>([]);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [searchMode, setSearchMode] = useState<SearchMode>("places");
+  const [exploreBarVisible, setExploreBarVisible] = useState(true);
   const { user } = useAuth();
   const { data: places = [] } = usePlaces();
   const { data: experiences = [] } = useExperiencesWithPhotos();
@@ -63,13 +64,23 @@ const Index = () => {
     );
   }, []);
 
+  const handleSearchModeChange = useCallback((mode: SearchMode) => {
+    setSearchMode(mode);
+    setExploreBarVisible(true);
+  }, []);
+
+  const handleExploreToggle = useCallback(() => {
+    setExploreBarVisible(prev => !prev);
+  }, []);
+
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      <Navbar searchMode={searchMode} onSearchModeChange={setSearchMode} />
+      <Navbar searchMode={searchMode} onSearchModeChange={handleSearchModeChange} onExploreToggle={handleExploreToggle} exploreBarVisible={exploreBarVisible} />
       <CityExploreBar
         onCitySelect={handleCityClick}
         mode={searchMode}
-        onModeChange={setSearchMode}
+        onModeChange={handleSearchModeChange}
+        visible={exploreBarVisible}
       />
       <MapControls
         showCities={showCities}

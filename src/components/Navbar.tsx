@@ -11,6 +11,8 @@ import type { SearchMode } from "@/components/CityExploreBar";
 interface NavbarProps {
   searchMode?: SearchMode;
   onSearchModeChange?: (mode: SearchMode) => void;
+  onExploreToggle?: () => void;
+  exploreBarVisible?: boolean;
 }
 
 const navItems = [
@@ -19,7 +21,7 @@ const navItems = [
   { icon: <Heart className="w-4 h-4" />, label: "Wishlist", path: "/wishlist" },
 ];
 
-const Navbar = ({ searchMode = "places", onSearchModeChange }: NavbarProps) => {
+const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, exploreBarVisible = true }: NavbarProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const navigate = useNavigate();
@@ -54,9 +56,14 @@ const Navbar = ({ searchMode = "places", onSearchModeChange }: NavbarProps) => {
   }, [onSearchModeChange, location.pathname, navigate]);
 
   const handleExploreClick = useCallback(() => {
-    navigate("/");
-    onSearchModeChange?.("places");
-  }, [onSearchModeChange, navigate]);
+    if (location.pathname === "/") {
+      // Already on explore page — toggle the search bar
+      onExploreToggle?.();
+    } else {
+      navigate("/");
+      onSearchModeChange?.("places");
+    }
+  }, [onExploreToggle, onSearchModeChange, location.pathname, navigate]);
 
   return (
     <motion.nav

@@ -73,14 +73,27 @@ const UserProfilePage = () => {
   const { data: followerCount = 0 } = useFollowerCount(userId);
   const { data: followingCount = 0 } = useFollowingCount(userId);
 
-  // Determine map visibility
+  // Privacy tiers: public (everything), mixed (identity + map), private (nothing)
+  const canViewIdentity = useMemo(() => {
+    if (isOwnProfile) return true;
+    if (!profile) return false;
+    if (profile.privacy === "public" || profile.privacy === "mixed") return true;
+    return false;
+  }, [profile, isOwnProfile]);
+
   const canViewMap = useMemo(() => {
     if (isOwnProfile) return true;
     if (!profile) return false;
-    if (profile.privacy === "public") return true;
-    if (profile.privacy === "friends" && connectionStatus === "connected") return true;
+    if (profile.privacy === "public" || profile.privacy === "mixed") return true;
     return false;
-  }, [profile, connectionStatus, isOwnProfile]);
+  }, [profile, isOwnProfile]);
+
+  const canViewTripsAndContent = useMemo(() => {
+    if (isOwnProfile) return true;
+    if (!profile) return false;
+    if (profile.privacy === "public") return true;
+    return false;
+  }, [profile, isOwnProfile]);
 
   // Fetch user's places (only if we can view)
   const { data: places = [] } = useQuery({
@@ -292,8 +305,8 @@ const UserProfilePage = () => {
           )}
         </motion.div>
 
-        {/* Interests & Identity */}
-        {((profile.interests && profile.interests.length > 0) || 
+        {/* Interests & Identity — visible for mixed + public */}
+        {canViewIdentity && ((profile.interests && profile.interests.length > 0) || 
           (profile.languages && profile.languages.length > 0) || 
           (profile.travel_style && profile.travel_style.length > 0)) && (
           <div className="p-4 rounded-2xl bg-card border border-border mb-4 space-y-3">
@@ -355,22 +368,10 @@ const UserProfilePage = () => {
             className="rounded-2xl border border-border bg-card p-12 text-center"
           >
             <Lock className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm font-medium text-foreground mb-1">This user's travel map is private</p>
+            <p className="text-sm font-medium text-foreground mb-1">This traveler's profile is private</p>
             <p className="text-xs text-muted-foreground">
-              {profile.privacy === "friends"
-                ? "Connect with this traveler to see their map."
-                : "This traveler has a private profile."}
+              Their travel map, trips, and experiences are not publicly visible.
             </p>
-            {connectionStatus === "none" && profile.privacy === "friends" && (
-              <button
-                onClick={handleConnect}
-                disabled={sendRequest.isPending}
-                className="mt-4 flex items-center gap-2 px-4 py-2 mx-auto rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                Send Connection Request
-              </button>
-            )}
           </motion.div>
         )}
       </div>

@@ -316,14 +316,9 @@ const Profile = () => {
                   <h3 className="font-display text-base font-semibold text-foreground flex items-center gap-2">
                     <Plane className="w-4 h-4 text-primary" /> Create Trip
                   </h3>
-                  <div className="flex gap-1.5">
-                    <button onClick={() => setShowTripCreate(false)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={handleCreateTrip} className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
-                      <Check className="w-3.5 h-3.5 text-primary-foreground" />
-                    </button>
-                  </div>
+                  <button onClick={() => setShowTripCreate(false)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
                 {/* Emoji picker */}
@@ -397,6 +392,30 @@ const Profile = () => {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Bottom CTAs */}
+                <div className="space-y-2 pt-2 border-t border-border">
+                  <button
+                    onClick={() => setShowTripCreate(false)}
+                    className="w-full py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreateTrip}
+                    disabled={!tripTitle.trim() || uploadingCover}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-40 hover:opacity-90 transition-opacity"
+                  >
+                    {uploadingCover ? (
+                      <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4" />
+                        Create Trip
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </motion.div>

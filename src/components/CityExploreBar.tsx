@@ -837,6 +837,8 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange, visible = true }: Ci
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+    </div>
     </motion.div>
       )}
     </AnimatePresence>

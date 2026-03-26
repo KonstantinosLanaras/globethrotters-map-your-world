@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import {
@@ -234,6 +235,11 @@ const Journeys = () => {
                       </div>
                       <div className="flex items-center gap-1.5">
                         {j.privacy === "private" && <Lock className="w-3 h-3 text-muted-foreground" />}
+                        {(j as any).status === "published" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">Published</span>
+                        ) : (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Draft</span>
+                        )}
                         <ChevronRight className="w-4 h-4 text-muted-foreground" />
                       </div>
                     </div>
@@ -439,6 +445,11 @@ const TripHub = ({
           <span className="flex items-center gap-0.5">
             <Lock className="w-2.5 h-2.5" /> {journey.privacy}
           </span>
+          {(journey as any).status === "published" ? (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">Published</span>
+          ) : (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Draft</span>
+          )}
         </div>
 
         {/* Member avatars row */}
@@ -1241,6 +1252,12 @@ const ShareTab = ({
   const publicPosts = posts.filter(p => p.visibility === "public");
   const { user } = useAuth();
   const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmationMessage, setConfirmationMessage] = useState("");
+  const qc = useQueryClient();
+
+  const isPublished = journey.status === "published";
 
   const handlePrivacyChange = async (privacy: string) => {
     setUpdatingPrivacy(true);
@@ -1254,17 +1271,87 @@ const ShareTab = ({
     }
   };
 
+  const handlePublish = async () => {
+    setPublishing(true);
+    try {
+      const { error } = await supabase
+        .from("journeys" as any)
+        .update({ status: "published", updated_at: new Date().toISOString() } as any)
+        .eq("id", journeyId);
+      if (error) throw error;
+
+      // Build confirmation message
+      const privacyLabel = journey.privacy === "private"
+        ? "visible only to you"
+        : journey.privacy === "friends"
+        ? "visible to your connections"
+        : "visible to everyone";
+      
+      setConfirmationMessage(
+        isPublished
+          ? "Your trip has been updated successfully."
+          : `Your trip has been published! It is now ${privacyLabel}.`
+      );
+      
+      qc.invalidateQueries({ queryKey: ["journeys"] });
+      qc.invalidateQueries({ queryKey: ["journey-experiences", journeyId] });
+      
+      toast.success(isPublished ? "Trip updated!" : "Trip published! 🎉");
+    } catch {
+      toast.error("Failed to publish trip");
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleSaveAsDraft = async () => {
+    try {
+      await supabase
+        .from("journeys" as any)
+        .update({ status: "draft", updated_at: new Date().toISOString() } as any)
+        .eq("id", journeyId);
+      qc.invalidateQueries({ queryKey: ["journeys"] });
+      qc.invalidateQueries({ queryKey: ["journey-experiences", journeyId] });
+      toast.success("Trip saved as draft");
+    } catch {
+      toast.error("Failed to save draft");
+    }
+  };
+
   return (
     <>
       {/* Section header */}
       <div className="rounded-xl bg-muted/30 border border-border p-3 space-y-1">
-        <p className="text-xs font-medium text-foreground/80">Share your trip to your profile 🌍</p>
+        <p className="text-xs font-medium text-foreground/80">
+          {isPublished ? "Manage your published trip 🌍" : "Ready to share your trip? 🌍"}
+        </p>
         <p className="text-[10px] text-muted-foreground">
-          Control who sees this trip on your profile — friends, followers, or everyone.
+          {isPublished
+            ? "Update visibility settings or make changes to your published trip."
+            : "Set your visibility preferences, then publish when you're ready."}
         </p>
         <p className="text-[10px] text-muted-foreground/60 pt-1 border-t border-border/50">
           🔒 Nothing is shared unless you choose to.
         </p>
+      </div>
+
+      {/* Current status */}
+      <div className="rounded-2xl bg-card border border-border p-4">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPublished ? "bg-emerald-500/10" : "bg-muted"}`}>
+            {isPublished ? <Globe className="w-4 h-4 text-emerald-600" /> : <Lock className="w-4 h-4 text-muted-foreground" />}
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">
+              {isPublished ? "Published" : "Draft"}
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              {isPublished
+                ? `Published · ${journey.privacy} visibility`
+                : "Only visible to you and invited collaborators"}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Privacy selector */}
@@ -1300,22 +1387,24 @@ const ShareTab = ({
       </div>
 
       {/* Share to network button */}
-      <button
-        onClick={() => onShare({
-          type: "journey",
-          id: journeyId,
-          title: journey.title,
-          emoji: journey.emoji || "✈️",
-          description: journey.description,
-          destinations: journey.destinations || [],
-          experienceCount: journey.experiences.length,
-          coverImage: journey.cover_image_url,
-        })}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
-      >
-        <Share2 className="w-4 h-4" />
-        Share Trip with Friends
-      </button>
+      {isPublished && (
+        <button
+          onClick={() => onShare({
+            type: "journey",
+            id: journeyId,
+            title: journey.title,
+            emoji: journey.emoji || "✈️",
+            description: journey.description,
+            destinations: journey.destinations || [],
+            experienceCount: journey.experiences.length,
+            coverImage: journey.cover_image_url,
+          })}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
+        >
+          <Share2 className="w-4 h-4" />
+          Share Trip with Friends
+        </button>
+      )}
 
       {/* Trip summary */}
       <div className="rounded-2xl bg-card border border-border p-4 space-y-3">
@@ -1373,6 +1462,70 @@ const ShareTab = ({
           ))}
         </div>
       )}
+
+      {/* Bottom CTA: Publish / Update */}
+      <div className="space-y-2 pt-2 border-t border-border">
+        {isPublished && (
+          <button
+            onClick={handleSaveAsDraft}
+            className="w-full py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+          >
+            Unpublish (Save as Draft)
+          </button>
+        )}
+        {!isPublished && (
+          <button
+            onClick={handleSaveAsDraft}
+            className="w-full py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+          >
+            Save as Draft
+          </button>
+        )}
+        <button
+          onClick={handlePublish}
+          disabled={publishing}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-40 hover:opacity-90 transition-opacity"
+        >
+          {publishing ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <>
+              {isPublished ? <Check className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
+              {isPublished ? "Update Trip" : "Publish Trip"}
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Publish confirmation */}
+      <AnimatePresence>
+        {showConfirmation && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-4 space-y-2"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <Check className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  {isPublished ? "Trip Updated" : "Trip Published! 🎉"}
+                </p>
+                <p className="text-[10px] text-muted-foreground">{confirmationMessage}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowConfirmation(false)}
+              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Dismiss
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

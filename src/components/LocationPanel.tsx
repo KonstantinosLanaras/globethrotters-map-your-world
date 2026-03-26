@@ -475,6 +475,9 @@ const SponsoredActivityCard = ({ place, onWishlist, onVisited, onShare, onTrip }
                 <span className="text-[11px] font-medium text-foreground">{place.quality_score.toFixed(1)}</span>
               </div>
             )}
+            <div className="ml-auto flex-shrink-0">
+              <FeaturedTooltip />
+            </div>
           </div>
           {place.description && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{place.description}</p>

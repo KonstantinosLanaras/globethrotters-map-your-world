@@ -64,13 +64,23 @@ const Index = () => {
     );
   }, []);
 
+  const handleSearchModeChange = useCallback((mode: SearchMode) => {
+    setSearchMode(mode);
+    setExploreBarVisible(true);
+  }, []);
+
+  const handleExploreToggle = useCallback(() => {
+    setExploreBarVisible(prev => !prev);
+  }, []);
+
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      <Navbar searchMode={searchMode} onSearchModeChange={setSearchMode} />
+      <Navbar searchMode={searchMode} onSearchModeChange={handleSearchModeChange} onExploreToggle={handleExploreToggle} exploreBarVisible={exploreBarVisible} />
       <CityExploreBar
         onCitySelect={handleCityClick}
         mode={searchMode}
-        onModeChange={setSearchMode}
+        onModeChange={handleSearchModeChange}
+        visible={exploreBarVisible}
       />
       <MapControls
         showCities={showCities}

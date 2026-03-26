@@ -56,9 +56,14 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
   }, [onSearchModeChange, location.pathname, navigate]);
 
   const handleExploreClick = useCallback(() => {
-    navigate("/");
-    onSearchModeChange?.("places");
-  }, [onSearchModeChange, navigate]);
+    if (location.pathname === "/") {
+      // Already on explore page — toggle the search bar
+      onExploreToggle?.();
+    } else {
+      navigate("/");
+      onSearchModeChange?.("places");
+    }
+  }, [onExploreToggle, onSearchModeChange, location.pathname, navigate]);
 
   return (
     <motion.nav

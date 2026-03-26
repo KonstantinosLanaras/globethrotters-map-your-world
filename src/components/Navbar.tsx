@@ -21,7 +21,7 @@ const navItems = [
   { icon: <Heart className="w-4 h-4" />, label: "Wishlist", path: "/wishlist" },
 ];
 
-const Navbar = ({ searchMode = "places", onSearchModeChange }: NavbarProps) => {
+const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, exploreBarVisible = true }: NavbarProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const navigate = useNavigate();

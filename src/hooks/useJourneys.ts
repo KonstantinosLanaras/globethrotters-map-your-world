@@ -14,6 +14,7 @@ export interface Journey {
   destinations: string[];
   cover_image_url: string | null;
   privacy: string;
+  status: string;
   created_at: string;
   updated_at: string;
 }

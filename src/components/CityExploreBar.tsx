@@ -331,7 +331,6 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange, visible = true }: Ci
     >
     <div className="w-full flex justify-center pointer-events-auto px-4">
     <div className="w-full max-w-[480px]">
-    >
       {/* Mode toggle tabs */}
       <div className="flex mb-1.5 bg-card/90 backdrop-blur-xl rounded-xl border border-border shadow-sm overflow-hidden">
         <button

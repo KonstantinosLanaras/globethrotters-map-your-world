@@ -1250,7 +1250,7 @@ const ShareTab = ({
   const [publishing, setPublishing] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState("");
-  const queryClient = (window as any).__queryClient;
+  const qc = useQueryClient();
 
   const isPublished = journey.status === "published";
 

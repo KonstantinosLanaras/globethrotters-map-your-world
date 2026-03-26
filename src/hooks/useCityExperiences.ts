@@ -161,23 +161,17 @@ export const useUnifiedExperiences = (city: string | null, country: string | nul
   const personality = profile?.personality || "";
 
   const unified = useMemo(() => {
-    // 1. Sponsored (max 2, quality-gated)
-    const sponsoredItems: UnifiedExperience[] = promoted
-      .filter(isPromotedQualified)
-      .slice(0, 2)
-      .map(p => ({
-        type: "sponsored" as const,
-        promoted: p,
-        name: p.business_name,
-        category: p.business_type,
-        description: p.description || "",
-        rating: p.quality_score / 10,
-        reviewCount: p.impressions,
-        engagement: p.quality_score,
-        label: "Sponsored" as const,
-      }));
+    // Personalization: boost categories matching user interests
+    const boostCategory = (cat: string): number => {
+      const all = [...interests, personality].map(s => s?.toLowerCase() || "");
+      if (cat === "food" && all.some(s => s.includes("food") || s.includes("culinary"))) return 10;
+      if ((cat === "hiking" || cat === "hike") && all.some(s => s.includes("adventure") || s.includes("hik"))) return 10;
+      if (cat === "culture" && all.some(s => s.includes("culture") || s.includes("history"))) return 10;
+      if (cat === "hidden_gem" && all.some(s => s.includes("hidden") || s.includes("local"))) return 10;
+      return 0;
+    };
 
-    // 2. Seeded experiences (AI-generated activities)
+    // 1. Seeded experiences (AI-generated activities)
     const seededItems: UnifiedExperience[] = activities.map(a => {
       const pseudoRating = 4.0 + (a.name.length % 10) / 10;
       const pseudoReviews = 50 + (a.name.length * 17) % 2000;
@@ -194,7 +188,37 @@ export const useUnifiedExperiences = (city: string | null, country: string | nul
       };
     });
 
-    // 3. Community experiences  
+    const sortedSeeded = [...seededItems].sort((a, b) =>
+      (b.engagement + boostCategory(b.category)) - (a.engagement + boostCategory(a.category))
+    );
+
+    // 2. Sponsored (max 2, quality-gated) with fallback to top ranked results
+    const qualifiedPromoted = promoted
+      .filter(isPromotedQualified)
+      .slice(0, 2);
+
+    const sponsoredItems: UnifiedExperience[] = qualifiedPromoted.length > 0
+      ? qualifiedPromoted.map(p => ({
+          type: "sponsored" as const,
+          promoted: p,
+          name: p.business_name,
+          category: p.business_type,
+          description: p.description || "",
+          rating: p.quality_score / 10,
+          reviewCount: p.impressions,
+          engagement: p.quality_score,
+          label: "Sponsored" as const,
+        }))
+      : sortedSeeded.slice(0, 2).map(item => ({
+          ...item,
+          type: "sponsored" as const,
+          label: "Sponsored" as const,
+        }));
+
+    const sponsoredNames = new Set(sponsoredItems.map(item => item.name));
+    const remainingSeeded = sortedSeeded.filter(item => !sponsoredNames.has(item.name));
+
+    // 3. Community experiences
     const communityItems: UnifiedExperience[] = community.map(e => {
       const isTrending = e.engagement_score >= 50 && e.saves_count >= 5;
       const isRising = e.engagement_score >= 20 && !isTrending;
@@ -211,22 +235,6 @@ export const useUnifiedExperiences = (city: string | null, country: string | nul
       };
     });
 
-    // Personalization: boost categories matching user interests
-    const boostCategory = (cat: string): number => {
-      const all = [...interests, personality].map(s => s?.toLowerCase() || "");
-      if (cat === "food" && all.some(s => s.includes("food") || s.includes("culinary"))) return 10;
-      if ((cat === "hiking" || cat === "hike") && all.some(s => s.includes("adventure") || s.includes("hik"))) return 10;
-      if (cat === "culture" && all.some(s => s.includes("culture") || s.includes("history"))) return 10;
-      if (cat === "hidden_gem" && all.some(s => s.includes("hidden") || s.includes("local"))) return 10;
-      return 0;
-    };
-
-    // Sort seeded by personalized relevance
-    const sortedSeeded = [...seededItems].sort((a, b) => 
-      (b.engagement + boostCategory(b.category)) - (a.engagement + boostCategory(a.category))
-    );
-
-    // Sort community by engagement
     const topCommunity = communityItems
       .filter(e => e.engagement >= 20)
       .sort((a, b) => b.engagement - a.engagement);
@@ -237,12 +245,12 @@ export const useUnifiedExperiences = (city: string | null, country: string | nul
 
     return {
       sponsored: sponsoredItems,
-      topPicks: sortedSeeded.slice(0, 5),
+      topPicks: remainingSeeded.slice(0, 5),
       trending: topCommunity.filter(e => e.label === "Trending"),
       hiddenGems: [...topCommunity.filter(e => e.label === "Rising"), ...newCommunity],
-      recommended: [...sortedSeeded.slice(5), ...topCommunity, ...newCommunity]
+      recommended: [...remainingSeeded.slice(5), ...topCommunity, ...newCommunity]
         .sort((a, b) => (b.engagement + boostCategory(b.category)) - (a.engagement + boostCategory(a.category))),
-      allSeeded: sortedSeeded,
+      allSeeded: remainingSeeded,
     };
   }, [activities, community, promoted, interests, personality]);
 

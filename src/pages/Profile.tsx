@@ -639,67 +639,8 @@ const Profile = () => {
           </div>
         )}
 
-        {/* ═══════ ABOUT TAB ═══════ */}
-        {tab === "about" && (
-          <div className="space-y-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-5 rounded-2xl bg-card border border-border">
-              <h3 className="font-display text-base font-medium text-foreground mb-4">Travel Identity</h3>
-              <div className="space-y-4">
-                {profile?.interests && profile.interests.length > 0 && (
-                  <AboutRow icon={<Heart className="w-4 h-4" />} label="Interests">
-                    <div className="flex flex-wrap gap-1.5">
-                      {profile.interests.map((i) => (
-                        <span key={i} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium">{i}</span>
-                      ))}
-                    </div>
-                  </AboutRow>
-                )}
-                {profile?.languages && profile.languages.length > 0 && (
-                  <AboutRow icon={<Languages className="w-4 h-4" />} label="Languages">
-                    <p className="text-sm text-foreground">{profile.languages.join(", ")}</p>
-                  </AboutRow>
-                )}
-                {profile?.travel_style && profile.travel_style.length > 0 && (
-                  <AboutRow icon={<Compass className="w-4 h-4" />} label="Travel Style">
-                    <div className="flex flex-wrap gap-1.5">
-                      {profile.travel_style.map((s) => (
-                        <span key={s} className="px-2 py-0.5 rounded-full bg-accent/20 text-accent-foreground text-[10px] font-medium">{s}</span>
-                      ))}
-                    </div>
-                  </AboutRow>
-                )}
-                {profile?.dream_destinations && profile.dream_destinations.length > 0 && (
-                  <AboutRow icon={<Sparkles className="w-4 h-4" />} label="Dream Destinations">
-                    <p className="text-sm text-foreground">{profile.dream_destinations.join(", ")}</p>
-                  </AboutRow>
-                )}
-                {profile?.next_trip && (
-                  <AboutRow icon={<Plane className="w-4 h-4" />} label="Next Trip">
-                    <p className="text-sm text-foreground">{profile.next_trip}</p>
-                  </AboutRow>
-                )}
-              </div>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-2xl bg-card border border-border">
-              <p className="text-xs text-muted-foreground">
-                Member since {profile?.created_at ? new Date(profile.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "–"}
-              </p>
-            </motion.div>
-          </div>
-        )}
-
         {/* ═══════ SETTINGS TAB ═══════ */}
-        {tab === "settings" && (
-          <div className="space-y-3">
-            <button onClick={startEdit} className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border border-border text-sm text-foreground hover:bg-muted/50 transition-colors">
-              <Edit3 className="w-4 h-4" /> Edit Profile
-            </button>
-            <button onClick={handleSignOut} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
-              <LogOut className="w-4 h-4" /> Sign Out
-            </button>
-          </div>
-        )}
+        {tab === "settings" && <ProfileSettings />}
       </div>
 
       <ExperienceComposer open={showComposer} onClose={() => setShowComposer(false)} />

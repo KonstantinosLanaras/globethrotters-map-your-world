@@ -132,6 +132,7 @@ const ExperienceCard = ({
   isSaved: boolean; saving: boolean;
 }) => {
   const [shareOpen, setShareOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const conf = categoryConfig[item.category] || categoryConfig.general;
   const Icon = conf?.icon || Camera;
   const lbl = item.label ? labelConfig[item.label] : null;
@@ -145,26 +146,45 @@ const ExperienceCard = ({
       transition={{ delay: idx * 0.03 }}
       className={`group relative p-3 rounded-xl transition-colors ${
         isSponsored
-          ? "bg-primary/5 border border-primary/10 hover:border-primary/20"
+          ? "bg-primary/[0.04] border border-primary/15 hover:border-primary/25"
           : "bg-muted/30 hover:bg-muted/50"
       }`}
     >
+      {/* Sponsored tag + toggleable info icon */}
       {isSponsored && (
-        <div className="absolute top-3 right-3 z-10">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button className="w-5 h-5 rounded-full border border-border bg-background/90 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center">
-                  <Info className="w-3 h-3" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="left" className="max-w-[240px]">
-                <p className="text-xs leading-relaxed">
-                  Sponsored by Globethrotters. We only feature experiences that are positively reviewed by the community, meet our quality standards, and are confirmed by local collaborators.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5">
+          <span className="text-[9px] font-semibold text-primary/70 uppercase tracking-wider">Sponsored</span>
+          <div className="relative">
+            <button
+              onClick={() => setInfoOpen(prev => !prev)}
+              className="w-[18px] h-[18px] rounded-full border border-primary/25 bg-primary/5 text-primary/60 hover:text-primary hover:bg-primary/10 transition-colors flex items-center justify-center"
+              aria-label="About sponsored experiences"
+            >
+              <span className="text-[10px] font-bold leading-none">i</span>
+            </button>
+            <AnimatePresence>
+              {infoOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setInfoOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-1.5 z-20 w-[250px] p-3 bg-popover border border-border rounded-xl shadow-xl"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <BadgeCheck className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-[11px] font-semibold text-foreground">Sponsored by Globethrotters</span>
+                    </div>
+                    <p className="text-[10px] leading-relaxed text-muted-foreground">
+                      We only feature experiences that are positively reviewed by the community, meet our quality standards, and are confirmed by local collaborators. Sponsored placement is curated and trust-based — not random advertising.
+                    </p>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       )}
 

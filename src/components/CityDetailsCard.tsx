@@ -286,6 +286,9 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const [ratingPlaceId, setRatingPlaceId] = useState<string | null>(null);
   const [showPostPrompt, setShowPostPrompt] = useState(false);
   const [postPlaceId, setPostPlaceId] = useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showTripDialog, setShowTripDialog] = useState(false);
+  const [selectedShareItem, setSelectedShareItem] = useState<ShareableExperience | null>(null);
 
   const isVisited = savedPlace?.type === "visited";
   const isWishlist = savedPlace?.type === "wishlist";

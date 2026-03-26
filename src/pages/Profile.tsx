@@ -48,7 +48,7 @@ const Profile = () => {
   const [showComposer, setShowComposer] = useState(false);
   const [showTripCreate, setShowTripCreate] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [tab, setTab] = useState<"activity" | "trips" | "stats" | "about" | "settings">("activity");
+  const [tab, setTab] = useState<"activity" | "trips" | "stats" | "settings">("activity");
 
   // Edit state
   const [editName, setEditName] = useState("");

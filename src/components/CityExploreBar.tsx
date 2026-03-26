@@ -21,6 +21,7 @@ interface CityExploreBarProps {
   onCitySelect: (city: City) => void;
   mode: SearchMode;
   onModeChange: (mode: SearchMode) => void;
+  visible?: boolean;
 }
 
 const categoryEmoji: Record<string, string> = {

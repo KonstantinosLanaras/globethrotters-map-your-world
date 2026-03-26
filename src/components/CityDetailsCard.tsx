@@ -4,7 +4,7 @@ import {
   X, MapPin, Check, Heart, Star, Plus, Loader2,
   BadgeCheck, Utensils, Mountain, Landmark, Eye, Bus, Gem, TreePine, Wine, Camera,
   Search, SlidersHorizontal, TrendingUp, Flame, Users,
-  Moon, Compass, Image, FileText
+  Moon, Compass, Image, FileText, Share2, Send, Plane, Info
 } from "lucide-react";
 import { City } from "@/data/cities";
 import { Place, useAddPlace, useUpdatePlace, usePlaces } from "@/hooks/usePlaces";
@@ -16,6 +16,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { toast } from "sonner";
 import ExperienceComposer from "@/components/ExperienceComposer";
 import RatingModal from "@/components/RatingModal";
+import ShareModal, { ShareableExperience } from "@/components/ShareModal";
+import AddToTripDialog from "@/components/AddToTripDialog";
 
 interface CityDetailsCardProps {
   city: City;

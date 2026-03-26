@@ -319,7 +319,16 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange, visible = true }: Ci
   const currentResults = mode === "places" ? placeResults : experienceResults;
 
   return (
-    <div ref={panelRef} className="fixed top-[68px] left-1/2 -translate-x-1/2 z-[1002] w-[92%] max-w-[520px] pointer-events-auto">
+    <AnimatePresence>
+      {visible && (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+      ref={panelRef}
+      className="fixed top-[68px] left-1/2 -translate-x-1/2 z-[1002] w-[92%] max-w-[520px] pointer-events-auto"
+    >
       {/* Mode toggle tabs */}
       <div className="flex mb-1.5 bg-card/90 backdrop-blur-xl rounded-xl border border-border shadow-sm overflow-hidden">
         <button

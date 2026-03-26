@@ -368,22 +368,10 @@ const UserProfilePage = () => {
             className="rounded-2xl border border-border bg-card p-12 text-center"
           >
             <Lock className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm font-medium text-foreground mb-1">This user's travel map is private</p>
+            <p className="text-sm font-medium text-foreground mb-1">This traveler's profile is private</p>
             <p className="text-xs text-muted-foreground">
-              {profile.privacy === "friends"
-                ? "Connect with this traveler to see their map."
-                : "This traveler has a private profile."}
+              Their travel map, trips, and experiences are not publicly visible.
             </p>
-            {connectionStatus === "none" && profile.privacy === "friends" && (
-              <button
-                onClick={handleConnect}
-                disabled={sendRequest.isPending}
-                className="mt-4 flex items-center gap-2 px-4 py-2 mx-auto rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                Send Connection Request
-              </button>
-            )}
           </motion.div>
         )}
       </div>

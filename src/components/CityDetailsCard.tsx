@@ -116,40 +116,68 @@ const matchesCategory = (itemCat: string, filterCat: string): boolean => {
   return mapped.includes(itemCat.toLowerCase());
 };
 
-// --- Experience Card (no Lists button, added Rate for visited items) ---
 const ExperienceCard = ({
-  item, idx, onSaveToWishlist, onSaveToVisited, isSaved: isExpSaved, saving,
+  item,
+  idx,
+  onSaveToWishlist,
+  onSaveToVisited,
+  onShareToChat,
+  onShareToTrip,
+  isSaved: isExpSaved,
+  saving,
 }: {
   item: UnifiedExperience; idx: number;
   onSaveToWishlist: () => void; onSaveToVisited: () => void;
+  onShareToChat: () => void; onShareToTrip: () => void;
   isSaved: boolean; saving: boolean;
 }) => {
+  const [shareOpen, setShareOpen] = useState(false);
   const conf = categoryConfig[item.category] || categoryConfig.general;
   const Icon = conf?.icon || Camera;
   const lbl = item.label ? labelConfig[item.label] : null;
   const LblIcon = lbl?.icon || Star;
+  const isSponsored = item.type === "sponsored";
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.03 }}
-      className={`group p-3 rounded-xl transition-colors ${
-        item.type === "sponsored"
+      className={`group relative p-3 rounded-xl transition-colors ${
+        isSponsored
           ? "bg-primary/5 border border-primary/10 hover:border-primary/20"
           : "bg-muted/30 hover:bg-muted/50"
       }`}
     >
+      {isSponsored && (
+        <div className="absolute top-3 right-3 z-10">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button className="w-5 h-5 rounded-full border border-border bg-background/90 text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center">
+                  <Info className="w-3 h-3" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-[240px]">
+                <p className="text-xs leading-relaxed">
+                  Sponsored by Globethrotters. We only feature experiences that are positively reviewed by the community, meet our quality standards, and are confirmed by local collaborators.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
+
       <div className="flex items-start gap-3">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${conf.color}`}>
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isSponsored ? "bg-primary/10 text-primary" : conf.color}`}>
           <Icon className="w-4 h-4" />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 pr-7">
           <div className="flex items-center gap-2">
             <h4 className="text-sm font-medium text-foreground truncate">{item.name}</h4>
             {item.rating > 0 && (
-              <span className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-600 flex-shrink-0">
-                <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+              <span className="flex items-center gap-0.5 text-[10px] font-semibold text-gold flex-shrink-0">
+                <Star className="w-3 h-3 fill-gold text-gold" />
                 {item.rating.toFixed(1)}
               </span>
             )}
@@ -173,8 +201,7 @@ const ExperienceCard = ({
               </span>
             )}
           </div>
-          {/* Actions: Wishlist / Visited only — no Lists button */}
-          <div className="flex items-center gap-1.5 mt-2">
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
             <button
               onClick={onSaveToWishlist}
               disabled={saving}
@@ -195,6 +222,42 @@ const ExperienceCard = ({
               <Check className="w-3 h-3" />
               Visited
             </button>
+            <div className="relative">
+              <button
+                onClick={() => setShareOpen((open) => !open)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+              >
+                <Share2 className="w-3 h-3" />
+                Share
+              </button>
+              {shareOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShareOpen(false)} />
+                  <div className="absolute left-0 top-full mt-1 z-20 min-w-[150px] rounded-xl border border-border bg-popover shadow-lg p-1">
+                    <button
+                      onClick={() => {
+                        setShareOpen(false);
+                        onShareToChat();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Send className="w-3 h-3" />
+                      Share to Chat
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShareOpen(false);
+                        onShareToTrip();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Plane className="w-3 h-3" />
+                      Share to Trip
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

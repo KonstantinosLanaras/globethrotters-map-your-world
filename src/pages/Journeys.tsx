@@ -234,6 +234,11 @@ const Journeys = () => {
                       </div>
                       <div className="flex items-center gap-1.5">
                         {j.privacy === "private" && <Lock className="w-3 h-3 text-muted-foreground" />}
+                        {(j as any).status === "published" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">Published</span>
+                        ) : (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Draft</span>
+                        )}
                         <ChevronRight className="w-4 h-4 text-muted-foreground" />
                       </div>
                     </div>

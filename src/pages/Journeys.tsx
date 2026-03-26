@@ -1305,6 +1305,8 @@ const ShareTab = ({
         .from("journeys" as any)
         .update({ status: "draft", updated_at: new Date().toISOString() } as any)
         .eq("id", journeyId);
+      qc.invalidateQueries({ queryKey: ["journeys"] });
+      qc.invalidateQueries({ queryKey: ["journey-experiences", journeyId] });
       toast.success("Trip saved as draft");
     } catch {
       toast.error("Failed to save draft");

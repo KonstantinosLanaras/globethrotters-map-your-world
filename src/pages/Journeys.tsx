@@ -445,6 +445,11 @@ const TripHub = ({
           <span className="flex items-center gap-0.5">
             <Lock className="w-2.5 h-2.5" /> {journey.privacy}
           </span>
+          {(journey as any).status === "published" ? (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">Published</span>
+          ) : (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Draft</span>
+          )}
         </div>
 
         {/* Member avatars row */}

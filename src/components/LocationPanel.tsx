@@ -447,6 +447,43 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
 };
 
 /* ═══════════════════════════════════════════════
+   Share Dropdown — Chat or Trip
+   ═══════════════════════════════════════════════ */
+const ShareDropdown = ({ onChat, onTrip }: { onChat: () => void; onTrip: () => void }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
+      >
+        <Share2 className="w-2.5 h-2.5" /> Share
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full mt-1 z-20 bg-popover border border-border rounded-lg shadow-lg py-1 min-w-[140px]">
+            <button
+              onClick={() => { onChat(); setOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-muted transition-colors"
+            >
+              <Send className="w-3 h-3" /> Share to Chat
+            </button>
+            <button
+              onClick={() => { onTrip(); setOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-muted transition-colors"
+            >
+              <Plane className="w-3 h-3" /> Add to Trip
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════════
    Sponsored / Featured Activity Card
    ═══════════════════════════════════════════════ */
 const SponsoredActivityCard = ({ place, onWishlist, onVisited, onShare, onTrip }: { place: PromotedPlace; onWishlist: () => void; onVisited: () => void; onShare: () => void; onTrip: () => void }) => {
@@ -475,6 +512,9 @@ const SponsoredActivityCard = ({ place, onWishlist, onVisited, onShare, onTrip }
                 <span className="text-[11px] font-medium text-foreground">{place.quality_score.toFixed(1)}</span>
               </div>
             )}
+            <div className="ml-auto flex-shrink-0">
+              <FeaturedTooltip />
+            </div>
           </div>
           {place.description && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{place.description}</p>
@@ -498,12 +538,7 @@ const SponsoredActivityCard = ({ place, onWishlist, onVisited, onShare, onTrip }
             <button onClick={onVisited} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-visited/10 text-visited hover:bg-visited/20 transition-colors">
               <CheckCircle2 className="w-2.5 h-2.5" /> Visited
             </button>
-            <button onClick={onShare} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
-              <Send className="w-2.5 h-2.5" /> Chat
-            </button>
-            <button onClick={onTrip} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-              <Plane className="w-2.5 h-2.5" /> Trip
-            </button>
+            <ShareDropdown onChat={onShare} onTrip={onTrip} />
           </div>
         </div>
       </div>
@@ -583,20 +618,15 @@ const ActivityCard = ({ activity, index, pinName, pinCountry, pinLat, pinLng, on
             )}
           </div>
 
-          {/* ── Wishlist + Visited + Share + Trip action row ── */}
-          <div className="flex items-center gap-1.5 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* ── Wishlist + Visited + Share action row ── */}
+          <div className="flex items-center gap-1.5 mt-2">
             <button onClick={handleWishlist} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-wishlist/10 text-wishlist hover:bg-wishlist/20 transition-colors">
               <Heart className="w-2.5 h-2.5" /> Wishlist
             </button>
             <button onClick={handleVisited} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-visited/10 text-visited hover:bg-visited/20 transition-colors">
               <CheckCircle2 className="w-2.5 h-2.5" /> Visited
             </button>
-            <button onClick={() => onShare(activity.name)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
-              <Send className="w-2.5 h-2.5" /> Chat
-            </button>
-            <button onClick={() => onTrip(activity.name)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-              <Plane className="w-2.5 h-2.5" /> Trip
-            </button>
+            <ShareDropdown onChat={() => onShare(activity.name)} onTrip={() => onTrip(activity.name)} />
           </div>
         </div>
       </div>

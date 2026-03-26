@@ -211,7 +211,6 @@ const Profile = () => {
     { id: "activity" as const, label: "Activity", icon: <Flame className="w-3.5 h-3.5" /> },
     { id: "trips" as const, label: "Trips", icon: <Plane className="w-3.5 h-3.5" /> },
     { id: "stats" as const, label: "Stats", icon: <TrendingUp className="w-3.5 h-3.5" /> },
-    { id: "about" as const, label: "About", icon: <User className="w-3.5 h-3.5" /> },
     { id: "settings" as const, label: "Settings", icon: <Shield className="w-3.5 h-3.5" /> },
   ];
 

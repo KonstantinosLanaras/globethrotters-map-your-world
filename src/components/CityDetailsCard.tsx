@@ -152,8 +152,7 @@ const ExperienceCard = ({
     >
       {/* Sponsored tag + toggleable info icon */}
       {isSponsored && (
-        <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5">
-          <span className="text-[9px] font-semibold text-primary/70 uppercase tracking-wider">Sponsored</span>
+        <div className="absolute top-2.5 right-2.5 z-10">
           <div className="relative">
             <button
               onClick={() => setInfoOpen(prev => !prev)}

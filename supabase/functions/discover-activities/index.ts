@@ -21,11 +21,11 @@ serve(async (req) => {
       });
     }
 
-    // Check cache first
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Check cache
     const { data: cached } = await supabase
       .from("destination_activities")
       .select("activities, updated_at")
@@ -33,7 +33,6 @@ serve(async (req) => {
       .eq("country", country)
       .maybeSingle();
 
-    // Return cache if less than 7 days old
     if (cached) {
       const age = Date.now() - new Date(cached.updated_at).getTime();
       if (age < 7 * 24 * 60 * 60 * 1000) {
@@ -43,7 +42,6 @@ serve(async (req) => {
       }
     }
 
-    // Generate with AI
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
@@ -60,11 +58,20 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a travel expert. Generate activities for a destination. Return structured data using the suggest_activities tool.`,
+            content: `You are a travel expert and local guide. Generate a comprehensive list of real, specific places and activities for a destination. Include well-known spots AND hidden gems. Each entry should feel like a real Google Maps listing with realistic ratings and review counts. Return structured data using the suggest_activities tool.`,
           },
           {
             role: "user",
-            content: `Generate 8-12 famous activities and things to do in ${placeName}, ${country}. Include a mix of food spots, nature/hiking, cultural sites, scenic views, transport experiences, and hidden gems. For each activity include a name, category, short description (1-2 sentences), and difficulty level if applicable.`,
+            content: `Generate 18-25 real, specific activities and places to visit in ${placeName}, ${country}. Include a rich mix across ALL categories:
+- Food (5-6): specific restaurants, street food spots, markets, cafes
+- Culture (3-4): museums, historic sites, temples, galleries
+- Nature (3-4): parks, gardens, viewpoints, beaches
+- Hiking (2-3): trails, walks, treks
+- Scenic (2-3): viewpoints, photo spots, architectural landmarks
+- Hidden Gem (2-3): local-only spots, off-the-beaten-path places
+- Transport (1-2): unique local transport experiences
+
+For each, include a realistic Google-style rating (3.8-4.9) and review count (50-2000). Make names specific and real.`,
           },
         ],
         tools: [
@@ -81,21 +88,21 @@ serve(async (req) => {
                     items: {
                       type: "object",
                       properties: {
-                        name: { type: "string", description: "Activity name" },
+                        name: { type: "string", description: "Specific place or activity name" },
                         category: {
                           type: "string",
                           enum: ["food", "hiking", "nature", "culture", "scenic", "transport", "hidden_gem"],
-                          description: "Activity category",
                         },
                         description: { type: "string", description: "1-2 sentence description" },
                         difficulty: {
                           type: "string",
                           enum: ["easy", "moderate", "challenging", "none"],
-                          description: "Difficulty level, use none for non-physical activities",
                         },
-                        duration: { type: "string", description: "Estimated duration e.g. '2 hours', 'half day'" },
+                        duration: { type: "string", description: "Estimated duration e.g. '2 hours'" },
+                        rating: { type: "number", description: "Realistic rating 3.8-4.9" },
+                        review_count: { type: "integer", description: "Realistic review count 50-2000" },
                       },
-                      required: ["name", "category", "description", "difficulty", "duration"],
+                      required: ["name", "category", "description", "difficulty", "duration", "rating", "review_count"],
                       additionalProperties: false,
                     },
                   },

@@ -565,6 +565,7 @@ export type Database = {
           open_to_join: boolean
           privacy: string
           start_date: string | null
+          status: string
           title: string
           updated_at: string
           user_id: string
@@ -581,6 +582,7 @@ export type Database = {
           open_to_join?: boolean
           privacy?: string
           start_date?: string | null
+          status?: string
           title: string
           updated_at?: string
           user_id: string
@@ -597,6 +599,7 @@ export type Database = {
           open_to_join?: boolean
           privacy?: string
           start_date?: string | null
+          status?: string
           title?: string
           updated_at?: string
           user_id?: string

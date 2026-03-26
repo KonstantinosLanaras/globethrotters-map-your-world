@@ -18,7 +18,6 @@ import FeaturedTooltip from "@/components/FeaturedTooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { useAddPlace } from "@/hooks/usePlaces";
 import { useActivities, Activity } from "@/hooks/useActivities";
-import { usePromotedPlaces, PromotedPlace } from "@/hooks/usePromotedPlaces";
 import { toast } from "sonner";
 
 interface LocationPanelProps {
@@ -59,8 +58,6 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
     pin?.country ?? null
   );
 
-  const { data: promotedPlaces = [] } = usePromotedPlaces();
-
   const { data: reviewScore } = useQuery({
     queryKey: ["review-score", pin?.id],
     enabled: !!pin,
@@ -93,11 +90,6 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
 
   const isVisited = pin.type === "visited";
   const isWishlist = pin.type === "wishlist";
-
-  // Get sponsored places that match the active category
-  const sponsoredForCategory = promotedPlaces
-    .filter((p) => p.is_active && p.quality_score >= 4.5)
-    .slice(0, 2);
 
   const handleMarkVisited = async () => {
     if (!user) { toast.error("Sign in to mark as visited"); return; }
@@ -195,7 +187,6 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
 
           {/* ===== Primary Action Row ===== */}
           <div className="px-5 pb-3 flex items-center gap-1.5 flex-wrap">
-            {/* Visited */}
             <button
               onClick={handleMarkVisited}
               disabled={addPlace.isPending}
@@ -207,7 +198,6 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
               Visited{isVisited ? " ✓" : ""}
             </button>
 
-            {/* Wishlist */}
             <button
               onClick={handleMarkWishlist}
               disabled={addPlace.isPending}
@@ -219,7 +209,6 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
               Wishlist{isWishlist ? " ✓" : ""}
             </button>
 
-            {/* Rate */}
             <button
               onClick={handleRateClick}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
@@ -231,7 +220,6 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
               Rate
             </button>
 
-            {/* Add to Trip — NEW */}
             <button
               onClick={handleAddToTrip}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-all"
@@ -243,7 +231,6 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
 
             <div className="flex-1" />
 
-            {/* Share */}
             <button
               onClick={() => setShowShare(true)}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
@@ -318,25 +305,6 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
               </div>
             )}
 
-            {/* ══════ FEATURED / SPONSORED SECTION ══════ */}
-            {sponsoredForCategory.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  <span className="text-xs font-semibold text-foreground">Featured</span>
-                  <FeaturedTooltip />
-                </div>
-
-                {sponsoredForCategory.map((sp) => (
-                  <SponsoredActivityCard key={sp.id} place={sp} onWishlist={() => {}} onVisited={() => {}} onShare={() => { setShareActivityName(sp.business_name); setShowShare(true); }} onTrip={() => { setTripActivityName(sp.business_name); setShowTripDialog(true); }} />
-                ))}
-
-                <p className="text-[10px] text-muted-foreground/50 italic px-1">
-                  We highlight quality — not just popularity.
-                </p>
-              </div>
-            )}
-
             {/* ══════ THINGS TO DO ══════ */}
             <div className="pt-2 space-y-3">
               <div className="flex items-center justify-between">
@@ -349,7 +317,7 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
               </div>
 
               <p className="text-[11px] text-muted-foreground -mt-1">
-                Explore places around you 🌍 — powered by local discovery, with trusted recommendations on top.
+                Find places worth experiencing 🌿 — save them, mark what you've done, or share with friends.
               </p>
 
               {activitiesLoading && (
@@ -395,19 +363,30 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
                     })}
                   </div>
 
-                  {/* Activity cards — with Wishlist + Visited + Trip buttons */}
+                  {/* Activity cards — first 2 are sponsored, rest are organic */}
                   <div className="space-y-2">
                     {filteredActivities.map((activity, i) => (
-                      <ActivityCard key={`${activity.name}-${i}`} activity={activity} index={i} pinName={pin.name} pinCountry={pin.country} pinLat={pin.lat} pinLng={pin.lng} onShare={(name) => { setShareActivityName(name); setShowShare(true); }} onTrip={(name) => { setTripActivityName(name); setShowTripDialog(true); }} />
+                      <ActivityCard
+                        key={`${activity.name}-${i}`}
+                        activity={activity}
+                        index={i}
+                        isSponsored={i < 2}
+                        pinName={pin.name}
+                        pinCountry={pin.country}
+                        pinLat={pin.lat}
+                        pinLng={pin.lng}
+                        onShare={(name) => { setShareActivityName(name); setShowShare(true); }}
+                        onTrip={(name) => { setTripActivityName(name); setShowTripDialog(true); }}
+                      />
                     ))}
                   </div>
 
-                  {/* Google Maps expansion note */}
-                  <div className="flex items-center gap-2 px-1 py-2">
-                    <MapPin className="w-3 h-3 text-muted-foreground/40" />
-                    <p className="text-[10px] text-muted-foreground/50">
-                      More places coming soon via Google Maps integration
-                    </p>
+                  {/* Trust footer */}
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <ShieldCheck className="w-3 h-3 text-muted-foreground/40" />
+                    <span className="text-[10px] text-muted-foreground/50">
+                      Every recommendation is curated — featured places still have to earn their spot.
+                    </span>
                   </div>
                 </>
               )}
@@ -417,14 +396,6 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
                   No activities found for this destination yet.
                 </p>
               )}
-            </div>
-
-            {/* Trust footer */}
-            <div className="flex items-center gap-1.5 pt-2">
-              <ShieldCheck className="w-3 h-3 text-muted-foreground/40" />
-              <span className="text-[10px] text-muted-foreground/50">
-                Every recommendation is curated — featured places still have to earn their spot.
-              </span>
             </div>
           </div>
         </motion.div>
@@ -484,72 +455,64 @@ const ShareDropdown = ({ onChat, onTrip }: { onChat: () => void; onTrip: () => v
 };
 
 /* ═══════════════════════════════════════════════
-   Sponsored / Featured Activity Card
+   Sponsored Info Button — ⓘ with tooltip
    ═══════════════════════════════════════════════ */
-const SponsoredActivityCard = ({ place, onWishlist, onVisited, onShare, onTrip }: { place: PromotedPlace; onWishlist: () => void; onVisited: () => void; onShare: () => void; onTrip: () => void }) => {
-  const typeIcons: Record<string, React.ReactNode> = {
-    restaurant: <Utensils className="w-3.5 h-3.5" />,
-    experience: <Camera className="w-3.5 h-3.5" />,
-    hotel: <Landmark className="w-3.5 h-3.5" />,
-  };
+const SponsoredInfoButton = () => {
+  const [showTooltip, setShowTooltip] = useState(false);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="p-3 rounded-xl bg-primary/[0.03] border border-primary/10 hover:border-primary/20 transition-colors"
-    >
-      <div className="flex items-start gap-2.5">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-primary/10 text-primary">
-          {typeIcons[place.business_type] || <MapPin className="w-3.5 h-3.5" />}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-foreground truncate">{place.business_name}</p>
-            {place.quality_score > 0 && (
-              <div className="flex items-center gap-0.5 flex-shrink-0">
-                <Star className="w-3 h-3 text-gold fill-gold" />
-                <span className="text-[11px] font-medium text-foreground">{place.quality_score.toFixed(1)}</span>
-              </div>
-            )}
-            <div className="ml-auto flex-shrink-0">
-              <FeaturedTooltip />
+    <div className="relative">
+      <button
+        onClick={() => setShowTooltip(!showTooltip)}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        className="w-4 h-4 rounded-full border border-primary/30 bg-primary/5 flex items-center justify-center hover:bg-primary/10 transition-colors"
+        title="About sponsored experiences"
+      >
+        <span className="text-[9px] font-semibold text-primary leading-none">i</span>
+      </button>
+      {showTooltip && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setShowTooltip(false)} />
+          <div className="absolute right-0 top-full mt-1.5 z-20 w-[240px] p-3 bg-popover border border-border rounded-xl shadow-lg">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Sparkles className="w-3 h-3 text-primary" />
+              <span className="text-[11px] font-semibold text-foreground">Sponsored by Globethrotters</span>
             </div>
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              We only feature experiences that are positively reviewed by the community, meet our quality standards, and are confirmed by local collaborators.
+            </p>
           </div>
-          {place.description && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{place.description}</p>
-          )}
-          <div className="flex items-center gap-2 mt-1.5">
-            <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full capitalize">
-              {place.business_type}
-            </span>
-            {place.impressions > 0 && (
-              <span className="text-[10px] text-muted-foreground">{place.impressions} reviews</span>
-            )}
-            <CheckCircle2 className="w-3 h-3 text-primary" />
-            <span className="text-[10px] text-primary font-medium">Verified</span>
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex items-center gap-1.5 mt-2">
-            <button onClick={onWishlist} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-wishlist/10 text-wishlist hover:bg-wishlist/20 transition-colors">
-              <Heart className="w-2.5 h-2.5" /> Wishlist
-            </button>
-            <button onClick={onVisited} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-visited/10 text-visited hover:bg-visited/20 transition-colors">
-              <CheckCircle2 className="w-2.5 h-2.5" /> Visited
-            </button>
-            <ShareDropdown onChat={onShare} onTrip={onTrip} />
-          </div>
-        </div>
-      </div>
-    </motion.div>
+        </>
+      )}
+    </div>
   );
 };
 
 /* ═══════════════════════════════════════════════
-   Activity Card — with Wishlist + Visited buttons
+   Activity Card — Unified: sponsored + organic
    ═══════════════════════════════════════════════ */
-const ActivityCard = ({ activity, index, pinName, pinCountry, pinLat, pinLng, onShare, onTrip }: { activity: Activity; index: number; pinName: string; pinCountry: string; pinLat: number; pinLng: number; onShare: (name: string) => void; onTrip: (name: string) => void }) => {
+const ActivityCard = ({
+  activity,
+  index,
+  isSponsored,
+  pinName,
+  pinCountry,
+  pinLat,
+  pinLng,
+  onShare,
+  onTrip,
+}: {
+  activity: Activity;
+  index: number;
+  isSponsored: boolean;
+  pinName: string;
+  pinCountry: string;
+  pinLat: number;
+  pinLng: number;
+  onShare: (name: string) => void;
+  onTrip: (name: string) => void;
+}) => {
   const config = categoryConfig[activity.category] || categoryConfig.culture;
   const { user } = useAuth();
   const addPlace = useAddPlace();
@@ -584,41 +547,68 @@ const ActivityCard = ({ activity, index, pinName, pinCountry, pinLat, pinLng, on
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04 }}
-      className="p-3 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors group"
+      transition={{ delay: index * 0.03 }}
+      className={`p-3 rounded-xl transition-colors ${
+        isSponsored
+          ? "bg-primary/[0.03] border border-primary/10 hover:border-primary/20"
+          : "bg-muted/40 hover:bg-muted/60"
+      }`}
     >
       <div className="flex items-start gap-2.5">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${config.color}`}>
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+          isSponsored ? "bg-primary/10 text-primary" : config.color
+        }`}>
           {config.icon}
         </div>
         <div className="flex-1 min-w-0">
+          {/* Title row */}
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-foreground truncate">{activity.name}</p>
             {activity.rating && activity.rating > 0 && (
               <div className="flex items-center gap-0.5 flex-shrink-0">
                 <Star className="w-3 h-3 text-gold fill-gold" />
-                <span className="text-[11px] font-medium">{activity.rating.toFixed(1)}</span>
+                <span className="text-[11px] font-medium text-foreground">{activity.rating.toFixed(1)}</span>
+              </div>
+            )}
+            {/* Sponsored info icon — top right */}
+            {isSponsored && (
+              <div className="ml-auto flex-shrink-0">
+                <SponsoredInfoButton />
               </div>
             )}
           </div>
+
           <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{activity.description}</p>
+
+          {/* Meta row */}
           <div className="flex items-center gap-3 mt-1.5">
-            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-              <Clock className="w-2.5 h-2.5" />
-              {activity.duration}
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full capitalize ${config.color}`}>
+              {categoryConfig[activity.category]?.label || activity.category}
             </span>
-            {activity.difficulty !== "none" && (
+            {activity.review_count && activity.review_count > 0 && (
+              <span className="text-[10px] text-muted-foreground">{activity.review_count} reviews</span>
+            )}
+            {isSponsored && (
+              <>
+                <CheckCircle2 className="w-3 h-3 text-primary" />
+                <span className="text-[10px] text-primary font-medium">Verified</span>
+              </>
+            )}
+            {!isSponsored && activity.duration && (
+              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                <Clock className="w-2.5 h-2.5" />
+                {activity.duration}
+              </span>
+            )}
+            {!isSponsored && activity.difficulty && activity.difficulty !== "none" && (
               <span className={`inline-flex items-center gap-1 text-[10px] font-medium capitalize ${difficultyColors[activity.difficulty] || "text-muted-foreground"}`}>
                 <Gauge className="w-2.5 h-2.5" />
                 {activity.difficulty}
               </span>
             )}
-            {activity.review_count && activity.review_count > 0 && (
-              <span className="text-[10px] text-muted-foreground">{activity.review_count} reviews</span>
-            )}
           </div>
 
-          {/* ── Wishlist + Visited + Share action row ── */}
+          {/* ── Wishlist + Visited + Share ── */}
           <div className="flex items-center gap-1.5 mt-2">
             <button onClick={handleWishlist} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-wishlist/10 text-wishlist hover:bg-wishlist/20 transition-colors">
               <Heart className="w-2.5 h-2.5" /> Wishlist

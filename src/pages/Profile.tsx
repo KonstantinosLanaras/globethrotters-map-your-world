@@ -24,8 +24,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const privacyOptions = [
-  { id: "public", label: "Open Profile", icon: <Globe className="w-4 h-4" />, desc: "Anyone can see your travel identity" },
-  { id: "friends", label: "Mixed", icon: <Users className="w-4 h-4" />, desc: "Public basics, private details for friends" },
+  { id: "public", label: "Public", icon: <Globe className="w-4 h-4" />, desc: "Trips, photos, and experiences are visible to everyone" },
+  { id: "mixed", label: "Mixed", icon: <Users className="w-4 h-4" />, desc: "Traveler identity & map visible, trips & photos private" },
   { id: "private", label: "Private", icon: <Lock className="w-4 h-4" />, desc: "Only you can see your profile" },
 ];
 

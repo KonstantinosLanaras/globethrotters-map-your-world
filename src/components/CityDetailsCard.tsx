@@ -726,6 +726,32 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                       idx={idx}
                       onSaveToWishlist={() => handleItemSave(item, "wishlist")}
                       onSaveToVisited={() => handleItemSave(item, "visited")}
+                      onShareToChat={() => {
+                        setSelectedShareItem({
+                          type: "experience",
+                          id: item.experience?.id || `${city.name}-${item.name}-chat`,
+                          title: item.name,
+                          city: city.name,
+                          country: city.country,
+                          category: item.category,
+                          rating: item.rating || undefined,
+                          caption: item.description || undefined,
+                        });
+                        setShowShareModal(true);
+                      }}
+                      onShareToTrip={() => {
+                        setSelectedShareItem({
+                          type: "experience",
+                          id: item.experience?.id || `${city.name}-${item.name}-trip`,
+                          title: item.name,
+                          city: city.name,
+                          country: city.country,
+                          category: item.category,
+                          rating: item.rating || undefined,
+                          caption: item.description || undefined,
+                        });
+                        setShowTripDialog(true);
+                      }}
                       isSaved={false}
                       saving={savingItem === item.name}
                     />
@@ -749,6 +775,32 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     idx={idx}
                     onSaveToWishlist={() => handleItemSave(item, "wishlist")}
                     onSaveToVisited={() => handleItemSave(item, "visited")}
+                    onShareToChat={() => {
+                      setSelectedShareItem({
+                        type: "experience",
+                        id: item.experience?.id || `${city.name}-${item.name}-chat`,
+                        title: item.name,
+                        city: city.name,
+                        country: city.country,
+                        category: item.category,
+                        rating: item.rating || undefined,
+                        caption: item.description || undefined,
+                      });
+                      setShowShareModal(true);
+                    }}
+                    onShareToTrip={() => {
+                      setSelectedShareItem({
+                        type: "experience",
+                        id: item.experience?.id || `${city.name}-${item.name}-trip`,
+                        title: item.name,
+                        city: city.name,
+                        country: city.country,
+                        category: item.category,
+                        rating: item.rating || undefined,
+                        caption: item.description || undefined,
+                      });
+                      setShowTripDialog(true);
+                    }}
                     isSaved={item.type === "community" && item.experience ? savedExpIds.has(item.experience.id) : false}
                     saving={savingItem === item.name}
                   />

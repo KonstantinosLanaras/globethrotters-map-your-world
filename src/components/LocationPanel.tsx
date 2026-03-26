@@ -501,12 +501,7 @@ const SponsoredActivityCard = ({ place, onWishlist, onVisited, onShare, onTrip }
             <button onClick={onVisited} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-visited/10 text-visited hover:bg-visited/20 transition-colors">
               <CheckCircle2 className="w-2.5 h-2.5" /> Visited
             </button>
-            <button onClick={onShare} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
-              <Send className="w-2.5 h-2.5" /> Chat
-            </button>
-            <button onClick={onTrip} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-              <Plane className="w-2.5 h-2.5" /> Trip
-            </button>
+            <ShareDropdown onChat={onShare} onTrip={onTrip} />
           </div>
         </div>
       </div>

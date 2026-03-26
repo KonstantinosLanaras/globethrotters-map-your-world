@@ -305,8 +305,8 @@ const UserProfilePage = () => {
           )}
         </motion.div>
 
-        {/* Interests & Identity */}
-        {((profile.interests && profile.interests.length > 0) || 
+        {/* Interests & Identity — visible for mixed + public */}
+        {canViewIdentity && ((profile.interests && profile.interests.length > 0) || 
           (profile.languages && profile.languages.length > 0) || 
           (profile.travel_style && profile.travel_style.length > 0)) && (
           <div className="p-4 rounded-2xl bg-card border border-border mb-4 space-y-3">

@@ -220,16 +220,14 @@ const UserProfilePage = () => {
             </div>
           </div>
 
-          {/* Stats */}
-          {canViewMap && (
-            <div className="grid grid-cols-5 gap-2 mt-5">
-              <MiniStat value={countries} label="Countries" />
-              <MiniStat value={visitedCount} label="Visited" />
-              <MiniStat value={wishlistCount} label="Wishlist" />
-              <MiniStat value={followerCount} label="Connections" />
-              <MiniStat value={followingCount} label="Following" />
-            </div>
-          )}
+          {/* Stats — always visible */}
+          <div className="grid grid-cols-5 gap-2 mt-5">
+            <MiniStat value={canViewMap ? countries : "—"} label="Countries" />
+            <MiniStat value={canViewMap ? visitedCount : "—"} label="Visited" />
+            <MiniStat value={canViewMap ? wishlistCount : "—"} label="Wishlist" />
+            <MiniStat value={followerCount} label="Connections" />
+            <MiniStat value={followingCount} label="Following" />
+          </div>
 
           {/* Connection button */}
           {!isOwnProfile && (

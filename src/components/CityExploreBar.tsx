@@ -327,8 +327,10 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange, visible = true }: Ci
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.2 }}
       ref={panelRef}
-      className="fixed top-[68px] left-1/2 -translate-x-1/2 z-[1002] w-[92%] max-w-[520px] pointer-events-auto"
+      className="fixed top-[60px] z-[1002] w-full pointer-events-none"
     >
+    <div className="w-full flex justify-center pointer-events-auto px-4">
+    <div className="w-full max-w-[480px]">
       {/* Mode toggle tabs */}
       <div className="flex mb-1.5 bg-card/90 backdrop-blur-xl rounded-xl border border-border shadow-sm overflow-hidden">
         <button
@@ -834,6 +836,8 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange, visible = true }: Ci
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+    </div>
     </motion.div>
       )}
     </AnimatePresence>

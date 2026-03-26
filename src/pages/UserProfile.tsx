@@ -482,7 +482,7 @@ const UserMapView = ({ places }: { places: Place[] }) => {
   return <div ref={containerRef} className="w-full h-[400px]" />;
 };
 
-const MiniStat = ({ value, label }: { value: number; label: string }) => (
+const MiniStat = ({ value, label }: { value: number | string; label: string }) => (
   <div className="text-center">
     <p className="font-display text-lg font-semibold text-foreground">{value}</p>
     <p className="text-[10px] text-muted-foreground">{label}</p>

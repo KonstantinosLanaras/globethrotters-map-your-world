@@ -11,6 +11,8 @@ import type { SearchMode } from "@/components/CityExploreBar";
 interface NavbarProps {
   searchMode?: SearchMode;
   onSearchModeChange?: (mode: SearchMode) => void;
+  onExploreToggle?: () => void;
+  exploreBarVisible?: boolean;
 }
 
 const navItems = [

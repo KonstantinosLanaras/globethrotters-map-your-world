@@ -447,6 +447,43 @@ const LocationPanel = ({ pin, onClose }: LocationPanelProps) => {
 };
 
 /* ═══════════════════════════════════════════════
+   Share Dropdown — Chat or Trip
+   ═══════════════════════════════════════════════ */
+const ShareDropdown = ({ onChat, onTrip }: { onChat: () => void; onTrip: () => void }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
+      >
+        <Share2 className="w-2.5 h-2.5" /> Share
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full mt-1 z-20 bg-popover border border-border rounded-lg shadow-lg py-1 min-w-[140px]">
+            <button
+              onClick={() => { onChat(); setOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-muted transition-colors"
+            >
+              <Send className="w-3 h-3" /> Share to Chat
+            </button>
+            <button
+              onClick={() => { onTrip(); setOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-muted transition-colors"
+            >
+              <Plane className="w-3 h-3" /> Add to Trip
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════════
    Sponsored / Featured Activity Card
    ═══════════════════════════════════════════════ */
 const SponsoredActivityCard = ({ place, onWishlist, onVisited, onShare, onTrip }: { place: PromotedPlace; onWishlist: () => void; onVisited: () => void; onShare: () => void; onTrip: () => void }) => {

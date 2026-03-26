@@ -1287,12 +1287,9 @@ const ShareTab = ({
           ? "Your trip has been updated successfully."
           : `Your trip has been published! It is now ${privacyLabel}.`
       );
-      setShowConfirmation(true);
       
-      // Invalidate queries to refresh data
-      try {
-        const { useQueryClient } = await import("@tanstack/react-query");
-      } catch {}
+      qc.invalidateQueries({ queryKey: ["journeys"] });
+      qc.invalidateQueries({ queryKey: ["journey-experiences", journeyId] });
       
       toast.success(isPublished ? "Trip updated!" : "Trip published! 🎉");
     } catch {

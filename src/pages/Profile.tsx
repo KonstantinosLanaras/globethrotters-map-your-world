@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import ProfileSettings from "@/components/ProfileSettings";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import {

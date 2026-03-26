@@ -86,7 +86,7 @@ const defaultExpFilters: ExpFilters = {
   contributorQuality: "all",
 };
 
-const CityExploreBar = ({ onCitySelect, mode, onModeChange }: CityExploreBarProps) => {
+const CityExploreBar = ({ onCitySelect, mode, onModeChange, visible = true }: CityExploreBarProps) => {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);

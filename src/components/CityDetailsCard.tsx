@@ -213,10 +213,16 @@ const ExperienceCard = ({
                 {item.reviewCount.toLocaleString()} reviews
               </span>
             )}
-            {item.label && lbl && (
+            {item.label && lbl && item.label !== "Sponsored" && (
               <span className={`inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full font-medium ${lbl.color}`}>
                 <LblIcon className="w-2.5 h-2.5" />
                 {item.label}
+              </span>
+            )}
+            {isSponsored && (
+              <span className={`inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full font-medium ${labelConfig.Verified.color}`}>
+                <BadgeCheck className="w-2.5 h-2.5" />
+                Verified
               </span>
             )}
           </div>

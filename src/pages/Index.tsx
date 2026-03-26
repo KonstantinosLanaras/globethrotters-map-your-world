@@ -16,6 +16,7 @@ const Index = () => {
   const [activeTags, setActiveTags] = useState<ActivityTag[]>([]);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [searchMode, setSearchMode] = useState<SearchMode>("places");
+  const [exploreBarVisible, setExploreBarVisible] = useState(true);
   const { user } = useAuth();
   const { data: places = [] } = usePlaces();
   const { data: experiences = [] } = useExperiencesWithPhotos();

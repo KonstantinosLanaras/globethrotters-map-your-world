@@ -182,7 +182,7 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
                 initial={{ opacity: 0, y: -4, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                className="absolute right-0 top-full mt-2 w-40 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+                className="absolute right-0 top-full mt-2 w-40 bg-card border border-border rounded-xl shadow-xl z-[1010] overflow-hidden"
               >
                 <button
                   onClick={() => { navigate("/profile"); setProfileOpen(false); }}

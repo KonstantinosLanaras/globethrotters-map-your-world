@@ -831,6 +831,34 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
         </motion.div>
       </AnimatePresence>
 
+      <ShareModal
+        open={showShareModal && !!selectedShareItem}
+        onClose={() => {
+          setShowShareModal(false);
+          setSelectedShareItem(null);
+        }}
+        item={selectedShareItem || {
+          type: "experience",
+          id: city.name,
+          title: city.name,
+          city: city.name,
+          country: city.country,
+          category: activeCategory,
+        }}
+      />
+
+      {selectedShareItem && (
+        <AddToTripDialog
+          open={showTripDialog}
+          onOpenChange={(open) => {
+            setShowTripDialog(open);
+            if (!open) setSelectedShareItem(null);
+          }}
+          experienceId={selectedShareItem.id}
+          experienceTitle={selectedShareItem.title}
+        />
+      )}
+
       {/* Experience Composer (triggered from post prompt or share button) */}
       <ExperienceComposer
         open={showComposer}

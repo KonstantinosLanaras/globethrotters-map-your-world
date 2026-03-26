@@ -134,7 +134,7 @@ const Profile = () => {
     setEditLanguages(profile?.languages?.join(", ") || "");
     setEditDreamDest(profile?.dream_destinations?.join(", ") || "");
     setEditNextTrip(profile?.next_trip || "");
-    setEditPrivacy(profile?.privacy || "private");
+    setEditPrivacy(profile?.privacy || "mixed");
     setEditing(true);
   };
 

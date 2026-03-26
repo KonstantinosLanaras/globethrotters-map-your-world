@@ -73,14 +73,27 @@ const UserProfilePage = () => {
   const { data: followerCount = 0 } = useFollowerCount(userId);
   const { data: followingCount = 0 } = useFollowingCount(userId);
 
-  // Determine map visibility
+  // Privacy tiers: public (everything), mixed (identity + map), private (nothing)
+  const canViewIdentity = useMemo(() => {
+    if (isOwnProfile) return true;
+    if (!profile) return false;
+    if (profile.privacy === "public" || profile.privacy === "mixed") return true;
+    return false;
+  }, [profile, isOwnProfile]);
+
   const canViewMap = useMemo(() => {
     if (isOwnProfile) return true;
     if (!profile) return false;
-    if (profile.privacy === "public") return true;
-    if (profile.privacy === "friends" && connectionStatus === "connected") return true;
+    if (profile.privacy === "public" || profile.privacy === "mixed") return true;
     return false;
-  }, [profile, connectionStatus, isOwnProfile]);
+  }, [profile, isOwnProfile]);
+
+  const canViewTripsAndContent = useMemo(() => {
+    if (isOwnProfile) return true;
+    if (!profile) return false;
+    if (profile.privacy === "public") return true;
+    return false;
+  }, [profile, isOwnProfile]);
 
   // Fetch user's places (only if we can view)
   const { data: places = [] } = useQuery({

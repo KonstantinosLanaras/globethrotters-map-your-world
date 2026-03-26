@@ -70,7 +70,7 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="fixed top-0 left-0 right-0 z-[1001] flex items-center justify-between px-4 h-[60px] bg-card/85 backdrop-blur-xl border-b border-border gap-2"
+      className="fixed top-0 left-0 right-0 z-[1003] flex items-center justify-between px-4 h-[60px] bg-card/85 backdrop-blur-xl border-b border-border gap-2"
     >
       <button onClick={() => { navigate("/"); onSearchModeChange?.("places"); }} className="flex items-center gap-2 flex-shrink-0">
         <GlobethrottersLogo variant="full" size={26} animate={false} className="text-foreground" />

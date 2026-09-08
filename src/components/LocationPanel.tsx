@@ -477,7 +477,7 @@ const SponsoredInfoButton = () => {
           <div className="absolute right-0 top-full mt-1.5 z-20 w-[240px] p-3 bg-popover border border-border rounded-xl shadow-lg">
             <div className="flex items-center gap-1.5 mb-1.5">
               <Sparkles className="w-3 h-3 text-primary" />
-              <span className="text-[11px] font-semibold text-foreground">Sponsored by Globetrotter</span>
+              <span className="text-[11px] font-semibold text-foreground">Sponsored by Globetrotters</span>
             </div>
             <p className="text-[10px] leading-relaxed text-muted-foreground">
               We only feature experiences that are positively reviewed by the community, meet our quality standards, and are confirmed by local collaborators.

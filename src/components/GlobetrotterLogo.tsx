@@ -132,7 +132,7 @@ const GlobetrotterLogo = ({
     <div className={`flex items-center gap-2 ${className}`}>
       {icon}
       <span className="font-display text-xl font-semibold text-foreground tracking-tight">
-        Globethrotters
+        Globetrotter
       </span>
     </div>
   );

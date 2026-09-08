@@ -449,7 +449,7 @@ const ProfileSettings = () => {
             <div>
               <h4 className="text-sm font-medium text-foreground mb-2">How featured places work</h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Globethrotters highlights certain experiences as featured.
+                Globetrotter highlights certain experiences as featured.
                 To qualify, places must:
               </p>
               <ul className="mt-2 space-y-1.5">

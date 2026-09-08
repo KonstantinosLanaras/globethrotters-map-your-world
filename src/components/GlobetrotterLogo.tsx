@@ -1,18 +1,18 @@
 import { motion } from "framer-motion";
 
-interface GlobethrottersLogoProps {
+interface GlobetrotterLogoProps {
   variant?: "icon" | "full";
   size?: number;
   animate?: boolean;
   className?: string;
 }
 
-const GlobethrottersLogo = ({
+const GlobetrotterLogo = ({
   variant = "icon",
   size = 32,
   animate = true,
   className = "",
-}: GlobethrottersLogoProps) => {
+}: GlobetrotterLogoProps) => {
   const iconSize = size;
 
   const icon = (
@@ -132,10 +132,10 @@ const GlobethrottersLogo = ({
     <div className={`flex items-center gap-2 ${className}`}>
       {icon}
       <span className="font-display text-xl font-semibold text-foreground tracking-tight">
-        Globethrotters
+        Globetrotter
       </span>
     </div>
   );
 };
 
-export default GlobethrottersLogo;
+export default GlobetrotterLogo;

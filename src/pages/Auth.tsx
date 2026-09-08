@@ -273,7 +273,7 @@ const Auth = () => {
               <h1 className="font-display text-[2.75rem] sm:text-5xl md:text-[3.5rem] font-medium text-foreground leading-[1.1] tracking-tight mb-6">
                 Welcome to
                 <br />
-                <em className="not-italic text-primary/90">Globethrotters</em>
+                <em className="not-italic text-primary/90">Globetrotter</em>
               </h1>
 
               <motion.p

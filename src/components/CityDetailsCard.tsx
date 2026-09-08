@@ -174,7 +174,7 @@ const ExperienceCard = ({
                   >
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <BadgeCheck className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-[11px] font-semibold text-foreground">Sponsored by Globethrotters</span>
+                      <span className="text-[11px] font-semibold text-foreground">Sponsored by Globetrotter</span>
                     </div>
                     <p className="text-[10px] leading-relaxed text-muted-foreground">
                       We only feature experiences that are positively reviewed by the community, meet our quality standards, and are confirmed by local collaborators. Sponsored placement is curated and trust-based — not random advertising.

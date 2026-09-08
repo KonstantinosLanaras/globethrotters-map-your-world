@@ -12,7 +12,7 @@ const FeaturedTooltip = () => {
           </button>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-[240px] text-xs leading-relaxed">
-          <p>These places are highlighted by Globethrotters.</p>
+          <p>These places are highlighted by Globetrotter.</p>
           <p className="mt-1 text-muted-foreground">
             To be featured, experiences must meet quality standards, reach strong ratings, and be approved by local collaborators.
           </p>

@@ -1,18 +1,18 @@
 import { motion } from "framer-motion";
 
-interface GlobethrottersLogoProps {
+interface GlobetrotterLogoProps {
   variant?: "icon" | "full";
   size?: number;
   animate?: boolean;
   className?: string;
 }
 
-const GlobethrottersLogo = ({
+const GlobetrotterLogo = ({
   variant = "icon",
   size = 32,
   animate = true,
   className = "",
-}: GlobethrottersLogoProps) => {
+}: GlobetrotterLogoProps) => {
   const iconSize = size;
 
   const icon = (
@@ -138,4 +138,4 @@ const GlobethrottersLogo = ({
   );
 };
 
-export default GlobethrottersLogo;
+export default GlobetrotterLogo;

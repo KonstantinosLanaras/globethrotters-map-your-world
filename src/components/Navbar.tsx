@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Map, MapPin, Heart, User, Menu, X, LogOut, Users, MessageSquare, Star } from "lucide-react";
-import GlobetrotterLogo from "@/components/GlobetrotterLogo";
+import GlobetrottersLogo from "@/components/GlobetrottersLogo";
 import PeopleSearch from "@/components/PeopleSearch";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -73,7 +73,7 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
       className="fixed top-0 left-0 right-0 z-[1003] flex items-center justify-between px-4 h-[60px] bg-card/85 backdrop-blur-xl border-b border-border gap-2"
     >
       <button onClick={() => { navigate("/"); onSearchModeChange?.("places"); }} className="flex items-center gap-2 flex-shrink-0">
-        <GlobetrotterLogo variant="full" size={26} animate={false} className="text-foreground" />
+        <GlobetrottersLogo variant="full" size={26} animate={false} className="text-foreground" />
       </button>
 
       {/* Desktop nav */}

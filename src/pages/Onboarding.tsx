@@ -112,7 +112,7 @@ const Onboarding = () => {
               <Globe className="w-8 h-8 text-primary" />
             </motion.div>
             <h1 className="font-display text-4xl md:text-5xl font-semibold text-foreground mb-4 leading-tight">
-              Welcome to<br />Globetrotter
+              Welcome to<br />Globetrotters
             </h1>
             <p className="text-muted-foreground text-lg leading-relaxed mb-2">
               Your personal atlas of places that matter.

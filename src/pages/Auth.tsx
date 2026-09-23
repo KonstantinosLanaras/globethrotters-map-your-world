@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 /* ── Refined illustrated globe — based on founder's sketch ── */
@@ -123,38 +123,52 @@ const IllustratedGlobe = () => (
 );
 
 const Auth = () => {
-  const [showAuth, setShowAuth] = useState(false);
-  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
+  const [searchParams] = useSearchParams();
+  const requestedMode = searchParams.get("mode") === "signup" ? "signup" : "login";
+  const [showAuth, setShowAuth] = useState(searchParams.has("mode") || searchParams.has("confirmed") || searchParams.has("oauth"));
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">(requestedMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(null);
-  const [authChecking, setAuthChecking] = useState(true);
   const navigate = useNavigate();
+
+  const finishSignIn = useCallback(async () => {
+    const pendingConsent = localStorage.getItem("globethrotters_pending_marketing_opt_in");
+    if (pendingConsent !== null) {
+      await supabase.auth.updateUser({
+        data: {
+          marketing_opt_in: pendingConsent === "true",
+          marketing_consent_at: pendingConsent === "true" ? new Date().toISOString() : null,
+          marketing_consent_version: "2026-09-23",
+          signup_source: "web_mvp",
+        },
+      });
+      localStorage.removeItem("globethrotters_pending_marketing_opt_in");
+    }
+    navigate(localStorage.getItem("globethrotters_onboarded") ? "/" : "/onboarding", { replace: true });
+  }, [navigate]);
 
   // Redirect authenticated users away from auth page — only on real session
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
         setOauthLoading(null);
-        navigate("/", { replace: true });
-      }
-      if (event === "INITIAL_SESSION") {
-        setAuthChecking(false);
+        void finishSignIn();
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        navigate("/", { replace: true });
+        void finishSignIn();
       }
-      setAuthChecking(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [finishSignIn]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,19 +182,28 @@ const Auth = () => {
         toast.success("Check your email for a password reset link");
         setMode("login");
       } else if (mode === "signup") {
+        localStorage.setItem("globethrotters_pending_marketing_opt_in", String(marketingOptIn));
         const { error } = await supabase.auth.signUp({
           email, password,
-          options: { data: { full_name: name }, emailRedirectTo: window.location.origin },
+          options: {
+            data: {
+              full_name: name,
+              marketing_opt_in: marketingOptIn,
+              marketing_consent_at: marketingOptIn ? new Date().toISOString() : null,
+              marketing_consent_version: "2026-09-23",
+              signup_source: "web_mvp",
+            },
+            emailRedirectTo: `${window.location.origin}/auth?confirmed=1`,
+          },
         });
         if (error) throw error;
         toast.success("Check your email to confirm your account");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate("/");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Something went wrong");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -189,8 +212,11 @@ const Auth = () => {
   const handleOAuth = async (provider: "google" | "apple") => {
     try {
       setOauthLoading(provider);
+      if (mode === "signup") {
+        localStorage.setItem("globethrotters_pending_marketing_opt_in", String(marketingOptIn));
+      }
       const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}/auth?oauth=1`,
       });
 
       // If the browser is being redirected to the provider, do nothing more
@@ -210,7 +236,7 @@ const Auth = () => {
 
       // If tokens were returned directly (non-redirect flow), session is set by lovable module
       // onAuthStateChange will handle the redirect
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("OAuth error:", err);
       toast.error("Sign-in failed. Please try again.");
       setOauthLoading(null);
@@ -412,6 +438,7 @@ const Auth = () => {
                       <input
                         type="text"
                         placeholder="Your name"
+                        required={mode === "signup"}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className={inputClass}
@@ -461,6 +488,20 @@ const Auth = () => {
                       </button>
                     </div>
                   </div>
+                )}
+
+                {mode === "signup" && (
+                  <label className="flex items-start gap-2.5 rounded-lg border border-border bg-card/30 px-3 py-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={marketingOptIn}
+                      onChange={(event) => setMarketingOptIn(event.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-border accent-[hsl(var(--primary))]"
+                    />
+                    <span className="font-body text-xs leading-relaxed text-muted-foreground">
+                      Send me occasional product updates and invitations to help shape Globetrotters. Optional; unsubscribe anytime.
+                    </span>
+                  </label>
                 )}
 
                 {mode === "login" && (

@@ -58,7 +58,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a travel expert and local guide. Generate a comprehensive list of real, specific places and activities for a destination. Include well-known spots AND hidden gems. Each entry should feel like a real Google Maps listing with realistic ratings and review counts. Return structured data using the suggest_activities tool.`,
+            content: `You are a travel research assistant. Suggest well-documented places and activities for a destination. Never invent ratings, review counts, awards, availability, prices, or sponsorship. The result is an unverified suggestion list and must not be presented as verified user-generated data. Return structured data using the suggest_activities tool.`,
           },
           {
             role: "user",
@@ -71,7 +71,7 @@ serve(async (req) => {
 - Hidden Gem (2-3): local-only spots, off-the-beaten-path places
 - Transport (1-2): unique local transport experiences
 
-For each, include a realistic Google-style rating (3.8-4.9) and review count (50-2000). Make names specific and real.`,
+Make names specific. Do not include ratings, review counts, prices, or booking availability.`,
           },
         ],
         tools: [
@@ -99,10 +99,8 @@ For each, include a realistic Google-style rating (3.8-4.9) and review count (50
                           enum: ["easy", "moderate", "challenging", "none"],
                         },
                         duration: { type: "string", description: "Estimated duration e.g. '2 hours'" },
-                        rating: { type: "number", description: "Realistic rating 3.8-4.9" },
-                        review_count: { type: "integer", description: "Realistic review count 50-2000" },
                       },
-                      required: ["name", "category", "description", "difficulty", "duration", "rating", "review_count"],
+                      required: ["name", "category", "description", "difficulty", "duration"],
                       additionalProperties: false,
                     },
                   },

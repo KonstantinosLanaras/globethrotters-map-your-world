@@ -14,6 +14,131 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalog_cities: {
+        Row: {
+          country: string
+          country_code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_launch_city: boolean
+          latitude: number
+          longitude: number
+          name: string
+          slug: string
+          market_rank: number | null
+          search_radius_km: number
+          updated_at: string
+        }
+        Insert: {
+          country: string
+          country_code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_launch_city?: boolean
+          latitude: number
+          longitude: number
+          name: string
+          slug: string
+          market_rank?: number | null
+          search_radius_km?: number
+          updated_at?: string
+        }
+        Update: {
+          country?: string
+          country_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_launch_city?: boolean
+          latitude?: number
+          longitude?: number
+          name?: string
+          slug?: string
+          market_rank?: number | null
+          search_radius_km?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalog_items: {
+        Row: {
+          canonical_category: string
+          city_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          last_verified_at: string | null
+          latitude: number
+          longitude: number
+          metadata: Json
+          name: string
+          published_at: string
+          quality_tier: string
+          selection_rank: number | null
+          source: string
+          source_confidence: number | null
+          source_id: string
+          source_url: string | null
+          subcategory: string
+          updated_at: string
+        }
+        Insert: {
+          canonical_category: string
+          city_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          last_verified_at?: string | null
+          latitude: number
+          longitude: number
+          metadata?: Json
+          name: string
+          published_at?: string
+          quality_tier?: string
+          selection_rank?: number | null
+          source: string
+          source_confidence?: number | null
+          source_id: string
+          source_url?: string | null
+          subcategory: string
+          updated_at?: string
+        }
+        Update: {
+          canonical_category?: string
+          city_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          last_verified_at?: string | null
+          latitude?: number
+          longitude?: number
+          metadata?: Json
+          name?: string
+          published_at?: string
+          quality_tier?: string
+          selection_rank?: number | null
+          source?: string
+          source_confidence?: number | null
+          source_id?: string
+          source_url?: string | null
+          subcategory?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_items_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contribution_impacts: {
         Row: {
           created_at: string
@@ -924,9 +1049,13 @@ export type Database = {
           interests: string[] | null
           is_verified: boolean
           languages: string[] | null
+          marketing_consent_at: string | null
+          marketing_consent_version: string | null
+          marketing_opt_in: boolean
           next_trip: string | null
           personality: string | null
           privacy: string
+          signup_source: string
           travel_style: string[] | null
           travelers_helped: number
           trust_score: number
@@ -948,9 +1077,13 @@ export type Database = {
           interests?: string[] | null
           is_verified?: boolean
           languages?: string[] | null
+          marketing_consent_at?: string | null
+          marketing_consent_version?: string | null
+          marketing_opt_in?: boolean
           next_trip?: string | null
           personality?: string | null
           privacy?: string
+          signup_source?: string
           travel_style?: string[] | null
           travelers_helped?: number
           trust_score?: number
@@ -972,9 +1105,13 @@ export type Database = {
           interests?: string[] | null
           is_verified?: boolean
           languages?: string[] | null
+          marketing_consent_at?: string | null
+          marketing_consent_version?: string | null
+          marketing_opt_in?: boolean
           next_trip?: string | null
           personality?: string | null
           privacy?: string
+          signup_source?: string
           travel_style?: string[] | null
           travelers_helped?: number
           trust_score?: number

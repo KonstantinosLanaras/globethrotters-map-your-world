@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Map, MapPin, Heart, User, Menu, X, LogOut, Users, MessageSquare, Star } from "lucide-react";
+import { Map, MapPin, Heart, User, Menu, X, LogOut, Users, MessageSquare, Star, LogIn } from "lucide-react";
 import GlobetrottersLogo from "@/components/GlobetrottersLogo";
 import PeopleSearch from "@/components/PeopleSearch";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -26,7 +26,7 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
   const [profileOpen, setProfileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const { data: unreadCount = 0 } = useUnreadCount();
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -132,77 +132,97 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
 
       </div>
 
-      {/* People search + Social + Profile */}
+      {/* Account actions */}
       <div className="hidden md:flex items-center gap-2">
-        <PeopleSearch />
+        {!authLoading && !user ? (
+          <>
+            <button
+              onClick={() => navigate("/auth?mode=login")}
+              className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+            >
+              Sign in
+            </button>
+            <button
+              onClick={() => navigate("/auth?mode=signup")}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-medium shadow-sm hover:opacity-90 transition-all"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              Create account
+            </button>
+          </>
+        ) : user ? (
+          <>
+            <PeopleSearch />
 
-        {/* Messages */}
-        <button
-          onClick={() => navigate("/messages")}
-          className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-            location.pathname.startsWith("/messages")
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          }`}
-        >
-          <MessageSquare className="w-4 h-4" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
-        </button>
+            {/* Messages */}
+            <button
+              onClick={() => navigate("/messages")}
+              className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                location.pathname.startsWith("/messages")
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
 
-        {/* Connections */}
-        <button
-          onClick={() => navigate("/connections")}
-          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-            location.pathname === "/connections"
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          }`}
-        >
-          <Users className="w-4 h-4" />
-        </button>
+            {/* Connections */}
+            <button
+              onClick={() => navigate("/connections")}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                location.pathname === "/connections"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <Users className="w-4 h-4" />
+            </button>
 
-        <div className="relative" ref={profileRef}>
-          <button
-            onClick={() => setProfileOpen(!profileOpen)}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${
-              location.pathname === "/profile" || profileOpen
-                ? "bg-primary/10 text-primary"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            <User className="w-4 h-4" />
-          </button>
-          <AnimatePresence>
-            {profileOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                className="absolute right-0 top-full mt-2 w-40 bg-card border border-border rounded-xl shadow-xl z-[1010] overflow-hidden"
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${
+                  location.pathname === "/profile" || profileOpen
+                    ? "bg-primary/10 text-primary"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
               >
-                <button
-                  onClick={() => { navigate("/profile"); setProfileOpen(false); }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-muted/50 transition-colors"
-                >
-                  <User className="w-3.5 h-3.5" />
-                  Profile
-                </button>
-                <div className="h-px bg-border" />
-                <button
-                  onClick={handleSignOut}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  Sign Out
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                <User className="w-4 h-4" />
+              </button>
+              <AnimatePresence>
+                {profileOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                    className="absolute right-0 top-full mt-2 w-40 bg-card border border-border rounded-xl shadow-xl z-[1010] overflow-hidden"
+                  >
+                    <button
+                      onClick={() => { navigate("/profile"); setProfileOpen(false); }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                    >
+                      <User className="w-3.5 h-3.5" />
+                      Profile
+                    </button>
+                    <div className="h-px bg-border" />
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      Sign Out
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </>
+        ) : null}
       </div>
 
       {/* Mobile menu */}
@@ -216,17 +236,21 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
           animate={{ opacity: 1, y: 0 }}
           className="absolute top-full left-0 right-0 bg-card/95 backdrop-blur-xl border-b border-border p-3 md:hidden"
         >
-          <div className="mb-3 px-1 space-y-2">
-            <PeopleSearch />
-          </div>
+          {user && (
+            <div className="mb-3 px-1 space-y-2">
+              <PeopleSearch />
+            </div>
+          )}
 
           {[
             { icon: <Map className="w-4 h-4" />, label: "Explore", action: handleExploreClick },
             { icon: <MapPin className="w-4 h-4" />, label: "Visited", action: () => navigate("/visited") },
             { icon: <Heart className="w-4 h-4" />, label: "Wishlist", action: () => navigate("/wishlist") },
-            { icon: <MessageSquare className="w-4 h-4" />, label: "Messages", action: () => navigate("/messages") },
-            { icon: <Users className="w-4 h-4" />, label: "Connections", action: () => navigate("/connections") },
-            { icon: <User className="w-4 h-4" />, label: "Profile", action: () => navigate("/profile") },
+            ...(user ? [
+              { icon: <MessageSquare className="w-4 h-4" />, label: "Messages", action: () => navigate("/messages") },
+              { icon: <Users className="w-4 h-4" />, label: "Connections", action: () => navigate("/connections") },
+              { icon: <User className="w-4 h-4" />, label: "Profile", action: () => navigate("/profile") },
+            ] : []),
           ].map((item) => (
             <button
               key={item.label}
@@ -239,13 +263,31 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
           ))}
 
           <div className="h-px bg-border my-1" />
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
+          {user ? (
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => { navigate("/auth?mode=login"); setMenuOpen(false); }}
+                className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Sign in
+              </button>
+              <button
+                onClick={() => { navigate("/auth?mode=signup"); setMenuOpen(false); }}
+                className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-medium bg-primary text-primary-foreground"
+              >
+                <LogIn className="w-4 h-4" />
+                Create account
+              </button>
+            </>
+          )}
         </motion.div>
       )}
     </motion.nav>

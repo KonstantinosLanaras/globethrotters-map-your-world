@@ -18,6 +18,10 @@ export interface Profile {
   username: string;
   dream_destinations: string[];
   languages: string[];
+  marketing_opt_in: boolean;
+  marketing_consent_at: string | null;
+  marketing_consent_version: string | null;
+  signup_source: string;
   travel_style: string[];
   next_trip: string;
   created_at: string;

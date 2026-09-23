@@ -6,6 +6,8 @@ import { useActivities, Activity } from "./useActivities";
 import { usePromotedPlaces, PromotedPlace } from "./usePromotedPlaces";
 import { useMemo } from "react";
 
+const isDemoMode = import.meta.env.VITE_DEMO_MODE === "true";
+
 export interface CommunityExperience {
   id: string;
   user_id: string;
@@ -43,17 +45,22 @@ export type UnifiedExperience = {
   name: string;
   category: string;
   description: string;
+  lat?: number;
+  lng?: number;
+  sourceLabel?: string;
   rating: number;
   reviewCount: number;
   engagement: number;
-  label?: "Sponsored" | "Trending" | "Rising" | "Community" | "Popular" | "Verified";
+  label?: "Sponsored" | "Trending" | "Rising" | "Community" | "Popular" | "Editorial" | "Verified";
 };
 
 // Fetch community experiences for a city
 export const useCommunityExperiences = (city: string | null, country: string | null) => {
   return useQuery({
     queryKey: ["community-experiences", city, country],
-    enabled: !!city && !!country,
+    // The local demo uses the bundled editorial catalogue and should never
+    // wait for a remote backend request when a city is opened.
+    enabled: !!city && !!country && !isDemoMode,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("experiences")
@@ -153,11 +160,11 @@ const isPromotedQualified = (p: PromotedPlace): boolean => {
  */
 export const useUnifiedExperiences = (city: string | null, country: string | null) => {
   const { activities, loading: seededLoading } = useActivities(city, country);
-  const { data: community = [], isLoading: communityLoading } = useCommunityExperiences(city, country);
+  const { data: community = [] } = useCommunityExperiences(city, country);
   const { data: promoted = [] } = usePromotedPlaces();
   const { data: profile } = useProfile();
 
-  const interests = profile?.interests || [];
+  const interests = useMemo(() => profile?.interests || [], [profile?.interests]);
   const personality = profile?.personality || "";
 
   const unified = useMemo(() => {
@@ -171,20 +178,32 @@ export const useUnifiedExperiences = (city: string | null, country: string | nul
       return 0;
     };
 
-    // 1. Seeded experiences (AI-generated activities)
+    // 1. Normalized catalogue records. Google rating/review data is used only
+    // during screening and is not copied into the permanent catalogue.
     const seededItems: UnifiedExperience[] = activities.map(a => {
-      const pseudoRating = 4.0 + (a.name.length % 10) / 10;
-      const pseudoReviews = 50 + (a.name.length * 17) % 2000;
+      const sourceLabels: Record<string, string> = {
+        curated: "Globethrotters editorial",
+        overture: "Overture Maps",
+        osm: "OpenStreetMap",
+        wikidata: "Wikidata",
+      };
       return {
         type: "seeded" as const,
         activity: a,
         name: a.name,
         category: a.category,
         description: a.description || "",
-        rating: pseudoRating,
-        reviewCount: pseudoReviews,
-        engagement: pseudoRating * 10 + pseudoReviews * 0.01,
-        label: "Verified" as const,
+        lat: a.lat,
+        lng: a.lng,
+        sourceLabel: sourceLabels[a.source || ""] || "Catalogue",
+        rating: 0,
+        reviewCount: 0,
+        engagement: a.popularity_score || 0,
+        label: a.quality_tier === "popular"
+          ? "Popular" as const
+          : a.quality_tier === "editorial"
+            ? "Editorial" as const
+            : undefined,
       };
     });
 
@@ -192,13 +211,12 @@ export const useUnifiedExperiences = (city: string | null, country: string | nul
       (b.engagement + boostCategory(b.category)) - (a.engagement + boostCategory(a.category))
     );
 
-    // 2. Sponsored (max 2, quality-gated) with fallback to top ranked results
+    // 2. Sponsored (max 2, quality-gated). Never relabel organic results as ads.
     const qualifiedPromoted = promoted
       .filter(isPromotedQualified)
       .slice(0, 2);
 
-    const sponsoredItems: UnifiedExperience[] = qualifiedPromoted.length > 0
-      ? qualifiedPromoted.map(p => ({
+    const sponsoredItems: UnifiedExperience[] = qualifiedPromoted.map(p => ({
           type: "sponsored" as const,
           promoted: p,
           name: p.business_name,
@@ -207,11 +225,6 @@ export const useUnifiedExperiences = (city: string | null, country: string | nul
           rating: p.quality_score / 10,
           reviewCount: p.impressions,
           engagement: p.quality_score,
-          label: "Sponsored" as const,
-        }))
-      : sortedSeeded.slice(0, 2).map(item => ({
-          ...item,
-          type: "sponsored" as const,
           label: "Sponsored" as const,
         }));
 
@@ -256,6 +269,8 @@ export const useUnifiedExperiences = (city: string | null, country: string | nul
 
   return {
     ...unified,
-    loading: seededLoading || communityLoading,
+    // Catalogue results can render immediately. Community content is additive
+    // and must not block the city panel while its separate query is in flight.
+    loading: seededLoading,
   };
 };

@@ -9,7 +9,7 @@ export interface Profile {
   avatar_url: string;
   personality: string;
   interests: string[];
-  privacy: "private" | "friends" | "public";
+  privacy: "private" | "friends" | "public" | "mixed";
   is_verified: boolean;
   trust_score: number;
   verified_at: string | null;

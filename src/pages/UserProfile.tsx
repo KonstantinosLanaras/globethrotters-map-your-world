@@ -680,13 +680,18 @@ const UserMapView = ({ places }: { places: Place[] }) => {
     if (!containerRef.current || mapRef.current) return;
     const map = L.map(containerRef.current, {
       center: [25, 10], zoom: 3, minZoom: 2, maxZoom: 14,
-      scrollWheelZoom: true, attributionControl: false, zoomControl: false,
+      scrollWheelZoom: true, attributionControl: true, zoomControl: false,
       maxBounds: L.latLngBounds(L.latLng(-85, -180), L.latLng(85, 180)),
       maxBoundsViscosity: 1.0,
     });
     L.control.zoom({ position: "bottomright" }).addTo(map);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png").addTo(map);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", { pane: "tooltipPane" }).addTo(map);
+    L.tileLayer(
+      import.meta.env.VITE_MAP_TILE_URL || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        attribution: import.meta.env.VITE_MAP_ATTRIBUTION || "&copy; OpenStreetMap contributors",
+        maxZoom: 19,
+      },
+    ).addTo(map);
     mapRef.current = map;
     return () => { map.remove(); mapRef.current = null; };
   }, []);

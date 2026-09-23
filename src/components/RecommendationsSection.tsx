@@ -1,11 +1,12 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Heart, Loader2, ArrowRight, Plus, X } from "lucide-react";
+import { Sparkles, Heart, Loader2, ArrowRight, Plus, X, ExternalLink } from "lucide-react";
 import { useSuggestions, Suggestion } from "@/hooks/useSuggestions";
 import { useAddPlace } from "@/hooks/usePlaces";
 import { useProfile } from "@/hooks/useProfile";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { destinationLinks, trackOutboundClick } from "@/lib/externalLinks";
 
 interface RecommendationsSectionProps {
   isOpen: boolean;
@@ -37,8 +38,8 @@ const RecommendationsSection = ({ isOpen, onToggle }: RecommendationsSectionProp
         date_visited: null,
       });
       toast.success(`${s.name} added to wishlist!`);
-    } catch (err: any) {
-      if (err?.message?.includes("Already")) {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes("Already")) {
         toast.info(err.message);
       } else {
         toast.error("Failed to save");
@@ -132,6 +133,22 @@ const RecommendationsSection = ({ isOpen, onToggle }: RecommendationsSectionProp
                         Save to Wishlist
                       </span>
                     </button>
+                    <div className="mt-1.5 grid grid-cols-2 gap-1">
+                      {destinationLinks(s.name, s.country).map((link) => (
+                        <a
+                          key={link.provider}
+                          href={link.url}
+                          target="_blank"
+                          rel="sponsored noopener noreferrer"
+                          onClick={() => trackOutboundClick(link.provider, "destination", s.name, `${s.name}, ${s.country}`)}
+                          className="flex items-center justify-center gap-1 rounded-lg bg-muted px-1 py-1.5 text-[10px] font-medium text-foreground hover:bg-muted/80"
+                          aria-label={`${link.label} in ${s.name} (opens an external website)`}
+                        >
+                          <ExternalLink className="h-2.5 w-2.5" />
+                          {link.label}
+                        </a>
+                      ))}
+                    </div>
                   </motion.div>
                 ))}
               </div>
@@ -140,6 +157,11 @@ const RecommendationsSection = ({ isOpen, onToggle }: RecommendationsSectionProp
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             ) : null}
+            {suggestions.length > 0 && (
+              <p className="mt-2 text-[9px] leading-relaxed text-muted-foreground">
+                External providers set availability and prices. Globetrotters does not complete the booking.
+              </p>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

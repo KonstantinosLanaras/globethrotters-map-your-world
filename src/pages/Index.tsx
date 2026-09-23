@@ -9,9 +9,12 @@ import { usePlaces, Place } from "@/hooks/usePlaces";
 import { useExperiencesWithPhotos } from "@/hooks/useExperiences";
 import { useAuth } from "@/hooks/useAuth";
 import { worldCities, City } from "@/data/cities";
+import { useCatalogMapItems, type CatalogItem } from "@/hooks/useCatalog";
 
 const Index = () => {
-  const [showCities, setShowCities] = useState(true);
+  // Keep the world view calm by default. Visitors can reveal the full city
+  // layer from MapControls, while catalogue and saved-place pins remain visible.
+  const [showCities, setShowCities] = useState(false);
   const [mapFilter, setMapFilter] = useState<"all" | "visited" | "wishlist">("all");
   const [activeTags, setActiveTags] = useState<ActivityTag[]>([]);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
@@ -20,6 +23,7 @@ const Index = () => {
   const { user } = useAuth();
   const { data: places = [] } = usePlaces();
   const { data: experiences = [] } = useExperiencesWithPhotos();
+  const { data: catalogItems = [] } = useCatalogMapItems();
 
   const stats = useMemo(() => ({
     visited: places.filter((p) => p.type === "visited").length,
@@ -64,6 +68,20 @@ const Index = () => {
     );
   }, []);
 
+  const handleCatalogItemClick = useCallback((item: CatalogItem) => {
+    const matchingCity = worldCities.find(
+      (candidate) => candidate.name.toLowerCase() === item.city.toLowerCase()
+        && candidate.country.toLowerCase() === item.country.toLowerCase(),
+    );
+    setSelectedCity(matchingCity || {
+      name: item.city,
+      country: item.country,
+      lat: item.lat,
+      lng: item.lng,
+      continent: "Europe",
+    });
+  }, []);
+
   const handleSearchModeChange = useCallback((mode: SearchMode) => {
     setSearchMode(mode);
     setExploreBarVisible(true);
@@ -104,11 +122,13 @@ const Index = () => {
           cities={worldCities}
           places={places}
           experiences={experiences}
+          catalogItems={catalogItems}
           showCities={showCities}
           mapFilter={mapFilter}
           activeTags={activeTags}
           onCityClick={handleCityClick}
           onPlaceClick={handlePlaceClick}
+          onCatalogItemClick={handleCatalogItemClick}
         />
       </div>
     </div>

@@ -147,6 +147,24 @@
   background: hsl(35 20% 90%) !important;
 }
 
+.leaflet-control-attribution {
+  margin: 0 0 10px 10px !important;
+  padding: 4px 8px !important;
+  border: 1px solid hsl(35 20% 88% / 0.8) !important;
+  border-radius: 999px !important;
+  background: hsl(36 33% 97% / 0.86) !important;
+  color: hsl(30 8% 42%) !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06) !important;
+  backdrop-filter: blur(10px);
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+}
+
+.leaflet-control-attribution a {
+  color: hsl(var(--primary)) !important;
+  text-decoration: none !important;
+}
+
 .saved-pin-visited {
   filter: drop-shadow(0 2px 4px rgba(180, 90, 30, 0.4));
 }

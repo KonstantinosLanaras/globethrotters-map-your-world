@@ -1,18 +1,25 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo } from "react";
+import { useCatalogItems, type CatalogCategory, type CatalogQualityTier } from "./useCatalog";
 
 export interface Activity {
+  id?: string;
   name: string;
-  category: "food" | "hiking" | "nature" | "culture" | "scenic" | "transport" | "hidden_gem";
+  category: CatalogCategory;
   description: string;
   difficulty: "easy" | "moderate" | "challenging" | "none";
   duration: string;
-  // Extended fields for Google Maps integration (future)
-  source?: "community" | "google" | "ai";
+  source?: "community" | "curated" | "overture" | "osm" | "wikidata";
+  source_id?: string;
+  lat?: number;
+  lng?: number;
   rating?: number;
   review_count?: number;
   is_sponsored?: boolean;
   place_id_google?: string;
+  popularity_score?: number;
+  quality_tier?: CatalogQualityTier;
+  subcategory?: string;
+  tags?: string[];
 }
 
 interface UseActivitiesResult {
@@ -22,72 +29,28 @@ interface UseActivitiesResult {
 }
 
 export const useActivities = (placeName: string | null, country: string | null): UseActivitiesResult => {
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const query = useCatalogItems(placeName, country);
 
-  useEffect(() => {
-    if (!placeName || !country) {
-      setActivities([]);
-      return;
-    }
+  const activities = useMemo<Activity[]>(() => (query.data || []).map((item) => ({
+    id: item.id,
+    name: item.name,
+    category: item.category,
+    description: item.description,
+    difficulty: "none",
+    duration: "",
+    source: item.source,
+    source_id: item.sourceId,
+    lat: item.lat,
+    lng: item.lng,
+    popularity_score: item.qualityTier === "popular" ? 100 : item.qualityTier === "editorial" ? 90 : 50,
+    quality_tier: item.qualityTier,
+    subcategory: item.subcategory,
+    tags: item.tags,
+  })), [query.data]);
 
-    let cancelled = false;
-    const fetchActivities = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        // Check local cache first (from Supabase table)
-        const { data: cached } = await supabase
-          .from("destination_activities")
-          .select("activities")
-          .eq("place_name", placeName)
-          .eq("country", country)
-          .maybeSingle();
-
-        if (cached && !cancelled) {
-          const cachedActivities = (cached.activities as unknown as Activity[]).map((a) => ({
-            ...a,
-            source: a.source || ("ai" as const),
-          }));
-          setActivities(cachedActivities);
-          setLoading(false);
-          return;
-        }
-
-        // Call edge function
-        const { data, error: fnError } = await supabase.functions.invoke("discover-activities", {
-          body: { placeName, country },
-        });
-
-        if (cancelled) return;
-
-        if (fnError) {
-          throw new Error(fnError.message || "Failed to fetch activities");
-        }
-
-        if (data?.error) {
-          throw new Error(data.error);
-        }
-
-        const fetched = (data?.activities || []).map((a: Activity) => ({
-          ...a,
-          source: "ai" as const,
-        }));
-        setActivities(fetched);
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Failed to load activities");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    fetchActivities();
-    return () => { cancelled = true; };
-  }, [placeName, country]);
-
-  return { activities, loading, error };
+  return {
+    activities,
+    loading: query.isLoading,
+    error: query.error instanceof Error ? query.error.message : null,
+  };
 };

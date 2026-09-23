@@ -1,5 +1,71 @@
 # Globethrotters: World Atlas
 
+## MVP status
+
+This branch contains the first MVP-focused implementation:
+
+- A built-in editorial catalog for Paris, Lisbon, Rome, Athens, Barcelona and London, so discovery works before community content exists.
+- Honest data labels: curated suggestions are marked **Popular**, AI suggestions are not shown as verified, and organic results are never relabelled as sponsored.
+- External link-outs for maps, tours and accommodation. These open the provider website; Globetrotters does not yet complete a booking or claim live availability/prices.
+- Privacy-light outbound click measurement through the `outbound_clicks` Supabase migration.
+- OpenStreetMap tiles by default, with visible attribution and no map API key required for an MVP. Configure a commercial tile provider before significant production traffic.
+- Environment files ignored by Git, with `.env.example` documenting public browser variables.
+- A normalized catalogue with individual coordinates, five canonical categories, public read policies, provider-safe import tracking, and map rendering for catalogue pins.
+- An Overture batch importer for inexpensive base coverage and a protected Google Places candidate importer for the agreed rating/review screening method.
+
+### Local setup
+
+```sh
+cp .env.example .env.local
+npm ci
+npm run dev
+```
+
+For a read-only product demo without a Supabase login, run `npm run demo` and open the local URL printed by Vite. Click Paris, Lisbon, Rome, Athens, Barcelona or London to inspect the built-in popular experiences and provider link-outs. Saving and community features require the real Supabase configuration.
+
+### Authentication and signup tracking
+
+The Explore map is public. Visited places, wishlists, ratings, posts, profiles,
+messages and connections require an authenticated account. Email/password,
+Google and Apple entry points are implemented through Lovable Cloud auth.
+
+Run `lovable_auth_setup.sql` once in Lovable Cloud's SQL editor. It records the
+signup source and an optional, unselected outreach consent on each profile.
+Authentication emails remain in the protected auth user store. `npm run demo`
+uses a placeholder backend for visual review only; test real signups in Lovable
+Preview or run `npm run dev` with the project's public cloud environment values.
+
+Apply the new Supabase migration before enabling outbound click analytics. Provider secrets and Supabase service-role keys must only be configured in server-side function secrets, never in a `VITE_` variable.
+
+## Catalogue population
+
+Apply migrations `20260921183000_catalog_foundation.sql` and `20260921183500_catalog_seed.sql` first. They create 50 editable European market records and seed the existing 18 editorial places with individual coordinates.
+
+For the linked Supabase project, configure the required values in your shell and run the guarded deployment helper:
+
+```sh
+export SUPABASE_ACCESS_TOKEN="..."
+export SUPABASE_DB_PASSWORD="..."
+# Optional until the Google validation pass:
+export GOOGLE_PLACES_API_KEY="..."
+export CATALOG_IMPORT_SECRET="..."
+npm run catalog:deploy
+```
+
+The helper applies migrations first. It deploys the Google function only when both optional provider secrets are present; secret values are passed through a protected temporary file and are never committed.
+
+For broad map coverage, configure server-side `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, then run:
+
+```sh
+python3 -m pip install -r scripts/requirements-import.txt
+npm run catalog:pilot:dry
+npm run catalog:pilot
+```
+
+Run a few cities first and review category coverage before processing all 50. The importer defaults to ten places per category and Overture items are labelled as coverage, not recommendations.
+
+The `import-google-candidates` Edge Function is deliberately protected by `CATALOG_IMPORT_SECRET`. Supply one to five city slugs per invocation; it defaults to food and culture, requests no more than three result pages per city/category, and transiently ranks candidates with more than 1,000 reviews to select ten per category. Only selected Google Place IDs and ranks are stored; names, coordinates, ratings and review counts are returned for immediate admin review but are not persisted or published to the map. Any interface that displays that response must follow Google Maps attribution and current Places policies.
+
 Loveable Prompt – Globethrotters Social Platform
 
 Create a modern, premium, intuitive social platform called Globethrotters, focused on meaningful travel, discovery, and personal curation rather than vanity metrics. The platform should feel aesthetic, calm, and aspirational (similar emotional tone to Pinterest, Airbnb, and Apple design).

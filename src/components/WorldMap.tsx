@@ -5,10 +5,26 @@ import { City } from "@/data/cities";
 import { Place } from "@/hooks/usePlaces";
 import { ExperienceWithPhotos } from "@/hooks/useExperiences";
 import type { ActivityTag } from "@/components/MapControls";
+import type { CatalogItem } from "@/hooks/useCatalog";
 
 const VISITED_COLOR = "hsl(0, 72%, 51%)";
 const WISHLIST_COLOR = "hsl(217, 91%, 60%)";
 const DEFAULT_COLOR = "hsl(30, 8%, 50%)";
+const CATALOG_COLORS: Record<string, string> = {
+  food: "#f97316",
+  culture: "#2563eb",
+  nature: "#059669",
+  hiking: "#16a34a",
+  nightlife: "#7c3aed",
+};
+
+const escapeTooltip = (value: string) => value.replace(/[&<>'"]/g, (character) => ({
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  "'": "&#39;",
+  '"': "&quot;",
+}[character] || character));
 
 const createCityIcon = (status: "none" | "visited" | "wishlist") => {
   if (status === "visited") {
@@ -28,10 +44,10 @@ const createCityIcon = (status: "none" | "visited" | "wishlist") => {
     });
   }
   return L.divIcon({
-    html: `<div style="width:10px;height:10px;border-radius:50%;background:${DEFAULT_COLOR};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.2);opacity:0.7;"></div>`,
+    html: `<div style="width:7px;height:7px;border-radius:50%;background:${DEFAULT_COLOR};border:1.5px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.16);opacity:0.58;"></div>`,
     className: "city-marker-default",
-    iconSize: [10, 10],
-    iconAnchor: [5, 5],
+    iconSize: [7, 7],
+    iconAnchor: [3.5, 3.5],
   });
 };
 
@@ -86,26 +102,29 @@ interface WorldMapProps {
   cities: City[];
   places: Place[];
   experiences?: ExperienceWithPhotos[];
+  catalogItems?: CatalogItem[];
   showCities: boolean;
   mapFilter: "all" | "visited" | "wishlist";
   activeTags?: ActivityTag[];
   onCityClick: (city: City) => void;
   onPlaceClick: (place: Place) => void;
+  onCatalogItemClick?: (item: CatalogItem) => void;
 }
 
-const WorldMap = ({ cities, places, experiences = [], showCities, mapFilter, activeTags = [], onCityClick, onPlaceClick }: WorldMapProps) => {
+const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCities, mapFilter, activeTags = [], onCityClick, onPlaceClick, onCatalogItemClick }: WorldMapProps) => {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cityLayerRef = useRef<L.LayerGroup | null>(null);
   const placeLayerRef = useRef<L.LayerGroup | null>(null);
+  const catalogLayerRef = useRef<L.LayerGroup | null>(null);
   const hasFittedRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
     const map = L.map(containerRef.current, {
-      center: [25, 10],
-      zoom: 3,
+      center: [50, 10],
+      zoom: 4,
       minZoom: 2,
       maxZoom: 14,
       scrollWheelZoom: true,
@@ -117,13 +136,18 @@ const WorldMap = ({ cities, places, experiences = [], showCities, mapFilter, act
     });
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png").addTo(map);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
-      pane: "tooltipPane",
-    }).addTo(map);
+    L.control.attribution({ position: "bottomleft", prefix: false }).addTo(map);
+    L.tileLayer(
+      import.meta.env.VITE_MAP_TILE_URL || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        attribution: import.meta.env.VITE_MAP_ATTRIBUTION || "&copy; OpenStreetMap",
+        maxZoom: 19,
+      },
+    ).addTo(map);
 
     cityLayerRef.current = L.layerGroup().addTo(map);
     placeLayerRef.current = L.layerGroup().addTo(map);
+    catalogLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
     return () => {
@@ -190,6 +214,34 @@ const WorldMap = ({ cities, places, experiences = [], showCities, mapFilter, act
       layer.addLayer(marker);
     });
   }, [cities, showCities, mapFilter, getCityStatus, onCityClick]);
+
+  useEffect(() => {
+    const layer = catalogLayerRef.current;
+    if (!layer) return;
+    layer.clearLayers();
+    if (mapFilter !== "all") return;
+
+    const visibleItems = activeTags.length === 0
+      ? catalogItems
+      : catalogItems.filter((item) => activeTags.includes(item.category as ActivityTag));
+
+    visibleItems.forEach((item) => {
+      const isFeatured = item.qualityTier === "popular" || item.qualityTier === "editorial";
+      const marker = L.circleMarker([item.lat, item.lng], {
+        radius: isFeatured ? 5 : 3.5,
+        color: "#ffffff",
+        weight: isFeatured ? 1.5 : 1,
+        fillColor: CATALOG_COLORS[item.category] || DEFAULT_COLOR,
+        fillOpacity: isFeatured ? 0.9 : 0.62,
+      });
+      marker.bindTooltip(
+        `<span style="font-weight:600;font-size:12px;">${escapeTooltip(item.name)}</span><br/><span style="font-size:10px;color:#888;">${escapeTooltip(item.city)} · ${escapeTooltip(item.category)}</span>`,
+        { direction: "top", offset: [0, -6], className: "city-tooltip" },
+      );
+      marker.on("click", () => onCatalogItemClick?.(item));
+      layer.addLayer(marker);
+    });
+  }, [catalogItems, mapFilter, activeTags, onCatalogItemClick]);
 
   useEffect(() => {
     const layer = placeLayerRef.current;

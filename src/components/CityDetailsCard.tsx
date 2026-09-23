@@ -4,7 +4,7 @@ import {
   X, MapPin, Check, Heart, Star, Plus, Loader2,
   BadgeCheck, Utensils, Mountain, Landmark, Eye, Bus, Gem, TreePine, Wine, Camera,
   Search, SlidersHorizontal, TrendingUp, Flame, Users,
-  Moon, Compass, Image, FileText, Share2, Send, Plane, Info
+  Moon, Compass, Image, FileText, Share2, Send, Plane, Info, ExternalLink as ExternalLinkIcon
 } from "lucide-react";
 import { City } from "@/data/cities";
 import { Place, useAddPlace, useUpdatePlace, usePlaces } from "@/hooks/usePlaces";
@@ -18,6 +18,8 @@ import ExperienceComposer from "@/components/ExperienceComposer";
 import RatingModal from "@/components/RatingModal";
 import ShareModal, { ShareableExperience } from "@/components/ShareModal";
 import AddToTripDialog from "@/components/AddToTripDialog";
+import { placeLinks, trackOutboundClick } from "@/lib/externalLinks";
+import { useNavigate } from "react-router-dom";
 
 interface CityDetailsCardProps {
   city: City;
@@ -100,6 +102,7 @@ const labelConfig: Record<string, { icon: typeof Star; color: string }> = {
   Community: { icon: Users, color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" },
   Verified: { icon: BadgeCheck, color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" },
   Popular: { icon: Star, color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" },
+  Editorial: { icon: Compass, color: "bg-stone-100 text-stone-600 dark:bg-stone-800/40 dark:text-stone-300" },
 };
 
 const categoryMatchMap: Record<string, string[]> = {
@@ -125,11 +128,14 @@ const ExperienceCard = ({
   onShareToTrip,
   isSaved: isExpSaved,
   saving,
+  cityName,
+  countryName,
 }: {
   item: UnifiedExperience; idx: number;
   onSaveToWishlist: () => void; onSaveToVisited: () => void;
   onShareToChat: () => void; onShareToTrip: () => void;
   isSaved: boolean; saving: boolean;
+  cityName: string; countryName: string;
 }) => {
   const [shareOpen, setShareOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
@@ -138,6 +144,7 @@ const ExperienceCard = ({
   const lbl = item.label ? labelConfig[item.label] : null;
   const LblIcon = lbl?.icon || Star;
   const isSponsored = item.type === "sponsored";
+  const externalLinks = placeLinks(item.name, cityName, countryName);
 
   return (
     <motion.div
@@ -213,6 +220,11 @@ const ExperienceCard = ({
                 {item.reviewCount.toLocaleString()} reviews
               </span>
             )}
+            {item.sourceLabel && (
+              <span className="text-[10px] text-muted-foreground">
+                Source: {item.sourceLabel}
+              </span>
+            )}
             {item.label && lbl && item.label !== "Sponsored" && (
               <span className={`inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full font-medium ${lbl.color}`}>
                 <LblIcon className="w-2.5 h-2.5" />
@@ -247,6 +259,20 @@ const ExperienceCard = ({
               <Check className="w-3 h-3" />
               Visited
             </button>
+            {externalLinks.map((link) => (
+              <a
+                key={link.provider}
+                href={link.url}
+                target="_blank"
+                rel="sponsored noopener noreferrer"
+                onClick={() => trackOutboundClick(link.provider, "experience", item.name, `${cityName}, ${countryName}`)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-muted text-foreground hover:bg-muted/80 transition-colors"
+                aria-label={`${link.label} for ${item.name} (opens an external website)`}
+              >
+                <ExternalLinkIcon className="w-3 h-3" />
+                {link.label}
+              </a>
+            ))}
             <div className="relative">
               <button
                 onClick={() => setShareOpen((open) => !open)}
@@ -291,6 +317,7 @@ const ExperienceCard = ({
 };
 
 const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const addPlace = useAddPlace();
   const updatePlace = useUpdatePlace();
@@ -401,7 +428,11 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
 
   // --- Save handlers ---
   const handleSave = async (type: "visited" | "wishlist") => {
-    if (!user) { toast.error("Sign in to save places"); return; }
+    if (!user) {
+      toast.info("Create an account to build your personal map");
+      navigate("/auth?mode=signup");
+      return;
+    }
     if (isSaved && savedPlace.type === type) {
       if (type === "visited") {
         // If already visited, open rating
@@ -436,20 +467,25 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
           setPostPlaceId(result.id);
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Save city error:", err);
-      const msg = err?.message || "Failed to save";
+      const msg = err instanceof Error ? err.message : "Failed to save";
       if (msg.includes("Already")) toast.info(msg);
       else toast.error("Couldn't save city. Please try again.");
     }
   };
 
   const handleItemSave = async (item: UnifiedExperience, type: "visited" | "wishlist") => {
-    if (!user) { toast.error("Sign in to save"); return; }
+    if (!user) {
+      toast.info("Create an account to save this place");
+      navigate("/auth?mode=signup");
+      return;
+    }
     setSavingItem(item.name);
     try {
       const result = await addPlace.mutateAsync({
-        name: item.name, country: city.country, city: city.name, lat: city.lat, lng: city.lng,
+        name: item.name, country: city.country, city: city.name,
+        lat: item.lat ?? city.lat, lng: item.lng ?? city.lng,
         type, tags: [item.category], rating: 0, notes: item.description || "",
         date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
       });
@@ -465,8 +501,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
         setPostPlaceId(result.id);
         setShowPostPrompt(true);
       }
-    } catch (err: any) {
-      if (err?.message?.includes("Already")) toast.info(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes("Already")) toast.info(err.message);
       else toast.error("Failed to save");
     } finally {
       setSavingItem(null);
@@ -584,6 +620,11 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
               </button>
               <button
                 onClick={() => {
+                  if (!user) {
+                    toast.info("Create an account to rate places");
+                    navigate("/auth?mode=signup");
+                    return;
+                  }
                   if (!savedPlace) {
                     toast.info("Mark as visited first to rate");
                     return;
@@ -731,7 +772,14 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                 </TooltipProvider>
 
                 <button
-                  onClick={() => setShowComposer(true)}
+                  onClick={() => {
+                    if (!user) {
+                      toast.info("Create an account to share an experience");
+                      navigate("/auth?mode=signup");
+                      return;
+                    }
+                    setShowComposer(true);
+                  }}
                   className="w-9 h-9 rounded-lg flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
                   aria-label="Share experience"
                 >
@@ -779,6 +827,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                       }}
                       isSaved={false}
                       saving={savingItem === item.name}
+                      cityName={city.name}
+                      countryName={city.country}
                     />
                   ))}
                 </>
@@ -828,6 +878,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                     }}
                     isSaved={item.type === "community" && item.experience ? savedExpIds.has(item.experience.id) : false}
                     saving={savingItem === item.name}
+                    cityName={city.name}
+                    countryName={city.country}
                   />
                 ))
               ) : !unifiedLoading && (searchQuery || activeFilterChips.length > 0 || activeCategory !== "all") ? (

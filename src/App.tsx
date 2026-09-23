@@ -18,15 +18,18 @@ import Messages from "./pages/Messages";
 import Favorites from "./pages/Favorites";
 
 const queryClient = new QueryClient();
+const isDemoMode = import.meta.env.VITE_DEMO_MODE === "true";
 
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  if (isDemoMode) return <>{children}</>;
   if (loading) return <div className="min-h-screen bg-background" />;
   if (!user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 };
 
 const RequireOnboarding = ({ children }: { children: React.ReactNode }) => {
+  if (isDemoMode) return <>{children}</>;
   const onboarded = localStorage.getItem("globethrotters_onboarded");
   if (!onboarded) return <Navigate to="/onboarding" replace />;
   return <>{children}</>;
@@ -47,7 +50,8 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            {/* Discovery is public; personal and social areas require an account. */}
+            <Route path="/" element={<Index />} />
             <Route path="/visited" element={<ProtectedRoute><Visited /></ProtectedRoute>} />
             <Route path="/places" element={<Navigate to="/visited" replace />} />
             <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />

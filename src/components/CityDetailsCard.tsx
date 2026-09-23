@@ -487,6 +487,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
         name: item.name, country: city.country, city: city.name,
         lat: item.lat ?? city.lat, lng: item.lng ?? city.lng,
         type, tags: [item.category], rating: 0, notes: item.description || "",
+        catalog_item_id: item.type === "seeded" ? item.activity?.id ?? null : null,
         date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
       });
       if (item.type === "community" && item.experience && type === "wishlist") {

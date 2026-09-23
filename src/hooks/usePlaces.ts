@@ -18,7 +18,13 @@ export interface Place {
   visibility: string;
   created_at: string;
   updated_at: string;
+  catalog_item_id: string | null;
 }
+
+type NewPlace = Omit<
+  Place,
+  "id" | "user_id" | "created_at" | "updated_at" | "visibility" | "catalog_item_id"
+> & { catalog_item_id?: string | null };
 
 export const usePlaces = () => {
   const { user } = useAuth();
@@ -42,17 +48,20 @@ export const useAddPlace = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (place: Omit<Place, "id" | "user_id" | "created_at" | "updated_at" | "visibility">) => {
+    mutationFn: async (place: NewPlace) => {
       if (!user) throw new Error("Not authenticated");
 
-      // Check for existing place by same user with same name+country
-      const { data: existing } = await supabase
+      // Canonical catalogue IDs are stable across spelling/localization changes.
+      // Manually entered places keep the name+country fallback.
+      let existingQuery = supabase
         .from("places")
         .select("id, type")
-        .eq("user_id", user.id)
-        .ilike("name", place.name)
-        .ilike("country", place.country)
-        .maybeSingle();
+        .eq("user_id", user.id);
+      existingQuery = place.catalog_item_id
+        ? existingQuery.eq("catalog_item_id", place.catalog_item_id)
+        : existingQuery.ilike("name", place.name).ilike("country", place.country);
+      const { data: existing, error: existingError } = await existingQuery.maybeSingle();
+      if (existingError) throw existingError;
 
       if (existing) {
         if (existing.type === place.type) {

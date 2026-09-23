@@ -982,8 +982,47 @@ export type Database = {
           },
         ]
       }
+      recommendation_intents: {
+        Row: {
+          created_at: string
+          id: string
+          raw_query: string
+          requested_categories: string[]
+          resolved_city_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          raw_query: string
+          requested_categories?: string[]
+          resolved_city_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          raw_query?: string
+          requested_categories?: string[]
+          resolved_city_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_intents_resolved_city_id_fkey"
+            columns: ["resolved_city_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       places: {
         Row: {
+          catalog_item_id: string | null
           city: string | null
           country: string
           created_at: string
@@ -1001,6 +1040,7 @@ export type Database = {
           visibility: string
         }
         Insert: {
+          catalog_item_id?: string | null
           city?: string | null
           country?: string
           created_at?: string
@@ -1018,6 +1058,7 @@ export type Database = {
           visibility?: string
         }
         Update: {
+          catalog_item_id?: string | null
           city?: string | null
           country?: string
           created_at?: string
@@ -1034,7 +1075,15 @@ export type Database = {
           user_id?: string
           visibility?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "places_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1394,7 +1443,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_catalog_recommendations: {
+        Args: {
+          p_categories?: string[] | null
+          p_city_slug: string
+          p_limit?: number
+        }
+        Returns: {
+          catalog_item_id: string
+          category: string
+          city_slug: string
+          community_rating: number
+          community_review_count: number
+          description: string | null
+          latitude: number
+          longitude: number
+          name: string
+          quality_tier: string
+          recommendation_score: number
+          source: string
+          subcategory: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

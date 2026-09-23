@@ -7,6 +7,19 @@ ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS marketing_consent_version text,
   ADD COLUMN IF NOT EXISTS signup_source text NOT NULL DEFAULT 'organic';
 
+-- A previous migration changed the default privacy value to `mixed` without
+-- extending the original check constraint. That made every new profile insert
+-- fail and caused Auth to report "Database error saving new user".
+ALTER TABLE public.profiles
+  DROP CONSTRAINT IF EXISTS profiles_privacy_check;
+
+ALTER TABLE public.profiles
+  ADD CONSTRAINT profiles_privacy_check
+  CHECK (privacy IN ('private', 'friends', 'public', 'mixed'));
+
+ALTER TABLE public.profiles
+  ALTER COLUMN privacy SET DEFAULT 'mixed';
+
 COMMENT ON COLUMN public.profiles.marketing_opt_in IS
   'True only when the user explicitly opts in to product outreach.';
 

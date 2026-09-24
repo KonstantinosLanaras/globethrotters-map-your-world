@@ -39,11 +39,15 @@ Run `lovable_recommendation_foundation.sql` once to connect saved catalogue
 places to verified community ratings. The app remains backward-compatible
 before this migration, but community scores appear only after it is applied.
 
+Run `lovable_catalog_pilot.sql` next to expand Paris and Lisbon to ten editorial
+places each. Both cities then have two places in every MVP category: food,
+culture, nature, hiking and nightlife. The script is safe to run more than once.
+
 Apply the new Supabase migration before enabling outbound click analytics. Provider secrets and Supabase service-role keys must only be configured in server-side function secrets, never in a `VITE_` variable.
 
 ## Catalogue population
 
-Apply migrations `20260921183000_catalog_foundation.sql` and `20260921183500_catalog_seed.sql` first. They create 50 editable European market records and seed the existing 18 editorial places with individual coordinates.
+Apply migrations `20260921183000_catalog_foundation.sql`, `20260921183500_catalog_seed.sql`, and `20260924120000_paris_lisbon_pilot.sql` first. They create 50 editable European market records, seed the initial editorial catalogue, and add the balanced Paris/Lisbon MVP pilot.
 
 For the linked Supabase project, configure the required values in your shell and run the guarded deployment helper:
 

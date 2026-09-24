@@ -22,7 +22,9 @@ export const useCatalogRecommendations = (
       p_categories: categories.length > 0 ? categories : null,
       p_limit: limit,
     });
-    if (error) throw error;
+    // The current catalogue remains usable before the optional recommendation
+    // migration is applied; community scores simply remain unavailable.
+    if (error) return [];
     return data ?? [];
   },
 });

@@ -4,6 +4,7 @@ import { useAuth } from "./useAuth";
 import { useProfile } from "./useProfile";
 import { useActivities, Activity } from "./useActivities";
 import { usePromotedPlaces, PromotedPlace } from "./usePromotedPlaces";
+import { useCatalogRecommendations } from "./useCatalogRecommendations";
 import { useMemo } from "react";
 
 const isDemoMode = import.meta.env.VITE_DEMO_MODE === "true";
@@ -160,6 +161,8 @@ const isPromotedQualified = (p: PromotedPlace): boolean => {
  */
 export const useUnifiedExperiences = (city: string | null, country: string | null) => {
   const { activities, loading: seededLoading } = useActivities(city, country);
+  const citySlug = activities[0]?.city_slug ?? null;
+  const { data: catalogRecommendations = [] } = useCatalogRecommendations(citySlug);
   const { data: community = [] } = useCommunityExperiences(city, country);
   const { data: promoted = [] } = usePromotedPlaces();
   const { data: profile } = useProfile();
@@ -168,6 +171,9 @@ export const useUnifiedExperiences = (city: string | null, country: string | nul
   const personality = profile?.personality || "";
 
   const unified = useMemo(() => {
+    const communityByCatalogId = new Map(
+      catalogRecommendations.map(item => [item.catalog_item_id, item]),
+    );
     // Personalization: boost categories matching user interests
     const boostCategory = (cat: string): number => {
       const all = [...interests, personality].map(s => s?.toLowerCase() || "");
@@ -181,6 +187,7 @@ export const useUnifiedExperiences = (city: string | null, country: string | nul
     // 1. Normalized catalogue records. Google rating/review data is used only
     // during screening and is not copied into the permanent catalogue.
     const seededItems: UnifiedExperience[] = activities.map(a => {
+      const communityScore = a.id ? communityByCatalogId.get(a.id) : undefined;
       const sourceLabels: Record<string, string> = {
         curated: "Globethrotters editorial",
         overture: "Overture Maps",
@@ -196,9 +203,9 @@ export const useUnifiedExperiences = (city: string | null, country: string | nul
         lat: a.lat,
         lng: a.lng,
         sourceLabel: sourceLabels[a.source || ""] || "Catalogue",
-        rating: 0,
-        reviewCount: 0,
-        engagement: a.popularity_score || 0,
+        rating: Number(communityScore?.community_rating) || 0,
+        reviewCount: Number(communityScore?.community_review_count) || 0,
+        engagement: Number(communityScore?.recommendation_score) || a.popularity_score || 0,
         label: a.quality_tier === "popular"
           ? "Popular" as const
           : a.quality_tier === "editorial"
@@ -265,7 +272,7 @@ export const useUnifiedExperiences = (city: string | null, country: string | nul
         .sort((a, b) => (b.engagement + boostCategory(b.category)) - (a.engagement + boostCategory(a.category))),
       allSeeded: remainingSeeded,
     };
-  }, [activities, community, promoted, interests, personality]);
+  }, [activities, catalogRecommendations, community, promoted, interests, personality]);
 
   return {
     ...unified,

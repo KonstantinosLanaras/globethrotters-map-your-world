@@ -13,6 +13,7 @@ import { useExperienceLocations, useDiscoverExperiences, DiscoverExperience } fr
 import ExperienceComposer from "@/components/ExperienceComposer";
 import { useFavoriteExperienceIds, useToggleFavoriteExperience } from "@/hooks/useFavorites";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const ACTIVITY_FILTERS = [
   { id: "food", label: "Food", icon: Utensils, emoji: "🍽️" },
@@ -498,22 +499,7 @@ const Experiences = () => {
             )}
 
             {/* ═══════ RESULTS ═══════ */}
-            {!hasAnyFilter ? (
-              <div className="text-center py-16">
-                <Globe className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-                <h3 className="font-display text-lg font-medium text-foreground mb-2">Start exploring</h3>
-                <p className="text-sm text-muted-foreground mb-4 max-w-xs mx-auto">
-                  Use the filters above to discover experiences by country, city, or activity type.
-                </p>
-                <button
-                  onClick={() => setShowFilterPanel(true)}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
-                  Open Filters
-                </button>
-              </div>
-            ) : discoverLoading ? (
+            {discoverLoading ? (
               <div className="text-center py-12">
                 <div className="w-8 h-8 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin mx-auto" />
               </div>
@@ -522,7 +508,7 @@ const Experiences = () => {
                 <Camera className="w-10 h-10 text-muted-foreground/30 mx-auto mb-4" />
                 <h3 className="font-display text-lg font-medium text-foreground mb-2">No experiences found</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Try adjusting your filters or be the first to share
+                  {hasAnyFilter ? "Try adjusting your filters" : "Connect with travelers or be the first to share"}
                 </p>
                 <button
                   onClick={() => setShowComposer(true)}
@@ -582,6 +568,7 @@ const Experiences = () => {
 /* ── Discover Experience Card ── */
 const DiscoverCard = ({ exp, onShare, isFav, onToggleFav }: { exp: DiscoverExperience; onShare: (item: ShareableItem) => void; isFav: boolean; onToggleFav: { mutate: (v: { experienceId: string; isFavorite: boolean }) => void } }) => {
   const [showGallery, setShowGallery] = useState(false);
+  const navigate = useNavigate();
 
   const handleShare = () => {
     if (exp.visibility !== "public") return;
@@ -632,9 +619,13 @@ const DiscoverCard = ({ exp, onShare, isFav, onToggleFav }: { exp: DiscoverExper
         <div className="flex items-start justify-between mb-1">
           <div className="flex-1 min-w-0">
             <h3 className="font-display text-sm font-semibold text-foreground">{exp.title}</h3>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
+            <button
+              type="button"
+              onClick={() => navigate(`/user/${exp.user_id}`)}
+              className="text-[10px] text-muted-foreground mt-0.5 hover:text-primary transition-colors text-left"
+            >
               by {exp.author_name} · {exp.city}{exp.country ? `, ${exp.country}` : ""}
-            </p>
+            </button>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             {exp.rating > 0 && (

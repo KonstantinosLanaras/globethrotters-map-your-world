@@ -43,6 +43,11 @@ Run `lovable_catalog_pilot.sql` next to expand Paris and Lisbon to ten editorial
 places each. Both cities then have two places in every MVP category: food,
 culture, nature, hiking and nightlife. The script is safe to run more than once.
 
+Run `lovable_social_feed_setup.sql` to enable the social feed audiences selected
+by users. It lets accepted connections read follower-only posts and their photos,
+allows request recipients to accept connections, and keeps close-friends posts
+restricted to people explicitly marked as close friends.
+
 Apply the new Supabase migration before enabling outbound click analytics. Provider secrets and Supabase service-role keys must only be configured in server-side function secrets, never in a `VITE_` variable.
 
 ## Catalogue population

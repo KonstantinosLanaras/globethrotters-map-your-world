@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import Connections from "./pages/Connections";
 import Messages from "./pages/Messages";
 import Favorites from "./pages/Favorites";
+import Experiences from "./pages/Experiences";
 
 const queryClient = new QueryClient();
 const isDemoMode = import.meta.env.VITE_DEMO_MODE === "true";
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/visited" element={<ProtectedRoute><Visited /></ProtectedRoute>} />
             <Route path="/places" element={<Navigate to="/visited" replace />} />
             <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+            <Route path="/experiences" element={<ProtectedRoute><Experiences /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
             <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />
@@ -62,7 +64,6 @@ const App = () => (
             <Route path="/messages/:conversationId" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
             {/* Legacy redirects */}
-            <Route path="/experiences" element={<Navigate to="/visited" replace />} />
             <Route path="/journeys" element={<Navigate to="/visited" replace />} />
             <Route path="/lists" element={<Navigate to="/wishlist" replace />} />
             <Route path="/discover" element={<Navigate to="/" replace />} />

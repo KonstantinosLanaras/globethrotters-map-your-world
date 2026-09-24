@@ -20,6 +20,7 @@ export interface Activity {
   quality_tier?: CatalogQualityTier;
   subcategory?: string;
   tags?: string[];
+  city_slug?: string;
 }
 
 interface UseActivitiesResult {
@@ -46,6 +47,7 @@ export const useActivities = (placeName: string | null, country: string | null):
     quality_tier: item.qualityTier,
     subcategory: item.subcategory,
     tags: item.tags,
+    city_slug: item.citySlug,
   })), [query.data]);
 
   return {

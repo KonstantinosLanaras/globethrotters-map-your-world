@@ -35,6 +35,10 @@ Authentication emails remain in the protected auth user store. `npm run demo`
 uses a placeholder backend for visual review only; test real signups in Lovable
 Preview or run `npm run dev` with the project's public cloud environment values.
 
+Run `lovable_recommendation_foundation.sql` once to connect saved catalogue
+places to verified community ratings. The app remains backward-compatible
+before this migration, but community scores appear only after it is applied.
+
 Apply the new Supabase migration before enabling outbound click analytics. Provider secrets and Supabase service-role keys must only be configured in server-side function secrets, never in a `VITE_` variable.
 
 ## Catalogue population

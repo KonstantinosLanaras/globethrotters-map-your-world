@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Map, MapPin, Heart, User, Menu, X, LogOut, Users, MessageSquare, Star, LogIn } from "lucide-react";
+import { Map, MapPin, Heart, User, Menu, X, LogOut, Users, MessageSquare, Star, LogIn, Camera } from "lucide-react";
 import GlobetrottersLogo from "@/components/GlobetrottersLogo";
 import PeopleSearch from "@/components/PeopleSearch";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -90,6 +90,20 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
           <Map className="w-4 h-4" />
           Explore
         </button>
+
+        {user && (
+          <button
+            onClick={() => navigate("/experiences")}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+              location.pathname === "/experiences"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            }`}
+          >
+            <Camera className="w-4 h-4" />
+            Feed
+          </button>
+        )}
 
         {/* Visited */}
         <button
@@ -244,6 +258,7 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
 
           {[
             { icon: <Map className="w-4 h-4" />, label: "Explore", action: handleExploreClick },
+            ...(user ? [{ icon: <Camera className="w-4 h-4" />, label: "Feed", action: () => navigate("/experiences") }] : []),
             { icon: <MapPin className="w-4 h-4" />, label: "Visited", action: () => navigate("/visited") },
             { icon: <Heart className="w-4 h-4" />, label: "Wishlist", action: () => navigate("/wishlist") },
             ...(user ? [

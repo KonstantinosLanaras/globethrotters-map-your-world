@@ -131,6 +131,8 @@ export const useAddExperience = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["experiences"] });
       qc.invalidateQueries({ queryKey: ["experiences-with-photos"] });
+      qc.invalidateQueries({ queryKey: ["discover-experiences"] });
+      qc.invalidateQueries({ queryKey: ["experience-locations"] });
     },
   });
 };
@@ -146,6 +148,8 @@ export const useDeleteExperience = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["experiences"] });
       qc.invalidateQueries({ queryKey: ["experiences-with-photos"] });
+      qc.invalidateQueries({ queryKey: ["discover-experiences"] });
+      qc.invalidateQueries({ queryKey: ["experience-locations"] });
     },
   });
 };
@@ -166,6 +170,7 @@ export const useAddAttachment = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["experiences"] });
       qc.invalidateQueries({ queryKey: ["experiences-with-photos"] });
+      qc.invalidateQueries({ queryKey: ["discover-experiences"] });
     },
   });
 };

@@ -31,7 +31,7 @@ export const useExperienceLocations = () => {
       const { data, error } = await supabase
         .from("experiences")
         .select("country, city")
-        .eq("visibility", "public")
+        .neq("visibility", "private")
         .not("country", "is", null)
         .not("city", "is", null);
       if (error) throw error;
@@ -73,12 +73,11 @@ export const useDiscoverExperiences = (filters: DiscoverFilters) => {
 
   return useQuery({
     queryKey: ["discover-experiences", filters],
-    enabled: !!(filters.country || filters.city || filters.searchQuery),
     queryFn: async () => {
       let query = supabase
         .from("experiences")
         .select("*")
-        .eq("visibility", "public");
+        .neq("visibility", "private");
 
       if (filters.country) {
         query = query.ilike("country", filters.country);

@@ -26,4 +26,18 @@ describe("catalogue seed", () => {
       expect(item.popularity_score).toBeGreaterThan(0);
     }
   });
+
+  it.each([
+    ["Paris", "France"],
+    ["Lisbon", "Portugal"],
+  ])("has a balanced ten-place pilot for %s", (city, country) => {
+    const pilot = curatedExperiences.filter(
+      (item) => item.city === city && item.country === country,
+    );
+
+    expect(pilot).toHaveLength(10);
+    for (const category of categories) {
+      expect(pilot.filter((item) => item.category === category)).toHaveLength(2);
+    }
+  });
 });

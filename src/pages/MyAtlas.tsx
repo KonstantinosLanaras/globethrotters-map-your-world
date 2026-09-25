@@ -99,7 +99,11 @@ const MyAtlas = () => {
   }, [experiences, q, category, ratedFilter, sortBy]);
 
   const showPlaces = content !== "experiences";
-  const showExperiences = content !== "places" && status === "all";
+  const isGeo = (p: Place) => !p.catalog_item_id && !(p.tags?.length);
+  const geoPlaces = filteredPlaces.filter(isGeo);
+  const expPlaces = filteredPlaces.filter((p) => !isGeo(p));
+  const visibleSavedExp = status === "all" ? filteredExp : [];
+  const showExperiences = content !== "places";
 
   const changeStatus = async (place: Place, type: Place["type"]) => {
     setOpenStatusId(null);
@@ -153,6 +157,49 @@ const MyAtlas = () => {
 
   const placeEmpty = status === "visited" ? "Places you mark as visited will appear here."
     : status === "wishlist" ? "Save places from Explore to plan where to go next." : "Save places from Explore to plan where to go next.";
+
+  const renderPlace = (place: Place, i: number) => {
+                    const myRating = rated[place.id];
+                    const isVisited = place.type === "visited";
+                    return (
+                      <motion.article key={place.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.025, 0.2) }} className="p-4 rounded-2xl bg-card border border-border">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-semibold text-foreground truncate">{place.name}</h3>
+                            <p className="text-xs text-muted-foreground truncate">{[place.city && place.city !== place.name ? place.city : null, place.country].filter(Boolean).join(", ")}</p>
+                            <div className="flex flex-wrap items-center gap-1 mt-2">
+                              {place.tags?.slice(0, 3).map((t) => <span key={t} className="px-2 py-0.5 rounded-full bg-muted text-[10px] text-muted-foreground">{t}</span>)}
+                              {myRating != null && <span className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground ml-1"><Star className="w-3 h-3 fill-current" />{myRating}</span>}
+                            </div>
+                          </div>
+                          <div className="relative flex-shrink-0">
+                            <button onClick={() => setOpenStatusId(openStatusId === place.id ? null : place.id)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${isVisited ? "bg-accent/15 text-accent-foreground" : "bg-primary/10 text-primary"}`} aria-label={`Change status for ${place.name}`}>
+                              {isVisited ? <Check className="w-3 h-3" /> : <Heart className="w-3 h-3" />}{isVisited ? "Visited" : "Wishlist"}<ChevronDown className="w-3 h-3" />
+                            </button>
+                            {openStatusId === place.id && (
+                              <div className="absolute right-0 top-full mt-1 z-20 w-36 p-1 rounded-xl border border-border bg-card shadow-lg">
+                                <button onClick={() => changeStatus(place, "visited")} className="w-full px-3 py-2 rounded-lg text-xs text-left hover:bg-muted">Visited</button>
+                                <button onClick={() => changeStatus(place, "wishlist")} className="w-full px-3 py-2 rounded-lg text-xs text-left hover:bg-muted">Wishlist</button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/60">
+                          {isVisited ? (
+                            <button onClick={() => setReviewPlace(place)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-primary text-primary-foreground hover:opacity-90">
+                              <PenLine className="w-3.5 h-3.5" /> {myRating != null ? "Edit review" : "Review"}
+                            </button>
+                          ) : (
+                            <span title="Mark this place as visited to review it" className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs text-muted-foreground/50 cursor-not-allowed">
+                              <PenLine className="w-3.5 h-3.5" /> Review after visiting
+                            </span>
+                          )}
+                          <ShareMenu id={place.id} item={placeShareItem(place)} title={place.name} catalogItemId={place.catalog_item_id} />
+                          <button onClick={() => setTripTarget({ title: place.name, catalogItemId: place.catalog_item_id })} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs text-muted-foreground hover:text-foreground hover:bg-muted"><Plane className="w-3.5 h-3.5" /> Add to trip</button>
+                          <button onClick={() => removePlace(place)} className="ml-auto w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10" aria-label={`Remove ${place.name}`}><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                      </motion.article>
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -224,52 +271,10 @@ const MyAtlas = () => {
           <section className="mb-8">
             {content === "all" && <h2 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Places</h2>}
             {loadingPlaces ? <p className="py-10 text-center text-sm text-muted-foreground">Loading places…</p>
-              : filteredPlaces.length === 0 ? <Empty text={placeEmpty} />
+              : geoPlaces.length === 0 ? <Empty text={placeEmpty} />
               : (
                 <div className="space-y-2">
-                  {filteredPlaces.map((place, i) => {
-                    const myRating = rated[place.id];
-                    const isVisited = place.type === "visited";
-                    return (
-                      <motion.article key={place.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.025, 0.2) }} className="p-4 rounded-2xl bg-card border border-border">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-semibold text-foreground truncate">{place.name}</h3>
-                            <p className="text-xs text-muted-foreground truncate">{[place.city && place.city !== place.name ? place.city : null, place.country].filter(Boolean).join(", ")}</p>
-                            <div className="flex flex-wrap items-center gap-1 mt-2">
-                              {place.tags?.slice(0, 3).map((t) => <span key={t} className="px-2 py-0.5 rounded-full bg-muted text-[10px] text-muted-foreground">{t}</span>)}
-                              {myRating != null && <span className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground ml-1"><Star className="w-3 h-3 fill-current" />{myRating}</span>}
-                            </div>
-                          </div>
-                          <div className="relative flex-shrink-0">
-                            <button onClick={() => setOpenStatusId(openStatusId === place.id ? null : place.id)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${isVisited ? "bg-accent/15 text-accent-foreground" : "bg-primary/10 text-primary"}`} aria-label={`Change status for ${place.name}`}>
-                              {isVisited ? <Check className="w-3 h-3" /> : <Heart className="w-3 h-3" />}{isVisited ? "Visited" : "Wishlist"}<ChevronDown className="w-3 h-3" />
-                            </button>
-                            {openStatusId === place.id && (
-                              <div className="absolute right-0 top-full mt-1 z-20 w-36 p-1 rounded-xl border border-border bg-card shadow-lg">
-                                <button onClick={() => changeStatus(place, "visited")} className="w-full px-3 py-2 rounded-lg text-xs text-left hover:bg-muted">Visited</button>
-                                <button onClick={() => changeStatus(place, "wishlist")} className="w-full px-3 py-2 rounded-lg text-xs text-left hover:bg-muted">Wishlist</button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/60">
-                          {isVisited ? (
-                            <button onClick={() => setReviewPlace(place)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-primary text-primary-foreground hover:opacity-90">
-                              <PenLine className="w-3.5 h-3.5" /> {myRating != null ? "Edit review" : "Review"}
-                            </button>
-                          ) : (
-                            <span title="Mark this place as visited to review it" className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs text-muted-foreground/50 cursor-not-allowed">
-                              <PenLine className="w-3.5 h-3.5" /> Review after visiting
-                            </span>
-                          )}
-                          <ShareMenu id={place.id} item={placeShareItem(place)} title={place.name} catalogItemId={place.catalog_item_id} />
-                          <button onClick={() => setTripTarget({ title: place.name, catalogItemId: place.catalog_item_id })} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs text-muted-foreground hover:text-foreground hover:bg-muted"><Plane className="w-3.5 h-3.5" /> Add to trip</button>
-                          <button onClick={() => removePlace(place)} className="ml-auto w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10" aria-label={`Remove ${place.name}`}><Trash2 className="w-3.5 h-3.5" /></button>
-                        </div>
-                      </motion.article>
-                    );
-                  })}
+                  {geoPlaces.map(renderPlace)}
                 </div>
               )}
           </section>
@@ -279,10 +284,12 @@ const MyAtlas = () => {
           <section>
             {content === "all" && <h2 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Saved experiences</h2>}
             {loadingExp ? <p className="py-10 text-center text-sm text-muted-foreground">Loading experiences…</p>
-              : filteredExp.length === 0 ? <Empty text="Save community experiences from Explore to find them here." />
+              : expPlaces.length + visibleSavedExp.length === 0 ? <Empty text="Save community experiences from Explore to find them here." />
               : (
+                <>
+                {expPlaces.length > 0 && <div className="space-y-2 mb-3">{expPlaces.map(renderPlace)}</div>}
                 <div className="grid sm:grid-cols-2 gap-3">
-                  {filteredExp.map((exp) => (
+                  {visibleSavedExp.map((exp) => (
                     <article key={exp.id} className="rounded-2xl bg-card border border-border overflow-hidden flex flex-col">
                       {exp.photos?.[0] && <img src={exp.photos[0]} alt={exp.title} className="w-full h-36 object-cover" loading="lazy" />}
                       <div className="p-4 flex-1 flex flex-col">

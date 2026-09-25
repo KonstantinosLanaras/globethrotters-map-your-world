@@ -27,6 +27,7 @@ export interface DiscoverJourney extends Journey {
   owner_name: string | null;
   owner_avatar_url: string | null;
   join_request_status: string | null;
+  open_to_join?: boolean;
 }
 
 export const useJourneys = () => {
@@ -93,7 +94,7 @@ export const useDiscoverJourneys = (searchQuery = "") => {
             ...journey,
             owner_name: owner?.display_name ?? null,
             owner_avatar_url: owner?.avatar_url ?? null,
-            join_request_status: request?.status ?? null,
+            join_request_status: (request as any)?.status ?? null,
           } as DiscoverJourney;
         });
     },

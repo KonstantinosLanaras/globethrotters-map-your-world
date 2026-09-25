@@ -13,8 +13,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Connections from "./pages/Connections";
 import Messages from "./pages/Messages";
-import Favorites from "./pages/Favorites";
-import Experiences from "./pages/Experiences";
+import MyAtlas from "./pages/MyAtlas";
 import Journeys from "./pages/Journeys";
 
 const queryClient = new QueryClient();
@@ -52,19 +51,20 @@ const App = () => (
             <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
             {/* Discovery is public; personal and social areas require an account. */}
             <Route path="/" element={<Index />} />
-            <Route path="/places" element={<ProtectedRoute><Experiences /></ProtectedRoute>} />
-            <Route path="/visited" element={<Navigate to="/places" replace />} />
-            <Route path="/wishlist" element={<Navigate to="/places" replace />} />
-            <Route path="/experiences" element={<Navigate to="/places" replace />} />
+            <Route path="/atlas" element={<ProtectedRoute><MyAtlas /></ProtectedRoute>} />
+            <Route path="/places" element={<Navigate to="/atlas" replace />} />
+            <Route path="/visited" element={<Navigate to="/atlas" replace />} />
+            <Route path="/wishlist" element={<Navigate to="/atlas" replace />} />
+            <Route path="/experiences" element={<Navigate to="/atlas" replace />} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
             <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/messages/:conversationId" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-            <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+            <Route path="/favorites" element={<Navigate to="/atlas" replace />} />
             <Route path="/journeys" element={<ProtectedRoute><Journeys /></ProtectedRoute>} />
             {/* Legacy redirects */}
-            <Route path="/lists" element={<Navigate to="/places" replace />} />
+            <Route path="/lists" element={<Navigate to="/atlas" replace />} />
             <Route path="/discover" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

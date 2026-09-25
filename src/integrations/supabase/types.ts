@@ -24,10 +24,10 @@ export type Database = {
           is_launch_city: boolean
           latitude: number
           longitude: number
-          name: string
-          slug: string
           market_rank: number | null
+          name: string
           search_radius_km: number
+          slug: string
           updated_at: string
         }
         Insert: {
@@ -39,10 +39,10 @@ export type Database = {
           is_launch_city?: boolean
           latitude: number
           longitude: number
-          name: string
-          slug: string
           market_rank?: number | null
+          name: string
           search_radius_km?: number
+          slug: string
           updated_at?: string
         }
         Update: {
@@ -54,11 +54,47 @@ export type Database = {
           is_launch_city?: boolean
           latitude?: number
           longitude?: number
-          name?: string
-          slug?: string
           market_rank?: number | null
+          name?: string
           search_radius_km?: number
+          slug?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      catalog_import_runs: {
+        Row: {
+          candidate_count: number
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          provider: string
+          request_count: number
+          selected_count: number
+          started_at: string
+          status: string
+        }
+        Insert: {
+          candidate_count?: number
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          provider: string
+          request_count?: number
+          selected_count?: number
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          candidate_count?: number
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          provider?: string
+          request_count?: number
+          selected_count?: number
+          started_at?: string
+          status?: string
         }
         Relationships: []
       }
@@ -135,6 +171,44 @@ export type Database = {
             columns: ["city_id"]
             isOneToOne: false
             referencedRelation: "catalog_cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalog_source_refs: {
+        Row: {
+          catalog_item_id: string
+          external_id: string
+          id: string
+          last_checked_at: string | null
+          matched_at: string
+          provider: string
+          selection_rank: number | null
+        }
+        Insert: {
+          catalog_item_id: string
+          external_id: string
+          id?: string
+          last_checked_at?: string | null
+          matched_at?: string
+          provider: string
+          selection_rank?: number | null
+        }
+        Update: {
+          catalog_item_id?: string
+          external_id?: string
+          id?: string
+          last_checked_at?: string | null
+          matched_at?: string
+          provider?: string
+          selection_rank?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_source_refs_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_items"
             referencedColumns: ["id"]
           },
         ]
@@ -538,6 +612,51 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      google_place_candidate_ids: {
+        Row: {
+          city_id: string
+          fetched_at: string
+          google_place_id: string
+          id: string
+          import_run_id: string
+          search_category: string
+          selection_rank: number
+        }
+        Insert: {
+          city_id: string
+          fetched_at?: string
+          google_place_id: string
+          id?: string
+          import_run_id: string
+          search_category: string
+          selection_rank: number
+        }
+        Update: {
+          city_id?: string
+          fetched_at?: string
+          google_place_id?: string
+          id?: string
+          import_run_id?: string
+          search_category?: string
+          selection_rank?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_place_candidate_ids_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_place_candidate_ids_import_run_id_fkey"
+            columns: ["import_run_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_import_runs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       helpful_marks: {
         Row: {
@@ -992,44 +1111,6 @@ export type Database = {
           },
         ]
       }
-      recommendation_intents: {
-        Row: {
-          created_at: string
-          id: string
-          raw_query: string
-          requested_categories: string[]
-          resolved_city_id: string | null
-          status: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          raw_query: string
-          requested_categories?: string[]
-          resolved_city_id?: string | null
-          status?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          raw_query?: string
-          requested_categories?: string[]
-          resolved_city_id?: string | null
-          status?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "recommendation_intents_resolved_city_id_fkey"
-            columns: ["resolved_city_id"]
-            isOneToOne: false
-            referencedRelation: "catalog_cities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       places: {
         Row: {
           catalog_item_id: string | null
@@ -1228,6 +1309,71 @@ export type Database = {
             columns: ["place_id"]
             isOneToOne: false
             referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_type_mappings: {
+        Row: {
+          canonical_category: string
+          external_type: string
+          is_active: boolean
+          priority: number
+          provider: string
+          subcategory: string
+        }
+        Insert: {
+          canonical_category: string
+          external_type: string
+          is_active?: boolean
+          priority?: number
+          provider: string
+          subcategory: string
+        }
+        Update: {
+          canonical_category?: string
+          external_type?: string
+          is_active?: boolean
+          priority?: number
+          provider?: string
+          subcategory?: string
+        }
+        Relationships: []
+      }
+      recommendation_intents: {
+        Row: {
+          created_at: string
+          id: string
+          raw_query: string
+          requested_categories: string[]
+          resolved_city_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          raw_query: string
+          requested_categories?: string[]
+          resolved_city_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          raw_query?: string
+          requested_categories?: string[]
+          resolved_city_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_intents_resolved_city_id_fkey"
+            columns: ["resolved_city_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_cities"
             referencedColumns: ["id"]
           },
         ]
@@ -1454,18 +1600,14 @@ export type Database = {
     }
     Functions: {
       get_catalog_recommendations: {
-        Args: {
-          p_categories?: string[] | null
-          p_city_slug: string
-          p_limit?: number
-        }
+        Args: { p_categories?: string[]; p_city_slug: string; p_limit?: number }
         Returns: {
           catalog_item_id: string
           category: string
           city_slug: string
           community_rating: number
           community_review_count: number
-          description: string | null
+          description: string
           latitude: number
           longitude: number
           name: string

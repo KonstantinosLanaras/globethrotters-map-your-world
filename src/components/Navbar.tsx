@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Map, Star, User, Menu, X, LogOut, Users, MessageSquare, LogIn, Plane } from "lucide-react";
+import { Map, BookMarked, User, Menu, X, LogOut, Users, MessageSquare, LogIn, Plane } from "lucide-react";
 import GlobetrottersLogo from "@/components/GlobetrottersLogo";
 import PeopleSearch from "@/components/PeopleSearch";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -88,15 +88,15 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
         {user && (
           <>
             <button
-              onClick={() => navigate("/favorites")}
+              onClick={() => navigate("/atlas")}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
-                location.pathname === "/favorites"
+                location.pathname === "/atlas"
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
             >
-              <Star className="w-4 h-4" />
-              Favorites
+              <BookMarked className="w-4 h-4" />
+              My Atlas
             </button>
             <button
               onClick={() => navigate("/journeys")}
@@ -227,7 +227,7 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
           {[
             { icon: <Map className="w-4 h-4" />, label: "Explore", action: handleExploreClick },
             ...(user ? [
-              { icon: <Star className="w-4 h-4" />, label: "Favorites", action: () => navigate("/favorites") },
+              { icon: <BookMarked className="w-4 h-4" />, label: "My Atlas", action: () => navigate("/atlas") },
               { icon: <Plane className="w-4 h-4" />, label: "Trips", action: () => navigate("/journeys") },
             ] : []),
             ...(user ? [

@@ -21,6 +21,15 @@ import ShareModal, { ShareableItem } from "@/components/ShareModal";
 
 type TripTab = "plan" | "people" | "chat" | "moments" | "share";
 
+const databaseErrorMessage = (error: unknown) => {
+  if (error && typeof error === "object" && "message" in error) {
+    const message = String(error.message);
+    const details = "details" in error && error.details ? String(error.details) : "";
+    return details && details !== message ? `${message} — ${details}` : message;
+  }
+  return error instanceof Error ? error.message : "Database rejected the trip";
+};
+
 const Journeys = () => {
   const { data: journeys = [], isLoading } = useJourneys();
   const { data: experiences = [] } = useExperiencesWithPhotos();
@@ -61,7 +70,7 @@ const Journeys = () => {
       setNewEndDate("");
     } catch (error) {
       console.error("Create trip failed", error);
-      const message = error instanceof Error ? error.message : "Database rejected the trip";
+      const message = databaseErrorMessage(error);
       toast.error(`Failed to create trip: ${message}`);
     }
   };
@@ -226,7 +235,7 @@ const Journeys = () => {
               onSuccess: () => toast.success("Request sent to the trip organizer"),
               onError: (error) => {
                 console.error("Request to join trip failed", error);
-                toast.error(error instanceof Error ? error.message : "Could not request to join");
+                toast.error(databaseErrorMessage(error));
               },
             })}
           />

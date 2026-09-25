@@ -16,6 +16,13 @@ interface AddToTripDialogProps {
   experienceTitle: string;
 }
 
+const databaseErrorMessage = (error: unknown) => {
+  if (error && typeof error === "object" && "message" in error) {
+    return String(error.message);
+  }
+  return error instanceof Error ? error.message : "Database rejected the place";
+};
+
 const AddToTripDialog = ({ open, onOpenChange, experienceId, catalogItemId, experienceTitle }: AddToTripDialogProps) => {
   const { data: journeys = [] } = useJourneys();
   const [adding, setAdding] = useState<string | null>(null);
@@ -50,7 +57,7 @@ const AddToTripDialog = ({ open, onOpenChange, experienceId, catalogItemId, expe
       }
     } catch (error) {
       console.error("Add place to trip failed", error);
-      const message = error instanceof Error ? error.message : "Database rejected the place";
+      const message = databaseErrorMessage(error);
       toast.error(`Could not add to trip: ${message}`);
     } finally {
       setAdding(null);

@@ -206,19 +206,39 @@ export const useAddJourney = () => {
   return useMutation({
     mutationFn: async (journey: { title: string; description?: string; emoji?: string; start_date?: string; end_date?: string; destinations?: string[]; cover_image_url?: string; privacy?: string }) => {
       if (!user) throw new Error("Not authenticated");
-      const { data, error } = await supabase
+      const coreJourney = {
+        title: journey.title,
+        description: journey.description,
+        emoji: journey.emoji,
+        start_date: journey.start_date,
+        end_date: journey.end_date,
+        user_id: user.id,
+      };
+      let result = await supabase
         .from("journeys")
         .insert({
-          ...journey,
-          user_id: user.id,
+          ...coreJourney,
           destinations: journey.destinations ?? [],
           privacy: journey.privacy ?? "private",
           status: "draft",
         })
         .select()
         .single();
-      if (error) throw error;
-      return data as unknown as Journey;
+
+      // Some Lovable projects can briefly retain an older PostgREST schema
+      // after a migration. Core journey creation should still work while the
+      // optional columns finish refreshing.
+      const schemaMessage = result.error?.message?.toLowerCase() ?? "";
+      if (result.error && (result.error.code === "PGRST204" || schemaMessage.includes("schema cache"))) {
+        result = await supabase
+          .from("journeys")
+          .insert(coreJourney)
+          .select()
+          .single();
+      }
+
+      if (result.error) throw result.error;
+      return result.data as unknown as Journey;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["journeys"] }),
   });

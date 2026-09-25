@@ -199,6 +199,7 @@ const MyAtlas = () => {
                           <button onClick={() => removePlace(place)} className="ml-auto w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10" aria-label={`Remove ${place.name}`}><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                       </motion.article>
+                    );
   };
 
   return (

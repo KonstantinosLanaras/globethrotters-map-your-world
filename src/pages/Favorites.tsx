@@ -182,10 +182,10 @@ const Favorites = () => {
       <div className="pt-[80px] px-4 pb-12 max-w-2xl mx-auto">
         <div className="flex gap-0.5 mb-4 bg-muted/50 p-1 rounded-xl">
           <button
-            onClick={() => navigate("/experiences")}
+            onClick={() => navigate("/places")}
             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground"
           >
-            Experiences
+            Places
           </button>
           <button className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium bg-card text-foreground shadow-sm">
             <Star className="w-3.5 h-3.5" /> Favorites

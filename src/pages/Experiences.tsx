@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 import {
   MapPin, Globe, Search, Star, Image, Camera, Plus, X,
   Heart, Award, TrendingUp, Users, SlidersHorizontal,
-  Trash2, Check, Share2,
+  Trash2, Check, Share2, ChevronDown,
   Utensils, Landmark, TreePine, Mountain, Moon, Compass, Building2, Gem, Home
 } from "lucide-react";
 import ShareModal, { ShareableItem } from "@/components/ShareModal";
@@ -12,6 +12,7 @@ import { useExperiencesWithPhotos, useDeleteExperience, ExperienceWithPhotos } f
 import { useExperienceLocations, useDiscoverExperiences, DiscoverExperience } from "@/hooks/useDiscoverExperiences";
 import ExperienceComposer from "@/components/ExperienceComposer";
 import { useFavoriteExperienceIds, useToggleFavoriteExperience } from "@/hooks/useFavorites";
+import { useDeletePlace, usePlaces, useUpdatePlace, type Place } from "@/hooks/usePlaces";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -43,6 +44,9 @@ const Experiences = () => {
   const [shareItem, setShareItem] = useState<ShareableItem | null>(null);
   const { data: favIds = new Set<string>() } = useFavoriteExperienceIds();
   const toggleFav = useToggleFavoriteExperience();
+  const { data: savedPlaces = [], isLoading: savedPlacesLoading } = usePlaces();
+  const updatePlace = useUpdatePlace();
+  const deletePlace = useDeletePlace();
 
   const [viewMode, setViewMode] = useState<"mine" | "discover">("discover");
 
@@ -54,6 +58,7 @@ const Experiences = () => {
   const [minRating, setMinRating] = useState(0);
   const [withPhotos, setWithPhotos] = useState(false);
   const [connectionsOnly, setConnectionsOnly] = useState(false);
+  const [savedStatus, setSavedStatus] = useState<"visited" | "wishlist" | null>(null);
   const [sortBy, setSortBy] = useState<"recent" | "rating" | "helpful" | "engagement">("recent");
 
   // UI state
@@ -63,7 +68,16 @@ const Experiences = () => {
 
   const hasPlaceSelected = !!(selectedCountry || selectedCity);
   const hasAnyFilter = hasPlaceSelected || selectedActivities.length > 0 || searchQuery.length > 0;
-  const activeFilterCount = (selectedCountry ? 1 : 0) + (selectedCity ? 1 : 0) + selectedActivities.length + (minRating > 0 ? 1 : 0) + (withPhotos ? 1 : 0) + (connectionsOnly ? 1 : 0);
+  const activeFilterCount = (selectedCountry ? 1 : 0) + (selectedCity ? 1 : 0) + selectedActivities.length + (minRating > 0 ? 1 : 0) + (withPhotos ? 1 : 0) + (connectionsOnly ? 1 : 0) + (savedStatus ? 1 : 0);
+
+  const filteredSavedPlaces = useMemo(() => {
+    if (!savedStatus) return [];
+    const q = searchQuery.trim().toLowerCase();
+    return savedPlaces.filter((place) =>
+      place.type === savedStatus &&
+      (!q || [place.name, place.city, place.country].filter(Boolean).some((value) => value!.toLowerCase().includes(q)))
+    );
+  }, [savedPlaces, savedStatus, searchQuery]);
 
   const { data: discoveredExperiences = [], isLoading: discoverLoading } = useDiscoverExperiences({
     country: selectedCountry,
@@ -129,6 +143,7 @@ const Experiences = () => {
     setMinRating(0);
     setWithPhotos(false);
     setConnectionsOnly(false);
+    setSavedStatus(null);
     setShowPlacePicker(true);
     setPlaceSearch("");
   };
@@ -140,6 +155,31 @@ const Experiences = () => {
     });
   };
 
+  const changeSavedStatus = async (place: Place, type: Place["type"]) => {
+    if (place.type === type) return;
+    try {
+      await updatePlace.mutateAsync({
+        id: place.id,
+        type,
+        date_visited: type === "visited" ? new Date().toISOString().split("T")[0] : null,
+      });
+      toast.success(type === "visited" ? `${place.name} marked as visited` : `${place.name} moved to your wishlist`);
+    } catch (error) {
+      console.error("Update saved place status failed", error);
+      toast.error("Could not update this place");
+    }
+  };
+
+  const removeSavedPlace = async (place: Place) => {
+    try {
+      await deletePlace.mutateAsync(place.id);
+      toast.success(`${place.name} removed`);
+    } catch (error) {
+      console.error("Remove saved place failed", error);
+      toast.error("Could not remove this place");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -147,8 +187,8 @@ const Experiences = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="font-display text-2xl font-semibold text-foreground">Experiences</h1>
-            <p className="text-sm text-muted-foreground">Discover what travelers have done</p>
+            <h1 className="font-display text-2xl font-semibold text-foreground">Places</h1>
+            <p className="text-sm text-muted-foreground">Discover, save and share places</p>
           </div>
           <button
             onClick={() => setShowComposer(true)}
@@ -197,7 +237,7 @@ const Experiences = () => {
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search experiences..."
+                placeholder="Search places and experiences..."
                   className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/40"
                 />
                 {searchQuery && (
@@ -264,6 +304,12 @@ const Experiences = () => {
                   <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                     <Users className="w-3 h-3" /> Connections
                     <button onClick={() => setConnectionsOnly(false)}><X className="w-3 h-3" /></button>
+                  </span>
+                )}
+                {savedStatus && (
+                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium capitalize">
+                    <Heart className="w-3 h-3" /> {savedStatus}
+                    <button onClick={() => setSavedStatus(null)}><X className="w-3 h-3" /></button>
                   </span>
                 )}
                 <button onClick={clearAllFilters} className="text-xs text-muted-foreground hover:text-foreground underline">
@@ -406,6 +452,32 @@ const Experiences = () => {
 
                       <div className="h-px bg-border" />
 
+                      {/* Saved-place status */}
+                      <div>
+                        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                          <Heart className="w-3.5 h-3.5" /> Saved status
+                        </h4>
+                        <div className="flex gap-2">
+                          {(["visited", "wishlist"] as const).map((status) => (
+                            <button
+                              key={status}
+                              onClick={() => setSavedStatus(savedStatus === status ? null : status)}
+                              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border capitalize transition-all ${
+                                savedStatus === status
+                                  ? "border-primary/30 bg-primary/10 text-primary"
+                                  : "border-border text-muted-foreground hover:text-foreground"
+                              }`}
+                            >
+                              {status === "visited" ? <Check className="w-3.5 h-3.5" /> : <Heart className="w-3.5 h-3.5" />}
+                              {status}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-2">Choose one to view your saved places with their status shown on each row.</p>
+                      </div>
+
+                      <div className="h-px bg-border" />
+
                       {/* Section 3: Additional Filters */}
                       <div>
                         <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
@@ -507,7 +579,24 @@ const Experiences = () => {
             )}
 
             {/* ═══════ RESULTS ═══════ */}
-            {discoverLoading ? (
+            {savedStatus ? (
+              savedPlacesLoading ? (
+                <div className="text-center py-12">
+                  <div className="w-8 h-8 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin mx-auto" />
+                </div>
+              ) : filteredSavedPlaces.length === 0 ? (
+                <div className="text-center py-16">
+                  <Heart className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">No {savedStatus} places found.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredSavedPlaces.map((place) => (
+                    <SavedPlaceRow key={place.id} place={place} onChangeStatus={changeSavedStatus} onRemove={removeSavedPlace} />
+                  ))}
+                </div>
+              )
+            ) : discoverLoading ? (
               <div className="text-center py-12">
                 <div className="w-8 h-8 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin mx-auto" />
               </div>
@@ -810,4 +899,58 @@ const MyExperienceCard = ({ exp, onDelete, onShare, isFav, onToggleFav }: { exp:
     </motion.div>
   );
 };
+
+const SavedPlaceRow = ({
+  place,
+  onChangeStatus,
+  onRemove,
+}: {
+  place: Place;
+  onChangeStatus: (place: Place, type: Place["type"]) => void;
+  onRemove: (place: Place) => void;
+}) => {
+  const [statusOpen, setStatusOpen] = useState(false);
+
+  return (
+    <div className="relative flex items-center gap-3 p-4 rounded-2xl bg-card border border-border">
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-semibold text-foreground truncate">{place.name}</h3>
+        <p className="text-xs text-muted-foreground truncate">
+          {[place.city && place.city !== place.name ? place.city : null, place.country].filter(Boolean).join(", ")}
+        </p>
+        {place.tags?.length > 0 && (
+          <div className="flex gap-1 mt-2 overflow-hidden">
+            {place.tags.slice(0, 3).map((tag) => (
+              <span key={tag} className="px-2 py-0.5 rounded-full bg-muted text-[10px] text-muted-foreground">{tag}</span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="relative flex-shrink-0">
+        <button
+          onClick={() => setStatusOpen(!statusOpen)}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
+            place.type === "visited"
+              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+              : "bg-rose-500/10 text-rose-700 dark:text-rose-400"
+          }`}
+        >
+          {place.type === "visited" ? <Check className="w-3 h-3" /> : <Heart className="w-3 h-3" />}
+          {place.type === "visited" ? "Visited" : "Wishlist"}
+          <ChevronDown className="w-3 h-3" />
+        </button>
+        {statusOpen && (
+          <div className="absolute right-0 top-full mt-1 z-20 w-36 p-1 rounded-xl border border-border bg-card shadow-lg">
+            <button onClick={() => { setStatusOpen(false); onChangeStatus(place, "visited"); }} className="w-full px-3 py-2 rounded-lg text-xs text-left hover:bg-muted">Visited</button>
+            <button onClick={() => { setStatusOpen(false); onChangeStatus(place, "wishlist"); }} className="w-full px-3 py-2 rounded-lg text-xs text-left hover:bg-muted">Wishlist</button>
+            <div className="h-px bg-border my-1" />
+            <button onClick={() => { setStatusOpen(false); onRemove(place); }} className="w-full px-3 py-2 rounded-lg text-xs text-left text-destructive hover:bg-destructive/10">Remove</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default Experiences;

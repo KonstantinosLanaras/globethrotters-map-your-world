@@ -23,6 +23,12 @@ export interface JourneyWithExperiences extends Journey {
   experiences: ExperienceWithPhotos[];
 }
 
+export interface DiscoverJourney extends Journey {
+  owner_name: string | null;
+  owner_avatar_url: string | null;
+  join_request_status: string | null;
+}
+
 export const useJourneys = () => {
   const { user } = useAuth();
 
@@ -37,6 +43,59 @@ export const useJourneys = () => {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Journey[];
+    },
+  });
+};
+
+export const useDiscoverJourneys = (searchQuery = "") => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["discover-journeys", user?.id, searchQuery],
+    enabled: !!user,
+    queryFn: async () => {
+      const today = new Date().toISOString().split("T")[0];
+      const { data, error } = await supabase
+        .from("journeys")
+        .select("*")
+        .eq("status", "published")
+        .in("privacy", ["public", "friends"])
+        .neq("user_id", user!.id)
+        .order("start_date", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+
+      const activeJourneys = (data ?? []).filter((journey) => !journey.end_date || journey.end_date >= today);
+      if (activeJourneys.length === 0) return [] as DiscoverJourney[];
+
+      const ownerIds = [...new Set(activeJourneys.map((journey) => journey.user_id))];
+      const journeyIds = activeJourneys.map((journey) => journey.id);
+      const [{ data: profiles }, { data: requests }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url")
+          .in("user_id", ownerIds),
+        supabase
+          .from("journey_join_requests" as any)
+          .select("journey_id, status")
+          .eq("user_id", user!.id)
+          .in("journey_id", journeyIds),
+      ]);
+
+      const q = searchQuery.trim().toLowerCase();
+      return activeJourneys
+        .filter((journey) => !q || [journey.title, journey.description, ...(journey.destinations ?? [])]
+          .filter(Boolean)
+          .some((value) => value!.toLowerCase().includes(q)))
+        .map((journey) => {
+          const owner = profiles?.find((profile) => profile.user_id === journey.user_id);
+          const request = (requests ?? []).find((item: any) => item.journey_id === journey.id);
+          return {
+            ...journey,
+            owner_name: owner?.display_name ?? null,
+            owner_avatar_url: owner?.avatar_url ?? null,
+            join_request_status: request?.status ?? null,
+          } as DiscoverJourney;
+        });
     },
   });
 };
@@ -148,8 +207,14 @@ export const useAddJourney = () => {
     mutationFn: async (journey: { title: string; description?: string; emoji?: string; start_date?: string; end_date?: string; destinations?: string[]; cover_image_url?: string; privacy?: string }) => {
       if (!user) throw new Error("Not authenticated");
       const { data, error } = await supabase
-        .from("journeys" as any)
-        .insert({ ...journey, user_id: user.id })
+        .from("journeys")
+        .insert({
+          ...journey,
+          user_id: user.id,
+          destinations: journey.destinations ?? [],
+          privacy: journey.privacy ?? "private",
+          status: "draft",
+        })
         .select()
         .single();
       if (error) throw error;

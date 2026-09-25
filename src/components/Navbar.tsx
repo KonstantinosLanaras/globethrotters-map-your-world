@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Map, MapPin, User, Menu, X, LogOut, Users, MessageSquare, LogIn, Camera, Plane } from "lucide-react";
+import { Map, Star, User, Menu, X, LogOut, Users, MessageSquare, LogIn, Plane } from "lucide-react";
 import GlobetrottersLogo from "@/components/GlobetrottersLogo";
 import PeopleSearch from "@/components/PeopleSearch";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -88,26 +88,15 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
         {user && (
           <>
             <button
-              onClick={() => navigate("/places")}
+              onClick={() => navigate("/favorites")}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
-                ["/places", "/visited", "/wishlist"].includes(location.pathname)
+                location.pathname === "/favorites"
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
             >
-              <MapPin className="w-4 h-4" />
-              Places
-            </button>
-            <button
-              onClick={() => navigate("/experiences")}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
-                location.pathname === "/experiences" || location.pathname === "/favorites"
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-            >
-              <Camera className="w-4 h-4" />
-              Experiences
+              <Star className="w-4 h-4" />
+              Favorites
             </button>
             <button
               onClick={() => navigate("/journeys")}
@@ -238,8 +227,7 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
           {[
             { icon: <Map className="w-4 h-4" />, label: "Explore", action: handleExploreClick },
             ...(user ? [
-              { icon: <MapPin className="w-4 h-4" />, label: "Places", action: () => navigate("/places") },
-              { icon: <Camera className="w-4 h-4" />, label: "Experiences", action: () => navigate("/experiences") },
+              { icon: <Star className="w-4 h-4" />, label: "Favorites", action: () => navigate("/favorites") },
               { icon: <Plane className="w-4 h-4" />, label: "Trips", action: () => navigate("/journeys") },
             ] : []),
             ...(user ? [

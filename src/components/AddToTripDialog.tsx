@@ -48,8 +48,10 @@ const AddToTripDialog = ({ open, onOpenChange, experienceId, catalogItemId, expe
         setAdded((prev) => new Set(prev).add(journeyId));
         qc.invalidateQueries({ queryKey: ["journey-experiences"] });
       }
-    } catch {
-      toast.error("Could not add to trip");
+    } catch (error) {
+      console.error("Add place to trip failed", error);
+      const message = error instanceof Error ? error.message : "Database rejected the place";
+      toast.error(`Could not add to trip: ${message}`);
     } finally {
       setAdding(null);
     }

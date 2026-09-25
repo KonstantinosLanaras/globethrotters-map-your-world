@@ -5,14 +5,14 @@ import Navbar from "@/components/Navbar";
 import {
   Plus, MapPin, Star, Calendar, ChevronRight, Trash2, X, Check,
   Plane, Loader2, Share2, Camera, Users, Lock, Globe, Send, Tag,
-  MessageSquare, DollarSign, Sparkles, Eye, Heart, UserPlus, LogIn
+  MessageSquare, DollarSign, Sparkles, Eye, Heart, UserPlus, LogIn, Search
 } from "lucide-react";
-import { useJourneys, useAddJourney, useDeleteJourney, useJourneyWithExperiences, useAddExperienceToJourney, useRemoveExperienceFromJourney, Journey } from "@/hooks/useJourneys";
+import { useJourneys, useDiscoverJourneys, useAddJourney, useDeleteJourney, useJourneyWithExperiences, useAddExperienceToJourney, useRemoveExperienceFromJourney, Journey, DiscoverJourney } from "@/hooks/useJourneys";
 import { useExperiencesWithPhotos, ExperienceWithPhotos } from "@/hooks/useExperiences";
 import { useFavoriteJourneyIds, useToggleFavoriteJourney } from "@/hooks/useFavorites";
 import { useTripPosts, useAddTripPost, useDeleteTripPost, TripPost } from "@/hooks/useTripPosts";
 import { useConnections } from "@/hooks/useShareConnections";
-import { useJourneyMembers, useInviteToJourney, useRemoveJourneyMember, useJourneyJoinRequests, useRespondToJoinRequest } from "@/hooks/useJourneyMembers";
+import { useJourneyMembers, useInviteToJourney, useRemoveJourneyMember, useJourneyJoinRequests, useRespondToJoinRequest, useRequestToJoinJourney } from "@/hooks/useJourneyMembers";
 import { useMessages, useSendMessage, useStartConversation } from "@/hooks/useMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +37,10 @@ const Journeys = () => {
   const [newEmoji, setNewEmoji] = useState("✈️");
   const [newStartDate, setNewStartDate] = useState("");
   const [newEndDate, setNewEndDate] = useState("");
+  const [journeyView, setJourneyView] = useState<"mine" | "discover">("mine");
+  const [journeySearch, setJourneySearch] = useState("");
+  const { data: discoverJourneys = [], isLoading: discoverLoading } = useDiscoverJourneys(journeySearch);
+  const requestToJoin = useRequestToJoinJourney();
 
   const handleCreate = async () => {
     if (!newTitle.trim()) { toast.error("Add a title"); return; }
@@ -55,8 +59,10 @@ const Journeys = () => {
       setNewEmoji("✈️");
       setNewStartDate("");
       setNewEndDate("");
-    } catch {
-      toast.error("Failed to create trip");
+    } catch (error) {
+      console.error("Create trip failed", error);
+      const message = error instanceof Error ? error.message : "Database rejected the trip";
+      toast.error(`Failed to create trip: ${message}`);
     }
   };
 
@@ -84,6 +90,33 @@ const Journeys = () => {
             New Trip
           </button>
         </div>
+
+        <div className="flex gap-1 p-1 rounded-xl bg-muted/50 mb-4">
+          <button
+            onClick={() => setJourneyView("mine")}
+            className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${journeyView === "mine" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            My Trips
+          </button>
+          <button
+            onClick={() => setJourneyView("discover")}
+            className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${journeyView === "discover" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            Discover Trips
+          </button>
+        </div>
+
+        {journeyView === "discover" && (
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              value={journeySearch}
+              onChange={(event) => setJourneySearch(event.target.value)}
+              placeholder="Search public trips by destination or title"
+              className="w-full h-11 pl-10 pr-3 rounded-xl border border-border bg-card text-sm outline-none focus:border-primary/40"
+            />
+          </div>
+        )}
 
         {/* Create trip form */}
         <AnimatePresence>
@@ -184,6 +217,19 @@ const Journeys = () => {
             isFav={favJourneyIds.has(selectedJourney)}
             onToggleFav={toggleFavJourney}
           />
+        ) : journeyView === "discover" ? (
+          <DiscoverTripsList
+            journeys={discoverJourneys}
+            loading={discoverLoading}
+            requesting={requestToJoin.isPending}
+            onRequestJoin={(journeyId) => requestToJoin.mutate(journeyId, {
+              onSuccess: () => toast.success("Request sent to the trip organizer"),
+              onError: (error) => {
+                console.error("Request to join trip failed", error);
+                toast.error(error instanceof Error ? error.message : "Could not request to join");
+              },
+            })}
+          />
         ) : (
           <>
             {isLoading ? (
@@ -253,6 +299,100 @@ const Journeys = () => {
       {shareItem && (
         <ShareModal open={!!shareItem} onClose={() => setShareItem(null)} item={shareItem} />
       )}
+    </div>
+  );
+};
+
+const DiscoverTripsList = ({
+  journeys,
+  loading,
+  requesting,
+  onRequestJoin,
+}: {
+  journeys: DiscoverJourney[];
+  loading: boolean;
+  requesting: boolean;
+  onRequestJoin: (journeyId: string) => void;
+}) => {
+  if (loading) {
+    return <div className="text-center py-12"><div className="w-8 h-8 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin mx-auto" /></div>;
+  }
+
+  if (journeys.length === 0) {
+    return (
+      <div className="text-center py-16 rounded-2xl border border-dashed border-border">
+        <Globe className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+        <p className="text-sm text-muted-foreground">No active public or shared trips found.</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">Published upcoming trips will appear here.</p>
+      </div>
+    );
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+
+  return (
+    <div className="space-y-3">
+      {journeys.map((journey, index) => (
+        <motion.article
+          key={journey.id}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.04 }}
+          className="p-4 rounded-2xl bg-card border border-border"
+        >
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">{journey.emoji || "✈️"}</span>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold text-foreground">{journey.title}</h3>
+              <div className="flex items-center gap-1.5 mt-1">
+                <div className="w-5 h-5 rounded-full bg-muted overflow-hidden flex items-center justify-center">
+                  {journey.owner_avatar_url ? <img src={journey.owner_avatar_url} alt="" className="w-full h-full object-cover" /> : <Users className="w-3 h-3 text-muted-foreground" />}
+                </div>
+                <span className="text-[10px] text-muted-foreground">by {journey.owner_name || "Traveler"}</span>
+              </div>
+              {journey.description && <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{journey.description}</p>}
+              {journey.destinations?.length > 0 && (
+                <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+                  <MapPin className="w-3 h-3" /> {journey.destinations.join(", ")}
+                </p>
+              )}
+              {(journey.start_date || journey.end_date) && (
+                <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {journey.start_date ? new Date(journey.start_date).toLocaleDateString() : "Now"}
+                  {journey.end_date ? ` – ${new Date(journey.end_date).toLocaleDateString()}` : ""}
+                </p>
+              )}
+              <span className="inline-flex mt-2 px-2 py-0.5 rounded-full bg-primary/10 text-[9px] font-medium text-primary">
+                {journey.start_date && journey.start_date > today ? "Upcoming" : "Happening now"}
+              </span>
+            </div>
+            <span className="px-2 py-1 rounded-full bg-emerald-500/10 text-[9px] font-medium text-emerald-700 dark:text-emerald-400">
+              {journey.privacy === "friends" ? "Shared by friend" : "Public"}
+            </span>
+          </div>
+
+          <div className="flex justify-end mt-3 pt-3 border-t border-border/60">
+            {journey.open_to_join ? (
+              journey.join_request_status ? (
+                <span className="px-3 py-1.5 rounded-lg bg-muted text-xs font-medium text-muted-foreground capitalize">
+                  Request {journey.join_request_status}
+                </span>
+              ) : (
+                <button
+                  onClick={() => onRequestJoin(journey.id)}
+                  disabled={requesting}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium disabled:opacity-50"
+                >
+                  <UserPlus className="w-3.5 h-3.5" /> Request to Join
+                </button>
+              )
+            ) : (
+              <span className="text-[10px] text-muted-foreground">View-only trip</span>
+            )}
+          </div>
+        </motion.article>
+      ))}
     </div>
   );
 };

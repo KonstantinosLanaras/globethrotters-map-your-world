@@ -138,3 +138,23 @@ export const useRespondToJoinRequest = () => {
     },
   });
 };
+
+export const useRequestToJoinJourney = () => {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (journeyId: string) => {
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase
+        .from("journey_join_requests" as any)
+        .insert({
+          journey_id: journeyId,
+          user_id: user.id,
+          status: "pending",
+        } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["discover-journeys"] }),
+  });
+};

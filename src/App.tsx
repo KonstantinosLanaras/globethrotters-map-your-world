@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Onboarding from "./pages/Onboarding";
-import SavedPlaces from "./pages/SavedPlaces";
 import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
 import Auth from "./pages/Auth";
@@ -53,10 +52,10 @@ const App = () => (
             <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
             {/* Discovery is public; personal and social areas require an account. */}
             <Route path="/" element={<Index />} />
-            <Route path="/places" element={<ProtectedRoute><SavedPlaces /></ProtectedRoute>} />
+            <Route path="/places" element={<ProtectedRoute><Experiences /></ProtectedRoute>} />
             <Route path="/visited" element={<Navigate to="/places" replace />} />
             <Route path="/wishlist" element={<Navigate to="/places" replace />} />
-            <Route path="/experiences" element={<ProtectedRoute><Experiences /></ProtectedRoute>} />
+            <Route path="/experiences" element={<Navigate to="/places" replace />} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
             <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />

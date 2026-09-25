@@ -308,6 +308,7 @@ const MyAtlas = () => {
                     </article>
                   ))}
                 </div>
+                </>
               )}
           </section>
         )}

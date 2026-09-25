@@ -116,7 +116,7 @@ const MyAtlas = () => {
   };
 
   const removeExperience = async (exp: FavoriteExperience) => {
-    try { await toggleFav.mutateAsync({ experienceId: exp.id, isFavorited: true } as never); toast.success(`${exp.title} removed from My Atlas`); }
+    try { await toggleFav.mutateAsync({ experienceId: exp.id, isFavorite: true }); toast.success(`${exp.title} removed from My Atlas`); }
     catch { toast.error("Could not remove this experience"); }
   };
 

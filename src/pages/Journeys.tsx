@@ -310,8 +310,12 @@ const TripHub = ({
     });
   };
 
-  const handleRemove = (expId: string) => {
-    removeExpFromJourney.mutate({ journeyId, experienceId: expId }, {
+  const handleRemove = (exp: ExperienceWithPhotos) => {
+    removeExpFromJourney.mutate({
+      journeyId,
+      experienceId: exp.source_type === "catalog" ? undefined : exp.id,
+      catalogItemId: exp.catalog_item_id,
+    }, {
       onSuccess: () => toast.success("Removed"),
       onError: () => toast.error("Failed to remove"),
     });
@@ -378,6 +382,8 @@ const TripHub = ({
     onShare({
       type: "experience",
       id: exp.id,
+      experienceId: exp.source_type === "catalog" ? null : exp.id,
+      catalogItemId: exp.catalog_item_id ?? null,
       title: exp.title,
       city: exp.city,
       country: exp.country,
@@ -580,7 +586,7 @@ const PlanTab = ({
   showAddExp: boolean;
   onToggleAddExp: () => void;
   onAdd: (id: string) => void;
-  onRemove: (id: string) => void;
+  onRemove: (experience: ExperienceWithPhotos) => void;
   onShareExp: (exp: ExperienceWithPhotos) => void;
 }) => (
   <>
@@ -688,7 +694,7 @@ const PlanTab = ({
                       <Share2 className="w-3 h-3 text-muted-foreground" />
                     </button>
                     <button
-                      onClick={() => onRemove(exp.id)}
+                      onClick={() => onRemove(exp)}
                       className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
                     >
                       <X className="w-3 h-3 text-muted-foreground" />

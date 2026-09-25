@@ -6,26 +6,37 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plane, Plus, Check } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface AddToTripDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  experienceId: string;
+  experienceId?: string | null;
+  catalogItemId?: string | null;
   experienceTitle: string;
 }
 
-const AddToTripDialog = ({ open, onOpenChange, experienceId, experienceTitle }: AddToTripDialogProps) => {
+const AddToTripDialog = ({ open, onOpenChange, experienceId, catalogItemId, experienceTitle }: AddToTripDialogProps) => {
   const { data: journeys = [] } = useJourneys();
   const [adding, setAdding] = useState<string | null>(null);
   const [added, setAdded] = useState<Set<string>>(new Set());
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const handleAdd = async (journeyId: string) => {
+    if (!experienceId && !catalogItemId) {
+      toast.error("This place cannot be added to a trip yet");
+      return;
+    }
     setAdding(journeyId);
     try {
       const { error } = await supabase
         .from("journey_experiences")
-        .insert({ journey_id: journeyId, experience_id: experienceId });
+        .insert({
+          journey_id: journeyId,
+          experience_id: experienceId || null,
+          catalog_item_id: catalogItemId || null,
+        });
       if (error) {
         if (error.code === "23505") {
           toast.info("Already added to this trip");
@@ -46,7 +57,7 @@ const AddToTripDialog = ({ open, onOpenChange, experienceId, experienceTitle }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="z-[2200] sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display">
             <Plane className="w-4 h-4 text-primary" />
@@ -63,6 +74,17 @@ const AddToTripDialog = ({ open, onOpenChange, experienceId, experienceTitle }: 
             <Plane className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">No trips yet</p>
             <p className="text-xs text-muted-foreground mt-1">Create a trip first, then come back to add experiences.</p>
+            <Button
+              className="mt-4"
+              size="sm"
+              onClick={() => {
+                onOpenChange(false);
+                navigate("/journeys");
+              }}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Create a trip
+            </Button>
           </div>
         ) : (
           <div className="space-y-2 max-h-64 overflow-y-auto">

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Map, MapPin, Heart, User, Menu, X, LogOut, Users, MessageSquare, Star, LogIn, Camera } from "lucide-react";
+import { Map, MapPin, User, Menu, X, LogOut, Users, MessageSquare, LogIn, Camera, Plane } from "lucide-react";
 import GlobetrottersLogo from "@/components/GlobetrottersLogo";
 import PeopleSearch from "@/components/PeopleSearch";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -14,12 +14,6 @@ interface NavbarProps {
   onExploreToggle?: () => void;
   exploreBarVisible?: boolean;
 }
-
-const navItems = [
-  { icon: <Map className="w-4 h-4" />, label: "Explore", path: "/", mode: "places" as SearchMode },
-  { icon: <MapPin className="w-4 h-4" />, label: "Visited", path: "/visited" },
-  { icon: <Heart className="w-4 h-4" />, label: "Wishlist", path: "/wishlist" },
-];
 
 const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, exploreBarVisible = true }: NavbarProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -92,57 +86,42 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
         </button>
 
         {user && (
-          <button
-            onClick={() => navigate("/experiences")}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
-              location.pathname === "/experiences"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            }`}
-          >
-            <Camera className="w-4 h-4" />
-            Feed
-          </button>
+          <>
+            <button
+              onClick={() => navigate("/places")}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+                ["/places", "/visited", "/wishlist"].includes(location.pathname)
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <MapPin className="w-4 h-4" />
+              Places
+            </button>
+            <button
+              onClick={() => navigate("/experiences")}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+                location.pathname === "/experiences" || location.pathname === "/favorites"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <Camera className="w-4 h-4" />
+              Experiences
+            </button>
+            <button
+              onClick={() => navigate("/journeys")}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+                location.pathname === "/journeys"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <Plane className="w-4 h-4" />
+              Trips
+            </button>
+          </>
         )}
-
-        {/* Visited */}
-        <button
-          onClick={() => navigate("/visited")}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
-            location.pathname === "/visited" || location.pathname === "/places"
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          }`}
-        >
-          <MapPin className="w-4 h-4" />
-          Visited
-        </button>
-
-        {/* Wishlist */}
-        <button
-          onClick={() => navigate("/wishlist")}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
-            location.pathname === "/wishlist"
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          }`}
-        >
-          <Heart className="w-4 h-4" />
-          Wishlist
-        </button>
-
-        {/* Favorites */}
-        <button
-          onClick={() => navigate("/favorites")}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
-            location.pathname === "/favorites"
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          }`}
-        >
-          <Star className="w-4 h-4" />
-          Favorites
-        </button>
 
       </div>
 
@@ -258,9 +237,11 @@ const Navbar = ({ searchMode = "places", onSearchModeChange, onExploreToggle, ex
 
           {[
             { icon: <Map className="w-4 h-4" />, label: "Explore", action: handleExploreClick },
-            ...(user ? [{ icon: <Camera className="w-4 h-4" />, label: "Feed", action: () => navigate("/experiences") }] : []),
-            { icon: <MapPin className="w-4 h-4" />, label: "Visited", action: () => navigate("/visited") },
-            { icon: <Heart className="w-4 h-4" />, label: "Wishlist", action: () => navigate("/wishlist") },
+            ...(user ? [
+              { icon: <MapPin className="w-4 h-4" />, label: "Places", action: () => navigate("/places") },
+              { icon: <Camera className="w-4 h-4" />, label: "Experiences", action: () => navigate("/experiences") },
+              { icon: <Plane className="w-4 h-4" />, label: "Trips", action: () => navigate("/journeys") },
+            ] : []),
             ...(user ? [
               { icon: <MessageSquare className="w-4 h-4" />, label: "Messages", action: () => navigate("/messages") },
               { icon: <Users className="w-4 h-4" />, label: "Connections", action: () => navigate("/connections") },

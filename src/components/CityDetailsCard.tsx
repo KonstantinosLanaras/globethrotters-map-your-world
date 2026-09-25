@@ -804,6 +804,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                         setSelectedShareItem({
                           type: "experience",
                           id: item.experience?.id || `${city.name}-${item.name}-chat`,
+                          experienceId: item.experience?.id ?? null,
+                          catalogItemId: item.activity?.id ?? null,
                           title: item.name,
                           city: city.name,
                           country: city.country,
@@ -817,6 +819,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                         setSelectedShareItem({
                           type: "experience",
                           id: item.experience?.id || `${city.name}-${item.name}-trip`,
+                          experienceId: item.experience?.id ?? null,
+                          catalogItemId: item.activity?.id ?? null,
                           title: item.name,
                           city: city.name,
                           country: city.country,
@@ -855,6 +859,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                       setSelectedShareItem({
                         type: "experience",
                         id: item.experience?.id || `${city.name}-${item.name}-chat`,
+                        experienceId: item.experience?.id ?? null,
+                        catalogItemId: item.activity?.id ?? null,
                         title: item.name,
                         city: city.name,
                         country: city.country,
@@ -868,6 +874,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
                       setSelectedShareItem({
                         type: "experience",
                         id: item.experience?.id || `${city.name}-${item.name}-trip`,
+                        experienceId: item.experience?.id ?? null,
+                        catalogItemId: item.activity?.id ?? null,
                         title: item.name,
                         city: city.name,
                         country: city.country,
@@ -932,7 +940,8 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
             setShowTripDialog(open);
             if (!open) setSelectedShareItem(null);
           }}
-          experienceId={selectedShareItem.id}
+          experienceId={selectedShareItem.experienceId}
+          catalogItemId={selectedShareItem.catalogItemId}
           experienceTitle={selectedShareItem.title}
         />
       )}

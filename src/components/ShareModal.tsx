@@ -9,6 +9,8 @@ import { toast } from "sonner";
 export interface ShareableExperience {
   type: "experience";
   id: string;
+  experienceId?: string | null;
+  catalogItemId?: string | null;
   title: string;
   city?: string | null;
   country?: string | null;
@@ -102,7 +104,7 @@ const ShareModal = ({ open, onClose, item }: ShareModalProps) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-[2200] flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onClose} />
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.97 }}

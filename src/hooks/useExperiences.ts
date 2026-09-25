@@ -31,6 +31,8 @@ export interface ExperienceAttachment {
 }
 
 export interface ExperienceWithPhotos extends Experience {
+  catalog_item_id?: string;
+  source_type?: "experience" | "catalog";
   photos: string[];
   saves_count: number;
   review_count: number;

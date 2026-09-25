@@ -57,38 +57,85 @@ export const useJourneyWithExperiences = (journeyId: string | null) => {
       if (jErr) throw jErr;
       const journey = journeyData as unknown as Journey;
 
-      // Get linked experience IDs
+      // A trip can contain either a community experience or a catalogue place.
       const { data: links, error: lErr } = await supabase
         .from("journey_experiences" as any)
-        .select("experience_id")
+        .select("experience_id, catalog_item_id")
         .eq("journey_id", journeyId!);
       if (lErr) throw lErr;
 
-      const expIds = (links ?? []).map((l: any) => l.experience_id);
-      if (expIds.length === 0) return { ...journey, experiences: [] } as JourneyWithExperiences;
+      const expIds = (links ?? []).map((l: any) => l.experience_id).filter(Boolean);
+      const catalogIds = (links ?? []).map((l: any) => l.catalog_item_id).filter(Boolean);
+      if (expIds.length === 0 && catalogIds.length === 0) {
+        return { ...journey, experiences: [] } as JourneyWithExperiences;
+      }
 
-      // Get experiences with photos
-      const { data: exps, error: eErr } = await supabase
-        .from("experiences")
-        .select("*")
-        .in("id", expIds)
-        .order("experience_date", { ascending: true });
-      if (eErr) throw eErr;
+      let exps: any[] = [];
+      let atts: any[] = [];
+      if (expIds.length > 0) {
+        const expResult = await supabase
+          .from("experiences")
+          .select("*")
+          .in("id", expIds)
+          .order("experience_date", { ascending: true });
+        if (expResult.error) throw expResult.error;
+        exps = expResult.data ?? [];
 
-      const { data: atts } = await supabase
-        .from("experience_attachments")
-        .select("*")
-        .in("experience_id", expIds)
-        .eq("attachment_type", "photo");
+        const attachmentResult = await supabase
+          .from("experience_attachments")
+          .select("*")
+          .in("experience_id", expIds)
+          .eq("attachment_type", "photo");
+        atts = attachmentResult.data ?? [];
+      }
 
-      const experiences = (exps ?? []).map(exp => ({
+      const experiences = exps.map(exp => ({
         ...exp,
+        source_type: "experience" as const,
         tags: exp.tags ?? [],
         rating: (exp as any).rating ?? 0,
-        photos: (atts ?? []).filter((a: any) => a.experience_id === exp.id).map((a: any) => a.url),
+        photos: atts.filter((a: any) => a.experience_id === exp.id).map((a: any) => a.url),
       })) as ExperienceWithPhotos[];
 
-      return { ...journey, experiences } as JourneyWithExperiences;
+      let catalogExperiences: ExperienceWithPhotos[] = [];
+      if (catalogIds.length > 0) {
+        const catalogResult = await supabase
+          .from("catalog_items" as any)
+          .select("id, name, latitude, longitude, canonical_category, subcategory, description, published_at, catalog_cities(name, country)")
+          .in("id", catalogIds);
+        if (catalogResult.error) throw catalogResult.error;
+        catalogExperiences = (catalogResult.data ?? []).map((row: any) => ({
+          id: row.id,
+          catalog_item_id: row.id,
+          source_type: "catalog" as const,
+          user_id: "",
+          title: row.name,
+          caption: row.description ?? null,
+          city: row.catalog_cities?.name ?? null,
+          country: row.catalog_cities?.country ?? null,
+          category: row.canonical_category ?? row.subcategory ?? "place",
+          experience_date: null,
+          visibility: "private",
+          tags: [row.canonical_category, row.subcategory].filter(Boolean),
+          lat: row.latitude ?? null,
+          lng: row.longitude ?? null,
+          rating: 0,
+          created_at: row.published_at ?? new Date(0).toISOString(),
+          updated_at: row.published_at ?? new Date(0).toISOString(),
+          photos: [],
+          saves_count: 0,
+          review_count: 0,
+          rating_avg: 0,
+          engagement_score: 0,
+        }));
+      }
+
+      const byId = new Map([...experiences, ...catalogExperiences].map((item) => [item.id, item]));
+      const ordered = (links ?? [])
+        .map((link: any) => byId.get(link.experience_id || link.catalog_item_id))
+        .filter(Boolean) as ExperienceWithPhotos[];
+
+      return { ...journey, experiences: ordered } as JourneyWithExperiences;
     },
   });
 };
@@ -142,12 +189,15 @@ export const useRemoveExperienceFromJourney = () => {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ journeyId, experienceId }: { journeyId: string; experienceId: string }) => {
-      const { error } = await supabase
+    mutationFn: async ({ journeyId, experienceId, catalogItemId }: { journeyId: string; experienceId?: string; catalogItemId?: string }) => {
+      let query = supabase
         .from("journey_experiences" as any)
         .delete()
-        .eq("journey_id", journeyId)
-        .eq("experience_id", experienceId);
+        .eq("journey_id", journeyId);
+      query = catalogItemId
+        ? query.eq("catalog_item_id", catalogItemId)
+        : query.eq("experience_id", experienceId!);
+      const { error } = await query;
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["journey-experiences"] }),

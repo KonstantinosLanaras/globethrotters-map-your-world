@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const CATEGORY_META: Record<string, { label: string; icon: any; emoji: string }> = {
   food: { label: "Food", icon: Utensils, emoji: "🍽️" },
@@ -31,6 +32,7 @@ const CATEGORY_META: Record<string, { label: string; icon: any; emoji: string }>
 };
 
 const Favorites = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: favExperiences = [], isLoading: loadingExp } = useFavoriteExperiences();
@@ -178,6 +180,17 @@ const Favorites = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="pt-[80px] px-4 pb-12 max-w-2xl mx-auto">
+        <div className="flex gap-0.5 mb-4 bg-muted/50 p-1 rounded-xl">
+          <button
+            onClick={() => navigate("/experiences")}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            Experiences
+          </button>
+          <button className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium bg-card text-foreground shadow-sm">
+            <Star className="w-3.5 h-3.5" /> Favorites
+          </button>
+        </div>
         {/* Header */}
         <div className="mb-4">
           <h1 className="font-display text-2xl font-semibold text-foreground flex items-center gap-2">

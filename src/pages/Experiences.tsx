@@ -35,6 +35,7 @@ const sortOptions = [
 ];
 
 const Experiences = () => {
+  const navigate = useNavigate();
   const { data: myExperiences = [], isLoading: myLoading } = useExperiencesWithPhotos();
   const deleteExperience = useDeleteExperience();
   const { data: locations } = useExperienceLocations();
@@ -177,6 +178,13 @@ const Experiences = () => {
           >
             <Heart className="w-3.5 h-3.5" />
             My Experiences
+          </button>
+          <button
+            onClick={() => navigate("/favorites")}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-all"
+          >
+            <Star className="w-3.5 h-3.5" />
+            Favorites
           </button>
         </div>
 

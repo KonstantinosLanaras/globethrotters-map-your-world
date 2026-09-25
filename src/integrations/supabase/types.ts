@@ -574,23 +574,33 @@ export type Database = {
       journey_experiences: {
         Row: {
           added_at: string
-          experience_id: string
+          catalog_item_id: string | null
+          experience_id: string | null
           id: string
           journey_id: string
         }
         Insert: {
           added_at?: string
-          experience_id: string
+          catalog_item_id?: string | null
+          experience_id?: string | null
           id?: string
           journey_id: string
         }
         Update: {
           added_at?: string
-          experience_id?: string
+          catalog_item_id?: string | null
+          experience_id?: string | null
           id?: string
           journey_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "journey_experiences_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "journey_experiences_experience_id_fkey"
             columns: ["experience_id"]

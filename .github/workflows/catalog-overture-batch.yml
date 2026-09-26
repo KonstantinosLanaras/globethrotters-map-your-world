@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       cities:
-        description: "Optional comma-separated city slugs; blank processes all active catalogue cities"
+        description: "Optional comma-separated city slugs; blank processes the current rollout batch"
         required: false
         type: string
       limit_per_category:
@@ -47,6 +47,9 @@ jobs:
         run: |
           limit_per_category="${LIMIT_PER_CATEGORY:-10}"
           minimum_confidence="${MINIMUM_CONFIDENCE:-0.80}"
+          if [[ -z "$CITY_INPUT" ]]; then
+            CITY_INPUT="istanbul-tr,madrid-es,amsterdam-nl,milan-it,prague-cz,vienna-at,berlin-de,dublin-ie"
+          fi
           city_args=()
           if [[ -n "$CITY_INPUT" ]]; then
             IFS=',' read -ra requested <<< "$CITY_INPUT"

@@ -37,6 +37,21 @@ class ImportQualityTests(unittest.TestCase):
         self.assertEqual(food_report["rejected"]["duplicate_name"], 1)
         self.assertEqual(nature_report["rejected"]["nature_infrastructure"], 1)
 
+    def test_blocks_global_food_chains_without_rejecting_local_restaurants(self):
+        items = [
+            candidate("Burger King Nygata"),
+            candidate("Domino's Pizza"),
+            candidate("Family Burger House"),
+        ]
+
+        selected, report = select_quality_candidates(items, {"test-city": CITY}, 10)
+
+        self.assertEqual([item["name"] for item in selected], ["Family Burger House"])
+        self.assertEqual(
+            report["cities"]["test-city"]["categories"]["food"]["rejected"]["global_food_chain"],
+            2,
+        )
+
     def test_prefers_subtype_then_city_center(self):
         items = [
             candidate("Far Bar", "nightlife", "bar", lat=50.1, confidence=0.99),

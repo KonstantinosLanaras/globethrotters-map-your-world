@@ -45,6 +45,8 @@ jobs:
           LIMIT_PER_CATEGORY: ${{ inputs.limit_per_category }}
           MINIMUM_CONFIDENCE: ${{ inputs.minimum_confidence }}
         run: |
+          limit_per_category="${LIMIT_PER_CATEGORY:-10}"
+          minimum_confidence="${MINIMUM_CONFIDENCE:-0.80}"
           city_args=()
           if [[ -n "$CITY_INPUT" ]]; then
             IFS=',' read -ra requested <<< "$CITY_INPUT"
@@ -55,8 +57,8 @@ jobs:
           python scripts/import_overture.py \
             --local-cities \
             "${city_args[@]}" \
-            --limit-per-category "$LIMIT_PER_CATEGORY" \
-            --min-confidence "$MINIMUM_CONFIDENCE" \
+            --limit-per-category "$limit_per_category" \
+            --min-confidence "$minimum_confidence" \
             --sql-output overture_catalog_batch.sql
       - uses: actions/upload-artifact@v4
         with:

@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "scripts/import_overture.py"
+      - "scripts/test_import_overture.py"
       - "scripts/requirements-import.txt"
       - "supabase/migrations/20260921183500_catalog_seed.sql"
       - ".github/workflows/catalog-overture-batch.yml"

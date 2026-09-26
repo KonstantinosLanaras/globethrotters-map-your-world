@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.recommendation_intents (
   status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'resolved', 'no_match', 'failed')),
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT recommendation_intents_categories_check CHECK (
-    requested_categories <@ ARRAY['food', 'culture', 'nature', 'hiking', 'nightlife']::text[]
+    requested_categories <@ ARRAY['food', 'culture', 'nature', 'nightlife']::text[]
   )
 );
 

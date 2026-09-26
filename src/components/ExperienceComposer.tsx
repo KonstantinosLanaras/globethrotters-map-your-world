@@ -26,7 +26,6 @@ const categories = [
   { id: "food", label: "Food", emoji: "🍽️" },
   { id: "culture", label: "Culture", emoji: "🏛️" },
   { id: "nature", label: "Nature", emoji: "🌿" },
-  { id: "hike", label: "Hiking", emoji: "🥾" },
   { id: "nightlife", label: "Nightlife", emoji: "🌙" },
   { id: "beach", label: "Beach", emoji: "🏖️" },
   { id: "museum", label: "Museum", emoji: "🎨" },

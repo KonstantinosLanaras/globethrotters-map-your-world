@@ -7,9 +7,9 @@ import { useExperiencesWithPhotos } from "@/hooks/useExperiences";
 import { toast } from "sonner";
 import type { Place } from "@/hooks/usePlaces";
 
-const categoryFilters = ["All", "Food", "Culture", "Nature", "Hiking", "Nightlife"] as const;
+const categoryFilters = ["All", "Food", "Culture", "Nature", "Nightlife"] as const;
 const categoryEmoji: Record<string, string> = {
-  Food: "🍽️", Culture: "🏛️", Nature: "🌿", Hiking: "🥾", Nightlife: "🌙",
+  Food: "🍽️", Culture: "🏛️", Nature: "🌿", Nightlife: "🌙",
 };
 
 interface DestinationNode {

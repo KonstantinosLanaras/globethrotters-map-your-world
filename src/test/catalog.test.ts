@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { curatedExperiences } from "@/data/curatedExperiences";
 
-const categories = new Set(["food", "culture", "nature", "hiking", "nightlife"]);
+const categories = new Set(["food", "culture", "nature", "nightlife"]);
 
 describe("catalogue seed", () => {
   it("uses the canonical category vocabulary", () => {
@@ -40,8 +40,9 @@ describe("catalogue seed", () => {
     );
 
     expect(pilot).toHaveLength(10);
-    for (const category of categories) {
-      expect(pilot.filter((item) => item.category === category)).toHaveLength(2);
-    }
+    expect(pilot.filter((item) => item.category === "food")).toHaveLength(2);
+    expect(pilot.filter((item) => item.category === "culture")).toHaveLength(2);
+    expect(pilot.filter((item) => item.category === "nature")).toHaveLength(4);
+    expect(pilot.filter((item) => item.category === "nightlife")).toHaveLength(2);
   });
 });

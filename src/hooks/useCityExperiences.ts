@@ -178,7 +178,7 @@ export const useUnifiedExperiences = (city: string | null, country: string | nul
     const boostCategory = (cat: string): number => {
       const all = [...interests, personality].map(s => s?.toLowerCase() || "");
       if (cat === "food" && all.some(s => s.includes("food") || s.includes("culinary"))) return 10;
-      if ((cat === "hiking" || cat === "hike") && all.some(s => s.includes("adventure") || s.includes("hik"))) return 10;
+      if (cat === "nature" && all.some(s => s.includes("adventure") || s.includes("hik") || s.includes("nature"))) return 10;
       if (cat === "culture" && all.some(s => s.includes("culture") || s.includes("history"))) return 10;
       if (cat === "hidden_gem" && all.some(s => s.includes("hidden") || s.includes("local"))) return 10;
       return 0;

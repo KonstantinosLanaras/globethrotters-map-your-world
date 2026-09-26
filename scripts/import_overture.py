@@ -2,7 +2,7 @@
 """Import high-confidence Overture places into the normalized catalogue.
 
 The script reads only configured city bounding boxes, maps Overture's taxonomy
-to Globethrotters' five categories, limits coverage per category, and upserts by
+to Globethrotters' four categories, limits coverage per category, and upserts by
 the stable Overture GERS ID. It can upload with server-side Supabase
 credentials or emit SQL for review in Lovable Cloud's SQL editor.
 """
@@ -13,6 +13,7 @@ import argparse
 import json
 import math
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -37,6 +38,13 @@ PILOT_CITIES = {
         "latitude": 38.7223, "longitude": -9.1393, "search_radius_km": 25,
     },
 }
+
+CITY_ROW_PATTERN = re.compile(
+    r"\('(?P<slug>[^']+)',\s*'(?P<name>[^']+)',\s*'(?P<country>[^']+)',\s*"
+    r"'(?P<country_code>[A-Z]{2})',\s*(?P<latitude>-?[0-9.]+),\s*"
+    r"(?P<longitude>-?[0-9.]+),\s*(?P<market_rank>[0-9]+),\s*"
+    r"(?P<search_radius_km>[0-9]+),\s*(?P<is_launch_city>true|false)\)"
+)
 
 
 def api_request(method: str, path: str, body: Any | None = None) -> Any:
@@ -72,6 +80,30 @@ def get_cities(slugs: list[str]) -> list[dict[str, Any]]:
     return api_request("GET", query)
 
 
+def get_local_cities(slugs: list[str], seed_file: str) -> list[dict[str, Any]]:
+    """Read the checked-in city registry so CI can generate SQL without DB keys."""
+    with open(seed_file, encoding="utf-8") as source:
+        matches = list(CITY_ROW_PATTERN.finditer(source.read()))
+    cities = [{
+        "slug": match["slug"],
+        "name": match["name"],
+        "country": match["country"],
+        "country_code": match["country_code"],
+        "latitude": float(match["latitude"]),
+        "longitude": float(match["longitude"]),
+        "market_rank": int(match["market_rank"]),
+        "search_radius_km": int(match["search_radius_km"]),
+        "is_launch_city": match["is_launch_city"] == "true",
+    } for match in matches]
+    if slugs:
+        requested = set(slugs)
+        cities = [city for city in cities if city["slug"] in requested]
+        missing = sorted(requested - {city["slug"] for city in cities})
+        if missing:
+            raise RuntimeError(f"Unknown city slug(s): {', '.join(missing)}")
+    return sorted(cities, key=lambda city: city["market_rank"])
+
+
 def category_case() -> str:
     return """
       CASE
@@ -81,7 +113,7 @@ def category_case() -> str:
           OR list_contains(taxonomy.hierarchy, 'historic_site')
           OR basic_category IN ('museum', 'art_gallery', 'monument', 'cultural_center') THEN 'culture'
         WHEN basic_category IN ('hiking_trail', 'trailhead')
-          OR list_contains(taxonomy.hierarchy, 'hiking_trail') THEN 'hiking'
+          OR list_contains(taxonomy.hierarchy, 'hiking_trail') THEN 'nature'
         WHEN basic_category IN ('park', 'botanical_garden', 'garden', 'beach', 'nature_reserve') THEN 'nature'
         WHEN basic_category IN ('nightclub', 'bar', 'concert_hall', 'live_music_venue') THEN 'nightlife'
         ELSE NULL
@@ -152,6 +184,95 @@ def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], re
     } for row in rows]
 
 
+def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str, Any]], release: str,
+                   minimum_confidence: float, limit_per_category: int) -> list[dict[str, Any]]:
+    """Extract many cities in one Overture scan and resolve overlapping bounds."""
+    connection.execute("""
+      CREATE OR REPLACE TEMP TABLE import_cities (
+        slug text, latitude double, longitude double,
+        latitude_min double, latitude_max double,
+        longitude_min double, longitude_max double
+      )
+    """)
+    bounds: list[tuple[Any, ...]] = []
+    for city in cities:
+        radius = float(city["search_radius_km"])
+        latitude = float(city["latitude"])
+        longitude = float(city["longitude"])
+        latitude_delta = radius / 111.0
+        longitude_delta = radius / (111.0 * max(0.2, math.cos(math.radians(latitude))))
+        bounds.append((
+            city["slug"], latitude, longitude,
+            latitude - latitude_delta, latitude + latitude_delta,
+            longitude - longitude_delta, longitude + longitude_delta,
+        ))
+    connection.executemany("INSERT INTO import_cities VALUES (?, ?, ?, ?, ?, ?, ?)", bounds)
+
+    source = PARQUET_URL.format(release=release)
+    classifier = category_case()
+    rows = connection.execute(f"""
+      WITH matched AS (
+        SELECT
+          city.slug AS city_slug,
+          place.id,
+          place.names.primary AS name,
+          place.bbox.ymin AS latitude,
+          place.bbox.xmin AS longitude,
+          place.basic_category,
+          place.taxonomy,
+          place.confidence,
+          power((place.bbox.ymin - city.latitude) * 111.0, 2)
+            + power((place.bbox.xmin - city.longitude) * 111.0
+              * greatest(0.2, cos(radians(city.latitude))), 2) AS distance_squared
+        FROM read_parquet(?, hive_partitioning=1) AS place
+        JOIN import_cities AS city
+          ON place.bbox.xmin BETWEEN city.longitude_min AND city.longitude_max
+         AND place.bbox.ymin BETWEEN city.latitude_min AND city.latitude_max
+        WHERE place.names.primary IS NOT NULL
+          AND place.confidence >= ?
+      ), nearest_city AS (
+        SELECT *, row_number() OVER (
+          PARTITION BY id ORDER BY distance_squared, city_slug
+        ) AS city_rank
+        FROM matched
+      ), categorized AS (
+        SELECT *, {classifier} AS canonical_category
+        FROM nearest_city
+        WHERE city_rank = 1
+      ), ranked AS (
+        SELECT *, row_number() OVER (
+          PARTITION BY city_slug, canonical_category
+          ORDER BY confidence DESC, distance_squared, name
+        ) AS category_rank
+        FROM categorized
+        WHERE canonical_category IS NOT NULL
+      )
+      SELECT city_slug, id, name, latitude, longitude, basic_category,
+        confidence, canonical_category
+      FROM ranked
+      WHERE category_rank <= ?
+      ORDER BY city_slug, canonical_category, category_rank
+    """, [source, minimum_confidence, limit_per_category]).fetchall()
+
+    city_by_slug = {city["slug"]: city for city in cities}
+    return [{
+        "city_id": city_by_slug[row[0]].get("id"),
+        "city_slug": row[0],
+        "name": row[2],
+        "latitude": row[3],
+        "longitude": row[4],
+        "canonical_category": row[7],
+        "subcategory": row[5] or row[7],
+        "description": None,
+        "source": "overture",
+        "source_id": row[1],
+        "source_confidence": row[6],
+        "quality_tier": "coverage",
+        "is_active": True,
+        "metadata": {"overture_release": release},
+    } for row in rows]
+
+
 def upsert_items(items: list[dict[str, Any]]) -> None:
     payload = [{key: value for key, value in item.items() if key != "city_slug"} for item in items]
     for start in range(0, len(payload), 250):
@@ -173,6 +294,8 @@ def write_sql(items: list[dict[str, Any]], destination: str) -> None:
         "metadata": item["metadata"],
     } for item in items]
     json_payload = json.dumps(records, ensure_ascii=False, separators=(",", ":"))
+    city_slugs = sorted({item["city_slug"] for item in items})
+    quoted_city_slugs = ", ".join("'" + slug.replace("'", "''") + "'" for slug in city_slugs)
     sql = f"""-- Generated by scripts/import_overture.py; safe to re-run.
 WITH incoming AS (
   SELECT * FROM jsonb_to_recordset($overture${json_payload}$overture$::jsonb) AS x(
@@ -208,7 +331,7 @@ ON CONFLICT (source, source_id) DO UPDATE SET
 SELECT city.slug, count(*) AS active_items
 FROM public.catalog_items AS item
 JOIN public.catalog_cities AS city ON city.id = item.city_id
-WHERE city.slug IN ('paris-fr', 'lisbon-pt') AND item.is_active
+WHERE city.slug IN ({quoted_city_slugs}) AND item.is_active
 GROUP BY city.slug ORDER BY city.slug;
 """
     with open(destination, "w", encoding="utf-8") as output:
@@ -223,6 +346,12 @@ def main() -> int:
     parser.add_argument("--limit-per-category", type=int, default=10)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--pilot-local", action="store_true", help="Use built-in Paris/Lisbon coordinates; no Supabase read needed")
+    parser.add_argument("--local-cities", action="store_true", help="Read all cities from the checked-in catalogue seed; no Supabase read needed")
+    parser.add_argument(
+        "--city-seed-file",
+        default="supabase/migrations/20260921183500_catalog_seed.sql",
+        help="Catalogue seed used by --local-cities",
+    )
     parser.add_argument("--sql-output", help="Write reviewable upsert SQL instead of uploading")
     args = parser.parse_args()
 
@@ -232,6 +361,10 @@ def main() -> int:
         parser.error("--limit-per-category must be between 1 and 100")
     if args.pilot_local and not (args.dry_run or args.sql_output):
         parser.error("--pilot-local requires --dry-run or --sql-output")
+    if args.local_cities and not (args.dry_run or args.sql_output):
+        parser.error("--local-cities requires --dry-run or --sql-output")
+    if args.pilot_local and args.local_cities:
+        parser.error("--pilot-local and --local-cities cannot be used together")
 
     if args.pilot_local:
         requested = args.cities or list(PILOT_CITIES)
@@ -239,6 +372,8 @@ def main() -> int:
         if unknown:
             parser.error(f"--pilot-local supports only: {', '.join(PILOT_CITIES)}")
         cities = [PILOT_CITIES[slug] for slug in requested]
+    elif args.local_cities:
+        cities = get_local_cities(args.cities, args.city_seed_file)
     else:
         cities = get_cities(args.cities)
     if not cities:
@@ -246,10 +381,9 @@ def main() -> int:
 
     connection = duckdb.connect()
     connection.execute("INSTALL httpfs; LOAD httpfs; SET s3_region='us-west-2'")
-    all_items: list[dict[str, Any]] = []
+    all_items = extract_cities(connection, cities, args.release, args.min_confidence, args.limit_per_category)
     for city in cities:
-        items = extract_city(connection, city, args.release, args.min_confidence, args.limit_per_category)
-        all_items.extend(items)
+        items = [item for item in all_items if item["city_slug"] == city["slug"]]
         counts: dict[str, int] = {}
         for item in items:
             counts[item["canonical_category"]] = counts.get(item["canonical_category"], 0) + 1

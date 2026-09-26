@@ -46,13 +46,9 @@ const categoryFilters: Record<string, FilterOption[]> = {
     { key: "venueType", label: "Type", type: "select", options: ["Bars", "Clubs", "Live music", "Rooftop", "Lounge"] },
     { key: "price", label: "Price range", type: "select", options: ["€", "€€", "€€€"] },
   ],
-  hiking: [
-    { key: "routeType", label: "Type", type: "select", options: ["Urban hike", "Trail", "Park walk", "Viewpoint route"] },
-    { key: "duration", label: "Duration", type: "select", options: ["< 1h", "1-3h", "3-6h", "Full day"] },
-    { key: "kidFriendly", label: "Kid-friendly", type: "toggle" },
-  ],
   nature: [
-    { key: "activityType", label: "Type", type: "select", options: ["Hiking", "Viewpoints", "Beaches", "Parks", "Lakes"] },
+    { key: "activityType", label: "Type", type: "select", options: ["Hiking", "Urban walks", "Viewpoints", "Beaches", "Parks", "Gardens", "Lakes"] },
+    { key: "duration", label: "Duration", type: "select", options: ["< 1h", "1-3h", "3-6h", "Full day"] },
     { key: "kidFriendly", label: "Kid-friendly", type: "toggle" },
   ],
   culture: [
@@ -70,7 +66,6 @@ const genericFilters: FilterOption[] = [
 const categoryNav = [
   { id: "all", label: "All", icon: Compass },
   { id: "food", label: "Food", icon: Utensils },
-  { id: "hiking", label: "Hiking", icon: Mountain },
   { id: "nature", label: "Nature", icon: TreePine },
   { id: "culture", label: "Culture", icon: Landmark },
   { id: "nightlife", label: "Nightlife", icon: Moon },
@@ -78,8 +73,8 @@ const categoryNav = [
 
 const categoryConfig: Record<string, { icon: typeof Utensils; label: string; color: string }> = {
   food: { icon: Utensils, label: "Food", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" },
-  hiking: { icon: Mountain, label: "Hiking", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-  hike: { icon: Mountain, label: "Hike", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+  hiking: { icon: TreePine, label: "Nature", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  hike: { icon: TreePine, label: "Nature", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   nature: { icon: TreePine, label: "Nature", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   culture: { icon: Landmark, label: "Culture", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
   scenic: { icon: Eye, label: "Scenic", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
@@ -107,8 +102,7 @@ const labelConfig: Record<string, { icon: typeof Star; color: string }> = {
 
 const categoryMatchMap: Record<string, string[]> = {
   food: ["food", "restaurant", "cafe", "bakery"],
-  hiking: ["hiking", "hike", "trail", "urban_hike", "park_walk"],
-  nature: ["nature", "scenic", "beach", "park", "urban_forest", "urban_waterfront"],
+  nature: ["nature", "hiking", "hike", "trail", "urban_hike", "park_walk", "scenic", "beach", "park", "urban_forest", "urban_waterfront"],
   culture: ["culture", "museum", "monument", "architecture", "gallery", "historic"],
   nightlife: ["nightlife", "bars", "club", "lounge"],
 };

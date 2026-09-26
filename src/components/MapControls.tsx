@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2, Eye, EyeOff, Layers,
-  Utensils, Mountain, Landmark, TreePine, Moon, Compass,
+  Utensils, Landmark, TreePine, Moon, Compass,
   Gem, Home, Plus, Minus, Check
 } from "lucide-react";
 
@@ -10,7 +10,6 @@ export const ACTIVITY_TAGS = [
   { id: "food", label: "Food", icon: Utensils },
   { id: "culture", label: "Culture", icon: Landmark },
   { id: "nature", label: "Nature", icon: TreePine },
-  { id: "hiking", label: "Hiking", icon: Mountain },
   { id: "nightlife", label: "Nightlife", icon: Moon },
   { id: "beach", label: "Beach", icon: Compass },
   { id: "museum", label: "Museum", icon: Building2 },

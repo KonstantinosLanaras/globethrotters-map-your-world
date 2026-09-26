@@ -65,8 +65,7 @@ serve(async (req) => {
             content: `Generate 18-25 real, specific activities and places to visit in ${placeName}, ${country}. Include a rich mix across ALL categories:
 - Food (5-6): specific restaurants, street food spots, markets, cafes
 - Culture (3-4): museums, historic sites, temples, galleries
-- Nature (3-4): parks, gardens, viewpoints, beaches
-- Hiking (2-3): trails, walks, treks
+- Nature (5-7): parks, gardens, viewpoints, beaches, trails, walks and treks. Use specific tags such as hiking or beach.
 - Scenic (2-3): viewpoints, photo spots, architectural landmarks
 - Hidden Gem (2-3): local-only spots, off-the-beaten-path places
 - Transport (1-2): unique local transport experiences
@@ -91,7 +90,7 @@ Make names specific. Do not include ratings, review counts, prices, or booking a
                         name: { type: "string", description: "Specific place or activity name" },
                         category: {
                           type: "string",
-                          enum: ["food", "hiking", "nature", "culture", "scenic", "transport", "hidden_gem"],
+                          enum: ["food", "nature", "culture", "scenic", "transport", "hidden_gem"],
                         },
                         description: { type: "string", description: "1-2 sentence description" },
                         difficulty: {

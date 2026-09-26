@@ -27,7 +27,7 @@ interface LocationPanelProps {
 
 const categoryConfig: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
   food: { icon: <Utensils className="w-3.5 h-3.5" />, color: "bg-visited/15 text-visited", label: "Food" },
-  hiking: { icon: <Mountain className="w-3.5 h-3.5" />, color: "bg-ocean/15 text-ocean", label: "Hiking" },
+  hiking: { icon: <Mountain className="w-3.5 h-3.5" />, color: "bg-ocean/15 text-ocean", label: "Nature" },
   nature: { icon: <Mountain className="w-3.5 h-3.5" />, color: "bg-ocean/15 text-ocean", label: "Nature" },
   culture: { icon: <Landmark className="w-3.5 h-3.5" />, color: "bg-gold/15 text-gold", label: "Culture" },
   scenic: { icon: <Camera className="w-3.5 h-3.5" />, color: "bg-primary/15 text-primary", label: "Scenic" },

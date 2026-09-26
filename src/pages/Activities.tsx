@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const categories = [
   { icon: <Utensils className="w-6 h-6" />, label: "Food & Dining", description: "Local dishes, restaurants, street food", count: 0, color: "bg-visited/10 text-visited" },
-  { icon: <Mountain className="w-6 h-6" />, label: "Hiking & Nature", description: "Trails, national parks, viewpoints", count: 0, color: "bg-ocean/10 text-ocean" },
+  { icon: <Mountain className="w-6 h-6" />, label: "Nature & Outdoors", description: "Trails, national parks, viewpoints", count: 0, color: "bg-ocean/10 text-ocean" },
   { icon: <Landmark className="w-6 h-6" />, label: "Culture & History", description: "Museums, monuments, historical sites", count: 0, color: "bg-gold/10 text-gold" },
   { icon: <Camera className="w-6 h-6" />, label: "Scenic Views", description: "Lookouts, sunsets, photography spots", count: 0, color: "bg-primary/10 text-primary" },
   { icon: <Train className="w-6 h-6" />, label: "Transport & Routes", description: "Trains, ferries, scenic drives, bike routes", count: 0, color: "bg-secondary/10 text-secondary" },

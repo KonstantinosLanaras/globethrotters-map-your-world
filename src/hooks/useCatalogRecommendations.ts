@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export const explorerCategories = ["food", "culture", "nature", "hiking", "nightlife"] as const;
+export const explorerCategories = ["food", "culture", "nature", "nightlife"] as const;
 export type ExplorerCategory = (typeof explorerCategories)[number];
 
 /**

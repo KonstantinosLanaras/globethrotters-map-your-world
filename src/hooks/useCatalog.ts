@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { curatedExperiences } from "@/data/curatedExperiences";
 import { supabase } from "@/integrations/supabase/client";
 
-export type CatalogCategory = "food" | "culture" | "nature" | "hiking" | "nightlife";
+export type CatalogCategory = "food" | "culture" | "nature" | "nightlife";
 export type CatalogQualityTier = "coverage" | "popular" | "editorial" | "community";
 
 export interface CatalogItem {
@@ -173,4 +173,3 @@ export const useCatalogMapItems = () =>
   });
 
 export const editorialCatalog = curatedCatalog;
-

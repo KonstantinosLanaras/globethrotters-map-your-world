@@ -20,7 +20,6 @@ const ACTIVITY_FILTERS = [
   { id: "food", label: "Food", icon: Utensils, emoji: "🍽️" },
   { id: "culture", label: "Culture", icon: Landmark, emoji: "🏛️" },
   { id: "nature", label: "Nature", icon: TreePine, emoji: "🌿" },
-  { id: "hike", label: "Hiking", icon: Mountain, emoji: "🥾" },
   { id: "nightlife", label: "Nightlife", icon: Moon, emoji: "🌙" },
   { id: "beach", label: "Beach", icon: Compass, emoji: "🏖️" },
   { id: "museum", label: "Museum", icon: Building2, emoji: "🎨" },

@@ -1,0 +1,66 @@
+name: Generate Overture catalogue batch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/import_overture.py"
+      - "scripts/requirements-import.txt"
+      - "supabase/migrations/20260921183500_catalog_seed.sql"
+      - ".github/workflows/catalog-overture-batch.yml"
+  workflow_dispatch:
+    inputs:
+      cities:
+        description: "Optional comma-separated city slugs; blank processes all active catalogue cities"
+        required: false
+        type: string
+      limit_per_category:
+        description: "Maximum records per top-level category and city"
+        required: true
+        default: "10"
+        type: string
+      minimum_confidence:
+        description: "Minimum Overture confidence"
+        required: true
+        default: "0.80"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r scripts/requirements-import.txt
+      - name: Generate idempotent SQL
+        env:
+          CITY_INPUT: ${{ inputs.cities }}
+          LIMIT_PER_CATEGORY: ${{ inputs.limit_per_category }}
+          MINIMUM_CONFIDENCE: ${{ inputs.minimum_confidence }}
+        run: |
+          city_args=()
+          if [[ -n "$CITY_INPUT" ]]; then
+            IFS=',' read -ra requested <<< "$CITY_INPUT"
+            for city in "${requested[@]}"; do
+              city_args+=(--city "${city// /}")
+            done
+          fi
+          python scripts/import_overture.py \
+            --local-cities \
+            "${city_args[@]}" \
+            --limit-per-category "$LIMIT_PER_CATEGORY" \
+            --min-confidence "$MINIMUM_CONFIDENCE" \
+            --sql-output overture_catalog_batch.sql
+      - uses: actions/upload-artifact@v4
+        with:
+          name: overture-catalogue-sql
+          path: overture_catalog_batch.sql
+          if-no-files-found: error
+          retention-days: 14

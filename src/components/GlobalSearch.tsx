@@ -13,12 +13,11 @@ const categoryEmoji: Record<string, string> = {
   Food: "🍽️",
   Culture: "🏛️",
   Nature: "🌿",
-  Hiking: "🥾",
   Nightlife: "🌙",
   general: "📍",
 };
 
-const experienceCategories = ["Food", "Culture", "Nature", "Hiking", "Nightlife"] as const;
+const experienceCategories = ["Food", "Culture", "Nature", "Nightlife"] as const;
 
 const placesFilters = [
   { key: "safe", label: "🛡️ Safe" },

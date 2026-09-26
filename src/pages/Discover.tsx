@@ -12,7 +12,7 @@ import FeaturedTooltip from "@/components/FeaturedTooltip";
 import AddToTripDialog from "@/components/AddToTripDialog";
 import { toast } from "sonner";
 
-const categories = ["All", "Food", "Culture", "Nature", "Hiking", "Nightlife"] as const;
+const categories = ["All", "Food", "Culture", "Nature", "Nightlife"] as const;
 type Category = (typeof categories)[number];
 
 interface DiscoverExperience {
@@ -113,7 +113,6 @@ const categoryEmoji: Record<string, string> = {
   Food: "🍽️",
   Culture: "🏛️",
   Nature: "🌿",
-  Hiking: "🥾",
   Nightlife: "🌙",
   general: "📍",
 };

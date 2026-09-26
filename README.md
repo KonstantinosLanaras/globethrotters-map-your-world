@@ -40,14 +40,19 @@ places to verified community ratings. The app remains backward-compatible
 before this migration, but community scores appear only after it is applied.
 
 Run `lovable_catalog_pilot.sql` next to expand Paris and Lisbon to ten editorial
-places each. Both cities then have two places in every MVP category: food,
-culture, nature, hiking and nightlife. The script is safe to run more than once.
+places each. The catalogue now uses four top-level categories: food, culture,
+nature and nightlife. Hiking remains available as a Nature subtype/tag. The
+script is safe to run more than once.
 
 Run `lovable_launch_cities_completion.sql` after the pilot to bring London,
 Rome, Barcelona and Athens to the same balanced ten-item coverage. This gives
 the working MVP six complete launch destinations before the automated Overture
 rollout begins. The script is idempotent and ends with a category-count check;
-every returned count should be `2`.
+Nature should return `4`; every other category should return `2`.
+
+Run `lovable_nature_category_migration.sql` after the catalogue and
+recommendation scripts. It merges existing Hiking records into Nature without
+losing their trail, urban-hike or cycling subcategories.
 
 Run `lovable_social_feed_setup.sql` to enable the social feed audiences selected
 by users. It lets accepted connections read follower-only posts and their photos,
@@ -81,7 +86,7 @@ npm run catalog:pilot:dry
 npm run catalog:pilot
 ```
 
-Run a few cities first and review category coverage before processing all 50. The importer defaults to ten places per category and Overture items are labelled as coverage, not recommendations.
+Run a few cities first and review category coverage before processing all 50. The importer defaults to ten places per category and Overture items are labelled as coverage, not recommendations. It can now read the complete checked-in city registry with `--local-cities`, so a reviewable batch for all cities can be generated without database credentials. The **Generate Overture catalogue batch** GitHub Action provides the same process and returns an idempotent SQL artifact.
 
 The `import-google-candidates` Edge Function is deliberately protected by `CATALOG_IMPORT_SECRET`. Supply one to five city slugs per invocation; it defaults to food and culture, requests no more than three result pages per city/category, and transiently ranks candidates with more than 1,000 reviews to select ten per category. Only selected Google Place IDs and ranks are stored; names, coordinates, ratings and review counts are returned for immediate admin review but are not persisted or published to the map. Any interface that displays that response must follow Google Maps attribution and current Places policies.
 

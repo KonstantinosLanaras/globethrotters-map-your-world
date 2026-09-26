@@ -14,7 +14,6 @@ const CATALOG_COLORS: Record<string, string> = {
   food: "#f97316",
   culture: "#2563eb",
   nature: "#059669",
-  hiking: "#16a34a",
   nightlife: "#7c3aed",
 };
 
@@ -80,8 +79,7 @@ const createSavedPinIcon = (type: "visited" | "wishlist") => {
 const TAG_MATCH_MAP: Record<string, string[]> = {
   food: ["food", "restaurant", "cafe", "bakery", "dining"],
   culture: ["culture", "museum", "monument", "architecture", "gallery", "historic"],
-  nature: ["nature", "scenic", "park", "lake", "waterfall"],
-  hiking: ["hiking", "hike", "trail", "trek"],
+  nature: ["nature", "scenic", "park", "lake", "waterfall", "hiking", "hike", "trail", "trek"],
   nightlife: ["nightlife", "bars", "club", "lounge", "pub"],
   beach: ["beach", "coast", "seaside"],
   museum: ["museum", "gallery", "exhibition"],

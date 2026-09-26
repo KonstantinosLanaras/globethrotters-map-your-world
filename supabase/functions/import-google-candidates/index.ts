@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-type Category = "food" | "culture" | "nature" | "hiking" | "nightlife";
+type Category = "food" | "culture" | "nature" | "nightlife";
 
 type GoogleCandidate = {
   googlePlaceId: string;
@@ -21,11 +21,10 @@ type SelectedCandidate = GoogleCandidate & {
   source: "Google Maps";
 };
 
-const SEARCH_CONFIG: Record<Category, { query: string; includedType: string }> = {
+const SEARCH_CONFIG: Record<Category, { query: string; includedType?: string }> = {
   food: { query: "restaurants", includedType: "restaurant" },
   culture: { query: "museums", includedType: "museum" },
-  nature: { query: "parks and gardens", includedType: "park" },
-  hiking: { query: "hiking trails", includedType: "hiking_area" },
+  nature: { query: "parks gardens hiking trails beaches and nature" },
   nightlife: { query: "nightclubs", includedType: "night_club" },
 };
 
@@ -107,8 +106,6 @@ serve(async (request) => {
         for (let page = 0; page < maxPages; page += 1) {
           const searchBody: Record<string, unknown> = {
             textQuery: `${config.query} in ${city.name}, ${city.country}`,
-            includedType: config.includedType,
-            strictTypeFiltering: true,
             minRating,
             pageSize: 20,
             languageCode: "en",
@@ -120,6 +117,10 @@ serve(async (request) => {
               },
             },
           };
+          if (config.includedType) {
+            searchBody.includedType = config.includedType;
+            searchBody.strictTypeFiltering = true;
+          }
           if (pageToken) searchBody.pageToken = pageToken;
 
           const response = await fetch("https://places.googleapis.com/v1/places:searchText", {

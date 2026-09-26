@@ -13,9 +13,9 @@ import ExperienceComposer from "@/components/ExperienceComposer";
 import { toast } from "sonner";
 
 const categoryEmoji: Record<string, string> = {
-  Food: "🍽️", Culture: "🏛️", Nature: "🌿", Hiking: "🥾", Nightlife: "🌙", general: "📍",
+  Food: "🍽️", Culture: "🏛️", Nature: "🌿", Nightlife: "🌙", general: "📍",
 };
-const categoryFilters = ["All", "Food", "Culture", "Nature", "Hiking", "Nightlife"] as const;
+const categoryFilters = ["All", "Food", "Culture", "Nature", "Nightlife"] as const;
 
 interface VisitedDestinationNode {
   city: string;

@@ -22,7 +22,7 @@ const CATEGORY_META: Record<string, { label: string; icon: any; emoji: string }>
   food: { label: "Food", icon: Utensils, emoji: "🍽️" },
   culture: { label: "Culture", icon: Landmark, emoji: "🏛️" },
   nature: { label: "Nature", icon: TreePine, emoji: "🌿" },
-  hike: { label: "Hiking", icon: Mountain, emoji: "🥾" },
+  hike: { label: "Nature", icon: TreePine, emoji: "🌿" },
   nightlife: { label: "Nightlife", icon: Moon, emoji: "🌙" },
   beach: { label: "Beach", icon: Compass, emoji: "🏖️" },
   museum: { label: "Museum", icon: Building2, emoji: "🎨" },

@@ -29,7 +29,7 @@ CREATE TABLE public.catalog_items (
   latitude double precision NOT NULL CHECK (latitude BETWEEN -90 AND 90),
   longitude double precision NOT NULL CHECK (longitude BETWEEN -180 AND 180),
   canonical_category text NOT NULL CHECK (
-    canonical_category IN ('food', 'culture', 'nature', 'hiking', 'nightlife')
+    canonical_category IN ('food', 'culture', 'nature', 'nightlife')
   ),
   subcategory text NOT NULL,
   description text,
@@ -88,7 +88,7 @@ CREATE TABLE public.google_place_candidate_ids (
   import_run_id uuid NOT NULL REFERENCES public.catalog_import_runs(id) ON DELETE CASCADE,
   city_id uuid NOT NULL REFERENCES public.catalog_cities(id) ON DELETE CASCADE,
   search_category text NOT NULL CHECK (
-    search_category IN ('food', 'culture', 'nature', 'hiking', 'nightlife')
+    search_category IN ('food', 'culture', 'nature', 'nightlife')
   ),
   google_place_id text NOT NULL,
   selection_rank integer NOT NULL CHECK (selection_rank BETWEEN 1 AND 10),
@@ -105,7 +105,7 @@ CREATE TABLE public.provider_type_mappings (
   provider text NOT NULL,
   external_type text NOT NULL,
   canonical_category text NOT NULL CHECK (
-    canonical_category IN ('food', 'culture', 'nature', 'hiking', 'nightlife')
+    canonical_category IN ('food', 'culture', 'nature', 'nightlife')
   ),
   subcategory text NOT NULL,
   priority integer NOT NULL DEFAULT 100,
@@ -129,7 +129,7 @@ VALUES
   ('google', 'national_park', 'nature', 'national_park', 10),
   ('google', 'botanical_garden', 'nature', 'botanical_garden', 10),
   ('google', 'beach', 'nature', 'beach', 10),
-  ('google', 'hiking_area', 'hiking', 'trail', 10),
+  ('google', 'hiking_area', 'nature', 'trail', 10),
   ('google', 'night_club', 'nightlife', 'nightclub', 10),
   ('google', 'bar', 'nightlife', 'bar', 20),
   ('google', 'concert_hall', 'nightlife', 'live_music', 20),
@@ -139,7 +139,7 @@ VALUES
   ('overture', 'historical_landmark', 'culture', 'historical_landmark', 10),
   ('overture', 'park', 'nature', 'park', 10),
   ('overture', 'botanical_garden', 'nature', 'botanical_garden', 10),
-  ('overture', 'hiking_trail', 'hiking', 'trail', 10),
+  ('overture', 'hiking_trail', 'nature', 'trail', 10),
   ('overture', 'nightclub', 'nightlife', 'nightclub', 10)
 ON CONFLICT (provider, external_type) DO UPDATE SET
   canonical_category = EXCLUDED.canonical_category,
@@ -249,10 +249,10 @@ WITH seed(city_slug, source_id, name, lat, lng, category, subcategory, descripti
     ('lisbon-pt', 'lisbon-lx', 'LX Factory', 38.7037, -9.1782, 'food', 'food_market', 'A former industrial complex with restaurants, small shops and creative spaces.', 3),
     ('rome-it', 'rome-colosseum', 'Colosseum and Roman Forum', 41.8902, 12.4922, 'culture', 'historical_landmark', 'Reserve a timed entry and allow enough time for the Forum and Palatine Hill.', 1),
     ('rome-it', 'rome-trastevere', 'Trastevere evening walk', 41.8897, 12.4708, 'food', 'neighbourhood_food', 'Explore side streets and traditional Roman food away from the busiest squares.', 2),
-    ('rome-it', 'rome-appian', 'Appian Way by bicycle', 41.8429, 12.5288, 'hiking', 'cycling_route', 'Cycle a preserved Roman road and nearby aqueduct landscapes outside the centre.', 3),
+    ('rome-it', 'rome-appian', 'Appian Way by bicycle', 41.8429, 12.5288, 'nature', 'cycling_route', 'Cycle a preserved Roman road and nearby aqueduct landscapes outside the centre.', 3),
     ('athens-gr', 'athens-acropolis', 'Acropolis and Acropolis Museum', 37.9715, 23.7267, 'culture', 'historical_landmark', 'Visit the archaeological site early, then connect the ruins to their history in the museum.', 1),
     ('athens-gr', 'athens-plaka', 'Plaka and Anafiotika walk', 37.9724, 23.7297, 'culture', 'neighbourhood_walk', 'A compact old-town walk through lanes inspired by Cycladic island architecture.', 2),
-    ('athens-gr', 'athens-lycabettus', 'Lycabettus Hill sunset', 37.9817, 23.7430, 'hiking', 'urban_hike', 'Climb or take the funicular for a wide city view; arrive ahead of sunset.', 3),
+    ('athens-gr', 'athens-lycabettus', 'Lycabettus Hill sunset', 37.9817, 23.7430, 'nature', 'urban_hike', 'Climb or take the funicular for a wide city view; arrive ahead of sunset.', 3),
     ('barcelona-es', 'barcelona-sagrada', 'Sagrada Família', 41.4036, 2.1744, 'culture', 'historical_landmark', 'Book a timed interior visit to understand Gaudí’s light, structure and symbolism.', 1),
     ('barcelona-es', 'barcelona-gracia', 'Gràcia neighbourhood walk', 41.4030, 2.1567, 'culture', 'neighbourhood_walk', 'Explore small plazas, local shops and a calmer side of Barcelona above the old centre.', 2),
     ('barcelona-es', 'barcelona-montjuic', 'Montjuïc gardens and museums', 41.3636, 2.1585, 'nature', 'park', 'Link hillside gardens, viewpoints and a museum visit in one flexible half-day route.', 3),

@@ -1723,6 +1723,10 @@ export type Database = {
           subcategory: string
         }[]
       }
+      is_journey_invitee: {
+        Args: { _journey_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_journey_member: {
         Args: { _journey_id: string; _user_id: string }
         Returns: boolean

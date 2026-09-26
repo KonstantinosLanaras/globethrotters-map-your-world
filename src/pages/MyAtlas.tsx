@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check, ChevronDown, Heart, Map, Plus, Search, Share2, Star, Trash2, Plane, MessageSquare, SlidersHorizontal, PenLine,
 } from "lucide-react";
@@ -37,6 +37,21 @@ const useMyRatedPlaceIds = () => {
   });
 };
 
+const useMyExperienceReviews = () => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["my-experience-reviews", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("experience_reviews").select("id, experience_id, rating, comment").eq("user_id", user!.id);
+      if (error) throw error;
+      const map: Record<string, { id: string; rating: number; comment: string | null }> = {};
+      (data ?? []).forEach((r) => { map[r.experience_id] = { id: r.id, rating: r.rating, comment: r.comment }; });
+      return map;
+    },
+  });
+};
+
 type ShareTarget = { item: ShareableExperience; experienceId?: string | null; catalogItemId?: string | null };
 
 const MyAtlas = () => {
@@ -44,6 +59,32 @@ const MyAtlas = () => {
   const { data: places = [], isLoading: loadingPlaces } = usePlaces();
   const { data: experiences = [], isLoading: loadingExp } = useFavoriteExperiences();
   const { data: rated = {} } = useMyRatedPlaceIds();
+  const { data: expReviews = {} } = useMyExperienceReviews();
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const [reviewExp, setReviewExp] = useState<FavoriteExperience | null>(null);
+  const [expStars, setExpStars] = useState(0);
+  const [expComment, setExpComment] = useState("");
+  const [savingExpReview, setSavingExpReview] = useState(false);
+  const expStatus = (e: FavoriteExperience): "visited" | "wishlist" => (expReviews[e.id] ? "visited" : "wishlist");
+  const openExpReview = (e: FavoriteExperience) => {
+    setReviewExp(e); setExpStars(expReviews[e.id]?.rating ?? 0); setExpComment(expReviews[e.id]?.comment ?? "");
+  };
+  const submitExpReview = async () => {
+    if (!reviewExp || !user || expStars === 0) { toast.error("Please select a star rating"); return; }
+    setSavingExpReview(true);
+    const existing = expReviews[reviewExp.id];
+    const payload = { rating: expStars, comment: expComment.trim().slice(0, 300) || null };
+    const { error } = existing
+      ? await supabase.from("experience_reviews").update(payload).eq("id", existing.id)
+      : await supabase.from("experience_reviews").insert({ ...payload, experience_id: reviewExp.id, user_id: user.id });
+    setSavingExpReview(false);
+    if (error) { toast.error("Could not save your review"); return; }
+    toast.success("Review saved — thanks for helping other travelers!");
+    qc.invalidateQueries({ queryKey: ["my-experience-reviews"] });
+    qc.invalidateQueries({ queryKey: ["favorite-experiences"] });
+    setReviewExp(null);
+  };
   const updatePlace = useUpdatePlace();
   const deletePlace = useDeletePlace();
   const toggleFav = useToggleFavoriteExperience();
@@ -65,11 +106,6 @@ const MyAtlas = () => {
   const q = query.trim().toLowerCase();
   const matchesText = (...vals: (string | null | undefined)[]) => !q || vals.some((v) => v?.toLowerCase().includes(q));
 
-  const counts = {
-    all: places.length,
-    visited: places.filter((p) => p.type === "visited").length,
-    wishlist: places.filter((p) => p.type === "wishlist").length,
-  };
 
   const filteredPlaces = useMemo(() => {
     const list = places.filter((p) =>
@@ -87,6 +123,7 @@ const MyAtlas = () => {
 
   const filteredExp = useMemo(() => {
     const list = experiences.filter((e) =>
+      (status === "all" || expStatus(e) === status) &&
       matchesText(e.title, e.city, e.country, e.caption) &&
       (!category || e.category === category) &&
       (ratedFilter === "any" || (ratedFilter === "rated" ? !!e.rating : !e.rating))
@@ -96,14 +133,25 @@ const MyAtlas = () => {
         : sortBy === "rating" ? (b.rating ?? 0) - (a.rating ?? 0)
         : b.favorited_at.localeCompare(a.favorited_at));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [experiences, q, category, ratedFilter, sortBy]);
+  }, [experiences, q, category, ratedFilter, sortBy, status, expReviews]);
 
   const showPlaces = content !== "experiences";
   const isGeo = (p: Place) => !p.catalog_item_id && !(p.tags?.length);
   const geoPlaces = filteredPlaces.filter(isGeo);
   const expPlaces = filteredPlaces.filter((p) => !isGeo(p));
-  const visibleSavedExp = status === "all" ? filteredExp : [];
+  const visibleSavedExp = filteredExp;
   const showExperiences = content !== "places";
+  const allGeo = places.filter(isGeo);
+  const allExpPlaces = places.filter((p) => !isGeo(p));
+  const countPool = [
+    ...(showPlaces ? allGeo.map((p) => p.type) : []),
+    ...(showExperiences ? [...allExpPlaces.map((p) => p.type), ...experiences.map(expStatus)] : []),
+  ];
+  const counts = {
+    all: countPool.length,
+    visited: countPool.filter((t) => t === "visited").length,
+    wishlist: countPool.filter((t) => t === "wishlist").length,
+  };
 
   const changeStatus = async (place: Place, type: Place["type"]) => {
     setOpenStatusId(null);
@@ -257,7 +305,7 @@ const MyAtlas = () => {
           </div>
         )}
 
-        {showPlaces && (
+        {(
           <div className="flex gap-2 mb-5">
             {(["all", "visited", "wishlist"] as const).map((s) => (
               <button key={s} onClick={() => setStatus(s)} className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border transition-all ${status === s ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:text-foreground"}`}>
@@ -296,11 +344,17 @@ const MyAtlas = () => {
                       <div className="p-4 flex-1 flex flex-col">
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="text-sm font-semibold text-foreground">{exp.title}</h3>
-                          {exp.rating > 0 && <span className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground flex-shrink-0"><Star className="w-3 h-3 fill-current" />{Number(exp.rating).toFixed(1)}</span>}
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium flex-shrink-0 ${expStatus(exp) === "visited" ? "bg-accent/15 text-accent-foreground" : "bg-primary/10 text-primary"}`}>
+                            {expStatus(exp) === "visited" ? <Check className="w-3 h-3" /> : <Heart className="w-3 h-3" />}{expStatus(exp) === "visited" ? "Visited" : "Wishlist"}
+                          </span>
                         </div>
                         <p className="text-xs text-muted-foreground">{[exp.city, exp.country].filter(Boolean).join(", ")} · <span className="capitalize">{exp.category.replace("_", " ")}</span></p>
+                        {exp.rating > 0 && <span className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground mt-1"><Star className="w-3 h-3 fill-current" />{Number(exp.rating).toFixed(1)} community</span>}
                         {exp.caption && <p className="text-xs text-muted-foreground/80 mt-2 line-clamp-2">{exp.caption}</p>}
                         <div className="flex items-center gap-1 mt-auto pt-3">
+                          <button onClick={() => openExpReview(exp)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-primary text-primary-foreground hover:opacity-90">
+                            <PenLine className="w-3.5 h-3.5" /> {expReviews[exp.id] ? "Edit review" : "Review"}
+                          </button>
                           <ShareMenu id={`e-${exp.id}`} item={expShareItem(exp)} title={exp.title} experienceId={exp.id} />
                           <button onClick={() => setTripTarget({ title: exp.title, experienceId: exp.id })} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs text-muted-foreground hover:text-foreground hover:bg-muted"><Plane className="w-3.5 h-3.5" /> Add to trip</button>
                           <button onClick={() => removeExperience(exp)} className="ml-auto w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10" aria-label={`Remove ${exp.title}`}><Trash2 className="w-3.5 h-3.5" /></button>
@@ -320,6 +374,26 @@ const MyAtlas = () => {
         <AddToTripDialog open onOpenChange={(o) => !o && setTripTarget(null)} experienceId={tripTarget.experienceId} catalogItemId={tripTarget.catalogItemId} experienceTitle={tripTarget.title} />
       )}
       {reviewPlace && <RatingModal open onClose={() => setReviewPlace(null)} placeId={reviewPlace.id} placeName={reviewPlace.name} />}
+      {reviewExp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4" onClick={() => setReviewExp(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-display text-lg font-semibold text-foreground">Review this experience</h3>
+            <p className="text-sm text-muted-foreground mb-4">{reviewExp.title}</p>
+            <div className="flex gap-1 mb-4">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button key={n} onClick={() => setExpStars(n)} aria-label={`${n} stars`}>
+                  <Star className={`w-7 h-7 ${n <= expStars ? "fill-primary text-primary" : "text-muted-foreground/40"}`} />
+                </button>
+              ))}
+            </div>
+            <textarea value={expComment} onChange={(e) => setExpComment(e.target.value.slice(0, 300))} placeholder="Share a tip for other travelers (optional)" className="w-full h-24 p-3 rounded-xl border border-border bg-background text-sm outline-none focus:border-primary/40 resize-none" />
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setReviewExp(null)} className="px-4 py-2 rounded-full text-sm text-muted-foreground hover:bg-muted">Cancel</button>
+              <button disabled={savingExpReview} onClick={submitExpReview} className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60">{savingExpReview ? "Saving…" : "Submit review"}</button>
+            </div>
+          </div>
+        </div>
+      )}
       <ExperienceComposer open={showComposer} onClose={() => setShowComposer(false)} />
     </div>
   );

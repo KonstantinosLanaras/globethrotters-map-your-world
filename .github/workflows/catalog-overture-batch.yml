@@ -40,6 +40,8 @@ jobs:
           cache: pip
           cache-dependency-path: scripts/requirements-import.txt
       - run: python -m pip install -r scripts/requirements-import.txt
+      - name: Test quality gates
+        run: python -m unittest discover -s scripts -p 'test_import_overture.py'
       - name: Generate idempotent SQL
         env:
           CITY_INPUT: ${{ inputs.cities }}
@@ -63,10 +65,13 @@ jobs:
             "${city_args[@]}" \
             --limit-per-category "$limit_per_category" \
             --min-confidence "$minimum_confidence" \
-            --sql-output overture_catalog_batch.sql
+            --sql-output overture_catalog_batch.sql \
+            --quality-report overture_catalog_quality_report.json
       - uses: actions/upload-artifact@v4
         with:
           name: overture-catalogue-sql
-          path: overture_catalog_batch.sql
+          path: |
+            overture_catalog_batch.sql
+            overture_catalog_quality_report.json
           if-no-files-found: error
           retention-days: 14

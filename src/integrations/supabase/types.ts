@@ -1596,7 +1596,28 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      city_metric_current: {
+        Row: {
+          band: string | null
+          city_id: string | null
+          city_name: string | null
+          city_slug: string | null
+          confidence: number | null
+          country: string | null
+          effective_at: string | null
+          methodology_version: string | null
+          metric: string | null
+          model_name: string | null
+          month: number | null
+          sample_size: number | null
+          source_kind: string | null
+          source_name: string | null
+          source_url: string | null
+          valid_until: string | null
+          value: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_catalog_recommendations: {

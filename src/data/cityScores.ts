@@ -1,5 +1,5 @@
-// Community-derived city scores (aggregated from user contributions)
-// These scores power the explore/discovery ranking system
+// Bundled launch estimates used as a resilient fallback until sourced metrics
+// are available from city_metric_current. They are not community ratings.
 
 export interface CityScore {
   cityName: string;
@@ -20,6 +20,7 @@ export interface CityScore {
   climate: Record<number, "A" | "B" | "C" | "D">;
   crowdLevel: Record<number, "low" | "moderate" | "high">;
   imageUrl?: string;
+  metricSources?: Partial<Record<string, { kind: string; name: string; confidence: number }>>;
 }
 
 // Deterministic score generator based on city characteristics
@@ -193,8 +194,8 @@ export interface ExploreFilters {
   month?: number; // 1-12
 }
 
-export function rankCities(filters: ExploreFilters): CityScore[] {
-  return cityScores
+export function rankCities(filters: ExploreFilters, scores: CityScore[] = cityScores): CityScore[] {
+  return scores
     .map(city => {
       let score = city.popularity;
 

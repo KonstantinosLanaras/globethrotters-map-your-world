@@ -14,6 +14,7 @@ import {
 } from "@/data/cityScores";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useDestinationScores } from "@/hooks/useDestinationScores";
 
 export type SearchMode = "places" | "experiences";
 
@@ -92,6 +93,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange, visible = true }: Ci
   const [filters, setFilters] = useState<ExploreFilters>({});
   const [crowdFilter, setCrowdFilter] = useState<CrowdFilter[]>([]);
   const [expFilters, setExpFilters] = useState<ExpFilters>(defaultExpFilters);
+  const { data: destinationScores = cityScores } = useDestinationScores();
   const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -170,9 +172,9 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange, visible = true }: Ci
     if (mode !== "places") return [];
     let ranked: CityScore[];
     if (hasActiveFilters) {
-      ranked = rankCities(filters);
+      ranked = rankCities(filters, destinationScores);
     } else {
-      ranked = [...cityScores].sort((a, b) => b.popularity - a.popularity);
+      ranked = [...destinationScores].sort((a, b) => b.popularity - a.popularity);
     }
     if (crowdFilter.length && filters.month) {
       ranked = ranked.filter((c) => crowdFilter.includes(c.crowdLevel[filters.month!] as CrowdFilter));
@@ -184,7 +186,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange, visible = true }: Ci
       );
     }
     return ranked.slice(0, 15);
-  }, [query, filters, hasActiveFilters, crowdFilter, mode]);
+  }, [query, filters, hasActiveFilters, crowdFilter, mode, destinationScores]);
 
   // Extract unique countries and cities from experiences for geo filters
   const geoOptions = useMemo(() => {
@@ -525,7 +527,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange, visible = true }: Ci
                     </div>
                     <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50 bg-muted/20 flex-shrink-0">
                       <p className="text-[10px] text-muted-foreground/60 leading-tight max-w-[200px]">
-                        City insights are based on community contributions and are not verified.
+                        Scores combine sourced data and clearly labelled editorial estimates.
                       </p>
                       <div className="flex items-center gap-2">
                         {hasActiveFilters && (
@@ -764,7 +766,7 @@ const CityExploreBar = ({ onCitySelect, mode, onModeChange, visible = true }: Ci
                 {!showFilters && (
                   <div className="px-4 py-2.5 border-t border-border bg-muted/30 flex-shrink-0">
                     <p className="text-[10px] text-muted-foreground/70 text-center leading-tight">
-                      City insights and scores are based on community contributions and are not verified.
+                      Scores combine sourced data and clearly labelled editorial estimates.
                     </p>
                   </div>
                 )}
@@ -864,6 +866,9 @@ function CityResultCard({
   ]
     .sort((a, b) => b.value - a.value)
     .slice(0, 2);
+  const hasEditorialEstimate = scores.some(
+    (score) => city.metricSources?.[score.label.toLowerCase()]?.kind === "llm_editorial",
+  );
 
   return (
     <button
@@ -905,11 +910,18 @@ function CityResultCard({
           )}
           <span className="text-muted-foreground/30">·</span>
           {scores.map((s, i) => (
-            <span key={s.label} className="flex items-center gap-0.5 text-xs text-muted-foreground">
+            <span
+              key={s.label}
+              className="flex items-center gap-0.5 text-xs text-muted-foreground"
+              title={city.metricSources?.[s.label.toLowerCase()]?.name}
+            >
               {i > 0 && <span className="text-muted-foreground/30 mx-0.5">·</span>}
               {s.label} <Star className="w-2.5 h-2.5 text-gold fill-gold inline" /> {s.value.toFixed(1)}
             </span>
           ))}
+          {hasEditorialEstimate && (
+            <span className="text-[9px] font-medium text-muted-foreground/70">AI estimate</span>
+          )}
         </div>
       </div>
       <div className="flex-shrink-0 hidden sm:block">

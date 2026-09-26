@@ -54,6 +54,14 @@ Run `lovable_nature_category_migration.sql` after the catalogue and
 recommendation scripts. It merges existing Hiking records into Nature without
 losing their trail, urban-hike or cycling subcategories.
 
+Run `lovable_city_metrics_foundation.sql` to move Explore scores into a
+provenance-aware data layer. The protected `generate-city-editorial-metrics`
+function can seed food, culture, nature, nightlife and temporary budget values
+as explicitly labelled LLM editorial estimates. Official and open-data records
+automatically take precedence when they are added later, followed by permitted
+published rankings; community scores take precedence only after at least 25
+contributions.
+
 Run `lovable_social_feed_setup.sql` to enable the social feed audiences selected
 by users. It lets accepted connections read follower-only posts and their photos,
 allows request recipients to accept connections, and keeps close-friends posts

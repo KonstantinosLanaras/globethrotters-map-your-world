@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.is_journey_invitee(uuid, uuid) FROM PUBLIC, anon;

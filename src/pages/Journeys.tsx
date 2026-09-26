@@ -12,7 +12,7 @@ import { useExperiencesWithPhotos, ExperienceWithPhotos } from "@/hooks/useExper
 import { useFavoriteJourneyIds, useToggleFavoriteJourney } from "@/hooks/useFavorites";
 import { useTripPosts, useAddTripPost, useDeleteTripPost, TripPost } from "@/hooks/useTripPosts";
 import { useConnections } from "@/hooks/useShareConnections";
-import { useJourneyMembers, useInviteToJourney, useRemoveJourneyMember, useJourneyJoinRequests, useRespondToJoinRequest, useRequestToJoinJourney } from "@/hooks/useJourneyMembers";
+import { useJourneyMembers, useInviteToJourney, useRemoveJourneyMember, useJourneyJoinRequests, useRespondToJoinRequest, useRequestToJoinJourney, useMyJourneyInvitations, useRespondToInvitation } from "@/hooks/useJourneyMembers";
 import { useMessages, useSendMessage, useStartConversation } from "@/hooks/useMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +50,8 @@ const Journeys = () => {
   const [journeySearch, setJourneySearch] = useState("");
   const { data: discoverJourneys = [], isLoading: discoverLoading } = useDiscoverJourneys(journeySearch);
   const requestToJoin = useRequestToJoinJourney();
+  const { data: invitations = [] } = useMyJourneyInvitations();
+  const respondInvite = useRespondToInvitation();
 
   const handleCreate = async () => {
     if (!newTitle.trim()) { toast.error("Add a title"); return; }
@@ -241,6 +243,32 @@ const Journeys = () => {
           />
         ) : (
           <>
+            {invitations.length > 0 && (
+              <div className="space-y-2 mb-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">✉️ Trip invitations ({invitations.length})</h3>
+                {invitations.map(inv => (
+                  <div key={inv.id} className="flex items-center gap-3 p-3 rounded-xl bg-card border border-accent">
+                    <span className="text-xl">{inv.journey?.emoji || "✈️"}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{inv.journey?.title || "A trip"}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {inv.inviter_name || "A traveler"} invited you{inv.journey?.destinations?.length ? ` · ${inv.journey.destinations.join(", ")}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => respondInvite.mutate({ id: inv.id, accept: true }, { onSuccess: () => toast.success("You joined the trip 🎉"), onError: () => toast.error("Couldn't accept") })}
+                      disabled={respondInvite.isPending}
+                      className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium disabled:opacity-50"
+                    >Accept</button>
+                    <button
+                      onClick={() => respondInvite.mutate({ id: inv.id, accept: false }, { onSuccess: () => toast("Invitation declined"), onError: () => toast.error("Couldn't decline") })}
+                      disabled={respondInvite.isPending}
+                      className="px-3 py-1.5 rounded-lg bg-muted text-xs font-medium text-muted-foreground disabled:opacity-50"
+                    >Decline</button>
+                  </div>
+                ))}
+              </div>
+            )}
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="w-8 h-8 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin mx-auto" />
@@ -889,7 +917,7 @@ const PeopleTab = ({
 
   const handleInvite = (userId: string) => {
     inviteToJourney.mutate({ journeyId, userId }, {
-      onSuccess: () => toast.success("Friend added to trip! 🎉"),
+      onSuccess: () => toast.success("Invitation sent — they'll join once they accept"),
       onError: () => toast.error("Failed to invite"),
     });
   };
@@ -901,11 +929,13 @@ const PeopleTab = ({
     });
   };
 
+  const qcOpen = useQueryClient();
   const toggleOpenToJoin = async () => {
     setUpdatingOpenToJoin(true);
     try {
       const newValue = !(journey as any).open_to_join;
       await supabase.from("journeys" as any).update({ open_to_join: newValue } as any).eq("id", journeyId);
+      qcOpen.invalidateQueries();
       toast.success(newValue ? "Trip is now open to join requests" : "Join requests disabled");
     } catch {
       toast.error("Failed to update");
@@ -1003,6 +1033,18 @@ const PeopleTab = ({
             >
               <X className="w-3 h-3 text-muted-foreground" />
             </button>
+          </div>
+        ))}
+        {members.filter(m => m.status === "pending").map(m => (
+          <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl bg-card/60 border border-dashed border-border">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground flex-shrink-0">
+              {(m.profile?.display_name || "?")[0]}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{m.profile?.display_name || "Traveler"}</p>
+              <p className="text-[10px] text-muted-foreground">Invitation pending</p>
+            </div>
+            <button onClick={() => handleRemove(m.id)} className="text-[10px] text-muted-foreground hover:text-foreground">Cancel</button>
           </div>
         ))}
       </div>

@@ -57,7 +57,7 @@ export const useInviteToJourney = () => {
           journey_id: journeyId,
           user_id: userId,
           invited_by: user.id,
-          status: "accepted",
+          status: "pending",
           role: "member",
         } as any);
       if (error) throw error;
@@ -127,9 +127,10 @@ export const useRespondToJoinRequest = () => {
 
       // If accepted, add as member
       if (accept) {
-        await supabase
+        const { error } = await supabase
           .from("journey_members" as any)
-          .insert({ journey_id: journeyId, user_id: userId, status: "accepted", role: "member" } as any);
+          .upsert({ journey_id: journeyId, user_id: userId, status: "accepted", role: "member" } as any, { onConflict: "journey_id,user_id" });
+        if (error) throw error;
       }
     },
     onSuccess: (_, vars) => {
@@ -156,5 +157,56 @@ export const useRequestToJoinJourney = () => {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["discover-journeys"] }),
+  });
+};
+
+export interface JourneyInvitation {
+  id: string;
+  journey_id: string;
+  invited_by: string | null;
+  journey?: { id: string; title: string; emoji: string | null; destinations: string[] | null; start_date: string | null };
+  inviter_name?: string | null;
+}
+
+export const useMyJourneyInvitations = () => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["journey-invitations", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("journey_members" as any)
+        .select("id, journey_id, invited_by")
+        .eq("user_id", user!.id)
+        .eq("status", "pending");
+      if (error) throw error;
+      const invites = (data ?? []) as unknown as JourneyInvitation[];
+      if (invites.length === 0) return [];
+      const [{ data: journeys }, { data: profiles }] = await Promise.all([
+        supabase.from("journeys").select("id, title, emoji, destinations, start_date").in("id", invites.map(i => i.journey_id)),
+        supabase.from("profiles").select("user_id, display_name").in("user_id", invites.map(i => i.invited_by).filter(Boolean) as string[]),
+      ]);
+      return invites.map(i => ({
+        ...i,
+        journey: journeys?.find(j => j.id === i.journey_id) as any,
+        inviter_name: profiles?.find(p => p.user_id === i.invited_by)?.display_name ?? null,
+      }));
+    },
+  });
+};
+
+export const useRespondToInvitation = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, accept }: { id: string; accept: boolean }) => {
+      const { error } = accept
+        ? await supabase.from("journey_members" as any).update({ status: "accepted" } as any).eq("id", id)
+        : await supabase.from("journey_members" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["journey-invitations"] });
+      qc.invalidateQueries({ queryKey: ["journeys"] });
+    },
   });
 };

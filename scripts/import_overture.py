@@ -79,6 +79,14 @@ NATURE_NAME_BLOCKLIST = (
     "parkeerplaats", "parkeergarage", "estacionamiento", "estacionamento",
 )
 
+# Globally standardized chains add little destination-specific value and can
+# dominate dense-city food results. This is deliberately limited to obvious
+# international chains; regional businesses remain eligible for review.
+FOOD_CHAIN_PREFIX_BLOCKLIST = (
+    "burger king", "domino s pizza", "five guys", "kfc", "mcdonald s",
+    "pizza hut", "starbucks", "subway",
+)
+
 
 def get_latest_release() -> str:
     with urllib.request.urlopen("https://stac.overturemaps.org/catalog.json", timeout=30) as response:
@@ -216,6 +224,11 @@ def quality_rejection_reason(item: dict[str, Any]) -> str | None:
         phrase in normalized for phrase in NATURE_NAME_BLOCKLIST
     ):
         return "nature_infrastructure"
+    if item["canonical_category"] == "food" and any(
+        normalized == chain or normalized.startswith(f"{chain} ")
+        for chain in FOOD_CHAIN_PREFIX_BLOCKLIST
+    ):
+        return "global_food_chain"
     return None
 
 

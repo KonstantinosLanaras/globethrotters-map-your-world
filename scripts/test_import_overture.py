@@ -41,6 +41,7 @@ class ImportQualityTests(unittest.TestCase):
         items = [
             candidate("Burger King Nygata"),
             candidate("Domino's Pizza"),
+            candidate("McDonald’s"),
             candidate("Family Burger House"),
         ]
 
@@ -49,7 +50,7 @@ class ImportQualityTests(unittest.TestCase):
         self.assertEqual([item["name"] for item in selected], ["Family Burger House"])
         self.assertEqual(
             report["cities"]["test-city"]["categories"]["food"]["rejected"]["global_food_chain"],
-            2,
+            3,
         )
 
     def test_prefers_subtype_then_city_center(self):

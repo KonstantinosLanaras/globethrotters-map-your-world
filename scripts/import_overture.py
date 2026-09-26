@@ -83,7 +83,7 @@ NATURE_NAME_BLOCKLIST = (
 # dominate dense-city food results. This is deliberately limited to obvious
 # international chains; regional businesses remain eligible for review.
 FOOD_CHAIN_PREFIX_BLOCKLIST = (
-    "burger king", "domino s pizza", "five guys", "kfc", "mcdonald s",
+    "burger king", "domino s pizza", "five guys", "kfc", "mcdonald s", "mcdonalds",
     "pizza hut", "starbucks", "subway",
 )
 

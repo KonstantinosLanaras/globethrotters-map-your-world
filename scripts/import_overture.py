@@ -16,6 +16,7 @@ import math
 import os
 import re
 import sys
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -52,6 +53,31 @@ CITY_ROW_PATTERN = re.compile(
 )
 
 STAC_FILE_CACHE: dict[str, list[dict[str, Any]]] = {}
+
+CATEGORY_SUBTYPE_PRIORITY = {
+    "culture": {
+        "historic_site": 0, "museum": 0, "monument": 1,
+        "art_gallery": 1, "cultural_center": 2,
+    },
+    "food": {
+        "food_market": 0, "restaurant": 1, "bakery": 2, "cafe": 2,
+    },
+    "nature": {
+        "nature_reserve": 0, "botanical_garden": 0, "garden": 1,
+        "beach": 1, "hiking_trail": 1, "trailhead": 2, "park": 2,
+    },
+    "nightlife": {
+        "live_music_venue": 0, "concert_hall": 0, "nightclub": 1, "bar": 2,
+    },
+}
+
+# These phrases are strong evidence that a feature classified as a park is
+# actually vehicle infrastructure. Keep the list deliberately narrow so the
+# importer does not silently make subjective editorial decisions.
+NATURE_NAME_BLOCKLIST = (
+    "car park", "parking lot", "parking garage", "parkhaus", "parcheggio",
+    "parkeerplaats", "parkeergarage", "estacionamiento", "estacionamento",
+)
 
 
 def get_latest_release() -> str:
@@ -176,6 +202,91 @@ def category_case() -> str:
     """
 
 
+def normalize_place_name(value: str) -> str:
+    """Return a stable key for conservative within-city name deduplication."""
+    ascii_value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", ascii_value.lower()).split())
+
+
+def quality_rejection_reason(item: dict[str, Any]) -> str | None:
+    normalized = normalize_place_name(item["name"])
+    if len(normalized) < 2:
+        return "invalid_name"
+    if item["canonical_category"] == "nature" and any(
+        phrase in normalized for phrase in NATURE_NAME_BLOCKLIST
+    ):
+        return "nature_infrastructure"
+    return None
+
+
+def select_quality_candidates(
+    candidates: list[dict[str, Any]],
+    city_by_slug: dict[str, dict[str, Any]],
+    limit_per_category: int,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Select a diverse coverage pool and return a machine-readable QA report."""
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    report: dict[str, Any] = {"cities": {}, "summary": {"selected": 0, "rejected": 0}}
+
+    for candidate in candidates:
+        city = city_by_slug[candidate["city_slug"]]
+        latitude_scale = 111.0
+        longitude_scale = 111.0 * max(0.2, math.cos(math.radians(float(city["latitude"]))))
+        distance_km = math.sqrt(
+            ((float(candidate["latitude"]) - float(city["latitude"])) * latitude_scale) ** 2
+            + ((float(candidate["longitude"]) - float(city["longitude"])) * longitude_scale) ** 2
+        )
+        candidate["distance_to_center_km"] = round(distance_km, 2)
+        key = (candidate["city_slug"], candidate["canonical_category"])
+        grouped.setdefault(key, []).append(candidate)
+
+    selected: list[dict[str, Any]] = []
+    for (city_slug, category), items in grouped.items():
+        subtype_priority = CATEGORY_SUBTYPE_PRIORITY.get(category, {})
+        items.sort(key=lambda item: (
+            subtype_priority.get(item["subcategory"], 9),
+            item["distance_to_center_km"],
+            -float(item["source_confidence"]),
+            normalize_place_name(item["name"]),
+        ))
+        city_report = report["cities"].setdefault(city_slug, {"categories": {}})
+        category_report = {
+            "available": len(items), "selected": 0, "target": limit_per_category,
+            "rejected": {}, "selected_names": [],
+        }
+        city_report["categories"][category] = category_report
+        seen_names: set[str] = set()
+        for item in items:
+            reason = quality_rejection_reason(item)
+            normalized_name = normalize_place_name(item["name"])
+            if reason is None and normalized_name in seen_names:
+                reason = "duplicate_name"
+            if reason is not None:
+                category_report["rejected"][reason] = category_report["rejected"].get(reason, 0) + 1
+                report["summary"]["rejected"] += 1
+                continue
+            if category_report["selected"] >= limit_per_category:
+                category_report["rejected"]["below_cutoff"] = category_report["rejected"].get("below_cutoff", 0) + 1
+                report["summary"]["rejected"] += 1
+                continue
+            seen_names.add(normalized_name)
+            item["metadata"]["distance_to_center_km"] = item["distance_to_center_km"]
+            item["metadata"]["selection_basis"] = "coverage_quality_gate_v1"
+            selected.append(item)
+            category_report["selected"] += 1
+            category_report["selected_names"].append(item["name"])
+            report["summary"]["selected"] += 1
+
+    for city_slug in city_by_slug:
+        city_report = report["cities"].setdefault(city_slug, {"categories": {}})
+        for category in CATEGORY_SUBTYPE_PRIORITY:
+            city_report["categories"].setdefault(category, {
+                "available": 0, "selected": 0, "target": limit_per_category,
+                "rejected": {}, "selected_names": [],
+            })
+    return selected, report
+
+
 def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], release: str,
                  minimum_confidence: float, limit_per_category: int) -> list[dict[str, Any]]:
     radius = float(city["search_radius_km"])
@@ -240,7 +351,7 @@ def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], re
 
 
 def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str, Any]], release: str,
-                   minimum_confidence: float, limit_per_category: int) -> list[dict[str, Any]]:
+                   minimum_confidence: float, limit_per_category: int) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Use Overture's STAC index per bbox, then resolve cross-city duplicates."""
     candidates: list[dict[str, Any]] = []
     for city in cities:
@@ -286,7 +397,7 @@ def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str,
             confidence, canonical_category
           FROM ranked
           WHERE category_rank <= ?
-        """, [minimum_confidence, limit_per_category * 2]).fetchall()
+        """, [minimum_confidence, max(limit_per_category * 12, 100)]).fetchall()
         connection.unregister(relation_name)
         candidates.extend({
             "city_id": city.get("id"),
@@ -324,21 +435,16 @@ def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str,
         if existing is None or distance_to_city(candidate) < distance_to_city(existing):
             nearest_by_source[candidate["source_id"]] = candidate
 
-    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
-    for candidate in nearest_by_source.values():
-        key = (candidate["city_slug"], candidate["canonical_category"])
-        grouped.setdefault(key, []).append(candidate)
-
-    selected: list[dict[str, Any]] = []
-    for items in grouped.values():
-        items.sort(key=lambda item: (-float(item["source_confidence"]), item["name"]))
-        selected.extend(items[:limit_per_category])
-    return sorted(selected, key=lambda item: (
+    selected, report = select_quality_candidates(
+        list(nearest_by_source.values()), city_by_slug, limit_per_category,
+    )
+    ordered = sorted(selected, key=lambda item: (
         city_by_slug[item["city_slug"]]["market_rank"],
         item["canonical_category"],
-        -float(item["source_confidence"]),
+        item["distance_to_center_km"],
         item["name"],
     ))
+    return ordered, report
 
 
 def extract_cities_legacy(connection: duckdb.DuckDBPyConnection, cities: list[dict[str, Any]], release: str,
@@ -492,6 +598,13 @@ GROUP BY city.slug ORDER BY city.slug;
         output.write(sql)
 
 
+def write_quality_report(report: dict[str, Any], destination: str, release: str) -> None:
+    report = {"overture_release": release, "quality_gate": "coverage_quality_gate_v1", **report}
+    with open(destination, "w", encoding="utf-8") as output:
+        json.dump(report, output, ensure_ascii=False, indent=2, sort_keys=True)
+        output.write("\n")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--city", action="append", dest="cities", default=[], help="City slug; repeat to select cities")
@@ -507,6 +620,7 @@ def main() -> int:
         help="Catalogue seed used by --local-cities",
     )
     parser.add_argument("--sql-output", help="Write reviewable upsert SQL instead of uploading")
+    parser.add_argument("--quality-report", help="Write JSON showing selected and rejected candidates")
     args = parser.parse_args()
 
     if not 0 <= args.min_confidence <= 1:
@@ -535,13 +649,17 @@ def main() -> int:
 
     release = args.release or get_latest_release()
     connection = duckdb.connect()
-    all_items = extract_cities(connection, cities, release, args.min_confidence, args.limit_per_category)
+    all_items, quality_report = extract_cities(connection, cities, release, args.min_confidence, args.limit_per_category)
     for city in cities:
         items = [item for item in all_items if item["city_slug"] == city["slug"]]
         counts: dict[str, int] = {}
         for item in items:
             counts[item["canonical_category"]] = counts.get(item["canonical_category"], 0) + 1
         print(f"{city['name']}: {len(items)} candidates {json.dumps(counts, sort_keys=True)}")
+
+    if args.quality_report:
+        write_quality_report(quality_report, args.quality_report, release)
+        print(f"Wrote quality report to {args.quality_report}")
 
     if args.dry_run:
         print(f"Dry run: {len(all_items)} records; nothing uploaded")

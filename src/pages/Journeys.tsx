@@ -929,11 +929,13 @@ const PeopleTab = ({
     });
   };
 
+  const qcOpen = useQueryClient();
   const toggleOpenToJoin = async () => {
     setUpdatingOpenToJoin(true);
     try {
       const newValue = !(journey as any).open_to_join;
       await supabase.from("journeys" as any).update({ open_to_join: newValue } as any).eq("id", journeyId);
+      qcOpen.invalidateQueries();
       toast.success(newValue ? "Trip is now open to join requests" : "Join requests disabled");
     } catch {
       toast.error("Failed to update");

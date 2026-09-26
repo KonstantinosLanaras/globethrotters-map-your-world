@@ -14,11 +14,12 @@ on:
       rollout_batch:
         description: "Gradual city rollout; ignored when explicit cities are supplied"
         required: true
-        default: "batch-1"
+        default: "batch-3"
         type: choice
         options:
           - batch-1
           - batch-2
+          - batch-3
       cities:
         description: "Optional comma-separated city slugs; blank processes the current rollout batch"
         required: false
@@ -61,12 +62,15 @@ jobs:
           limit_per_category="${LIMIT_PER_CATEGORY:-10}"
           minimum_confidence="${MINIMUM_CONFIDENCE:-0.80}"
           if [[ -z "$CITY_INPUT" ]]; then
-            case "${ROLLOUT_BATCH:-batch-1}" in
+            case "${ROLLOUT_BATCH:-batch-3}" in
               batch-1)
                 CITY_INPUT="istanbul-tr,madrid-es,amsterdam-nl,milan-it,prague-cz,vienna-at,berlin-de,dublin-ie"
                 ;;
               batch-2)
                 CITY_INPUT="venice-it,munich-de,copenhagen-dk,budapest-hu,brussels-be,edinburgh-gb,porto-pt,stockholm-se"
+                ;;
+              batch-3)
+                CITY_INPUT="florence-it,oslo-no,reykjavik-is,zurich-ch,geneva-ch,nice-fr,krakow-pl,warsaw-pl"
                 ;;
               *)
                 echo "Unknown rollout batch: $ROLLOUT_BATCH" >&2

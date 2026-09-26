@@ -122,6 +122,7 @@ export const useCatalogItems = (city: string | null, country: string | null) =>
         .from("catalog_items")
         .select(catalogSelect)
         .eq("is_active", true)
+        .neq("quality_tier", "coverage")
         .ilike("catalog_cities.name", city!)
         .ilike("catalog_cities.country", country!)
         .order("quality_tier", { ascending: false })
@@ -156,6 +157,7 @@ export const useCatalogMapItems = () =>
           .from("catalog_items")
           .select(catalogSelect)
           .eq("is_active", true)
+          .neq("quality_tier", "coverage")
           .range(start, start + pageSize - 1);
         if (error) {
           console.warn("Catalogue map layer unavailable; using editorial fallback", error.message);

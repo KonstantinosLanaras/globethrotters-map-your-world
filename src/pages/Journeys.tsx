@@ -1459,7 +1459,10 @@ const ShareTab = ({
   const handlePrivacyChange = async (privacy: string) => {
     setUpdatingPrivacy(true);
     try {
-      await supabase.from("journeys" as any).update({ privacy } as any).eq("id", journeyId);
+      const { error } = await supabase.from("journeys" as any).update({ privacy } as any).eq("id", journeyId);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["journeys"] });
+      qc.invalidateQueries({ queryKey: ["journey-experiences", journeyId] });
       toast.success(`Trip visibility set to ${privacy}`);
     } catch {
       toast.error("Failed to update");
@@ -1535,19 +1538,26 @@ const ShareTab = ({
       {/* Current status */}
       <div className="rounded-2xl bg-card border border-border p-4">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPublished ? "bg-emerald-500/10" : "bg-muted"}`}>
-            {isPublished ? <Globe className="w-4 h-4 text-emerald-600" /> : <Lock className="w-4 h-4 text-muted-foreground" />}
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPublished ? "bg-primary/10" : "bg-muted"}`}>
+            {isPublished ? <Globe className="w-4 h-4 text-primary" /> : <Lock className="w-4 h-4 text-muted-foreground" />}
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-sm font-medium text-foreground">
-              {isPublished ? "Published" : "Draft"}
+              {isPublished ? "Published on your feed" : "Draft"}
             </p>
             <p className="text-[10px] text-muted-foreground">
               {isPublished
-                ? `Published · ${journey.privacy} visibility`
-                : "Only visible to you and invited collaborators"}
+                ? `Seen by: ${journey.privacy === "private" ? "only you" : journey.privacy === "friends" ? "your connections" : "everyone"}`
+                : "You can publish to your feed anytime — whatever visibility you pick"}
             </p>
           </div>
+          <button
+            onClick={isPublished ? handleSaveAsDraft : handlePublish}
+            disabled={publishing}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-opacity disabled:opacity-40 ${isPublished ? "border border-border text-muted-foreground hover:text-foreground" : "bg-primary text-primary-foreground hover:opacity-90"}`}
+          >
+            {publishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : isPublished ? "Unpublish" : "Publish"}
+          </button>
         </div>
       </div>
 

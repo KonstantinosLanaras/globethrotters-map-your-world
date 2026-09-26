@@ -30,7 +30,11 @@ describe("catalogue seed", () => {
   it.each([
     ["Paris", "France"],
     ["Lisbon", "Portugal"],
-  ])("has a balanced ten-place pilot for %s", (city, country) => {
+    ["London", "United Kingdom"],
+    ["Rome", "Italy"],
+    ["Barcelona", "Spain"],
+    ["Athens", "Greece"],
+  ])("has a balanced ten-place launch catalogue for %s", (city, country) => {
     const pilot = curatedExperiences.filter(
       (item) => item.city === city && item.country === country,
     );

@@ -43,6 +43,12 @@ Run `lovable_catalog_pilot.sql` next to expand Paris and Lisbon to ten editorial
 places each. Both cities then have two places in every MVP category: food,
 culture, nature, hiking and nightlife. The script is safe to run more than once.
 
+Run `lovable_launch_cities_completion.sql` after the pilot to bring London,
+Rome, Barcelona and Athens to the same balanced ten-item coverage. This gives
+the working MVP six complete launch destinations before the automated Overture
+rollout begins. The script is idempotent and ends with a category-count check;
+every returned count should be `2`.
+
 Run `lovable_social_feed_setup.sql` to enable the social feed audiences selected
 by users. It lets accepted connections read follower-only posts and their photos,
 allows request recipients to accept connections, and keeps close-friends posts

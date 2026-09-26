@@ -19,6 +19,41 @@ ALTER TABLE public.journeys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.journey_experiences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.journey_join_requests ENABLE ROW LEVEL SECURITY;
 
+CREATE OR REPLACE FUNCTION public.is_journey_owner(_journey_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+SET row_security = off
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.journeys
+    WHERE id = _journey_id AND user_id = auth.uid()
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_accepted_journey_member(_journey_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+SET row_security = off
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.journey_members
+    WHERE journey_id = _journey_id
+      AND user_id = auth.uid()
+      AND status = 'accepted'
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_journey_owner(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.is_accepted_journey_member(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_journey_owner(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_accepted_journey_member(uuid) TO authenticated;
+
 DROP POLICY IF EXISTS "Users can view own journeys" ON public.journeys;
 DROP POLICY IF EXISTS "Users can insert own journeys" ON public.journeys;
 DROP POLICY IF EXISTS "Users can update own journeys" ON public.journeys;
@@ -56,6 +91,17 @@ CREATE POLICY "Connections can view published friend journeys"
         AND connection.status = 'active'
     )
   );
+
+DROP POLICY IF EXISTS "Members can view joined journeys" ON public.journeys;
+CREATE POLICY "Members can view joined journeys"
+  ON public.journeys FOR SELECT TO authenticated
+  USING (public.is_accepted_journey_member(id));
+
+DROP POLICY IF EXISTS "Journey owner can manage members" ON public.journey_members;
+CREATE POLICY "Journey owner can manage members"
+  ON public.journey_members FOR ALL TO authenticated
+  USING (public.is_journey_owner(journey_id))
+  WITH CHECK (public.is_journey_owner(journey_id));
 
 DROP POLICY IF EXISTS "Users can insert own join requests" ON public.journey_join_requests;
 DROP POLICY IF EXISTS "Users can view own join requests" ON public.journey_join_requests;

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { findCatalogMatch, type MatchableCatalogItem } from "../_shared/catalogMatching.ts";
 
 type Category = "food" | "culture" | "nature" | "nightlife";
 
@@ -19,6 +20,10 @@ type SelectedCandidate = GoogleCandidate & {
   category: Category;
   selectionRank: number;
   source: "Google Maps";
+  catalogItemId: string | null;
+  catalogItemName: string | null;
+  matchScore: number | null;
+  matchMethod: "name_distance_v1" | null;
 };
 
 const SEARCH_CONFIG: Record<Category, { query: string; includedType?: string }> = {
@@ -167,19 +172,37 @@ serve(async (request) => {
         const uniqueCandidates = [...new Map(
           categoryCandidates.map((candidate) => [candidate.googlePlaceId, candidate]),
         ).values()];
-        const selected = uniqueCandidates
+        const selectedCandidatesForCategory = uniqueCandidates
           .filter((candidate) => candidate.reviewCount > 1000)
           .sort((left, right) => right.rating - left.rating
             || right.reviewCount - left.reviewCount
             || left.displayName.localeCompare(right.displayName))
-          .slice(0, 10)
-          .map((candidate, index): SelectedCandidate => ({
-            ...candidate,
-            citySlug: city.slug,
-            category,
-            selectionRank: index + 1,
-            source: "Google Maps",
-          }));
+          .slice(0, 10);
+
+        const { data: catalogRows, error: catalogError } = await supabase
+          .from("catalog_items")
+          .select("id,name,latitude,longitude")
+          .eq("city_id", city.id)
+          .eq("canonical_category", category)
+          .eq("is_active", true);
+        if (catalogError) throw catalogError;
+        const catalogItems = (catalogRows || []) as MatchableCatalogItem[];
+
+        const selected = selectedCandidatesForCategory
+          .map((candidate, index): SelectedCandidate => {
+            const match = findCatalogMatch(candidate, catalogItems);
+            return {
+              ...candidate,
+              citySlug: city.slug,
+              category,
+              selectionRank: index + 1,
+              source: "Google Maps",
+              catalogItemId: match?.item.id || null,
+              catalogItemName: match?.item.name || null,
+              matchScore: match?.score || null,
+              matchMethod: match ? "name_distance_v1" : null,
+            };
+          });
 
         if (selected.length > 0) {
           const storedIds = selected.map((candidate) => ({
@@ -188,6 +211,10 @@ serve(async (request) => {
             search_category: category,
             google_place_id: candidate.googlePlaceId,
             selection_rank: candidate.selectionRank,
+            catalog_item_id: candidate.catalogItemId,
+            match_score: candidate.matchScore,
+            match_method: candidate.matchMethod,
+            review_status: candidate.catalogItemId ? "pending" : "unmatched",
           }));
           const { error: insertError } = await supabase.from("google_place_candidate_ids").upsert(storedIds, {
             onConflict: "import_run_id,city_id,search_category,google_place_id",
@@ -211,8 +238,9 @@ serve(async (request) => {
       requestsUsed: requestCount,
       candidatesImported: candidateCount,
       candidatesSelected: selectedCandidates.length,
-      // Returned for immediate admin review only. Do not persist these fields;
-      // the database stores only the Google Place IDs above.
+      // Google names, coordinates, ratings and counts are returned only for the
+      // immediate admin review. Storage is limited to Place IDs and proposed
+      // links to independently sourced catalogue rows.
       selected: selectedCandidates,
     });
   } catch (error) {

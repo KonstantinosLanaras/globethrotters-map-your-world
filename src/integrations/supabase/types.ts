@@ -213,6 +213,83 @@ export type Database = {
           },
         ]
       }
+      city_metrics: {
+        Row: {
+          band: string | null
+          city_id: string
+          confidence: number
+          created_at: string
+          effective_at: string
+          evidence: Json
+          id: string
+          is_active: boolean
+          methodology_version: string
+          metric: string
+          model_name: string | null
+          month: number | null
+          month_key: number | null
+          sample_size: number | null
+          source_kind: string
+          source_name: string
+          source_url: string | null
+          updated_at: string
+          valid_until: string | null
+          value: number
+        }
+        Insert: {
+          band?: string | null
+          city_id: string
+          confidence: number
+          created_at?: string
+          effective_at?: string
+          evidence?: Json
+          id?: string
+          is_active?: boolean
+          methodology_version: string
+          metric: string
+          model_name?: string | null
+          month?: number | null
+          month_key?: number | null
+          sample_size?: number | null
+          source_kind: string
+          source_name: string
+          source_url?: string | null
+          updated_at?: string
+          valid_until?: string | null
+          value: number
+        }
+        Update: {
+          band?: string | null
+          city_id?: string
+          confidence?: number
+          created_at?: string
+          effective_at?: string
+          evidence?: Json
+          id?: string
+          is_active?: boolean
+          methodology_version?: string
+          metric?: string
+          model_name?: string | null
+          month?: number | null
+          month_key?: number | null
+          sample_size?: number | null
+          source_kind?: string
+          source_name?: string
+          source_url?: string | null
+          updated_at?: string
+          valid_until?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_metrics_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contribution_impacts: {
         Row: {
           created_at: string
@@ -1616,7 +1693,15 @@ export type Database = {
           valid_until: string | null
           value: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "city_metrics_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_cities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -1637,6 +1722,14 @@ export type Database = {
           source: string
           subcategory: string
         }[]
+      }
+      is_journey_member: {
+        Args: { _journey_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_journey_owner: {
+        Args: { _journey_id: string; _user_id: string }
+        Returns: boolean
       }
     }
     Enums: {

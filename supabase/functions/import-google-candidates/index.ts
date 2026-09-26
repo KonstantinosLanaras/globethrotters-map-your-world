@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { findCatalogMatch, type MatchableCatalogItem } from "../_shared/catalogMatching.ts";
+import {
+  googleCandidateQualityScore,
+  rankGoogleCandidates,
+} from "../_shared/googleCandidateRanking.ts";
 
 type Category = "food" | "culture" | "nature" | "nightlife";
 
@@ -24,6 +28,7 @@ type SelectedCandidate = GoogleCandidate & {
   catalogItemName: string | null;
   matchScore: number | null;
   matchMethod: "name_distance_v1" | null;
+  qualityScore: number;
 };
 
 const SEARCH_CONFIG: Record<Category, { query: string; includedType?: string }> = {
@@ -72,6 +77,8 @@ serve(async (request) => {
     .filter((value: unknown): value is Category => typeof value === "string" && value in SEARCH_CONFIG);
   const maxPages = Math.min(3, Math.max(1, Number(body.maxPages) || 3));
   const minRating = Math.min(5, Math.max(0, Number(body.minRating) || 4));
+  const minimumReviews = Math.min(100_000, Math.max(100, Number(body.minimumReviews) || 1_000));
+  const selectionLimit = Math.min(25, Math.max(1, Number(body.selectionLimit) || 10));
 
   if (citySlugs.length === 0 || citySlugs.length > 5) {
     return json({ error: "Provide between one and five citySlugs per batch" }, 400);
@@ -169,15 +176,11 @@ serve(async (request) => {
           if (!pageToken) break;
         }
 
-        const uniqueCandidates = [...new Map(
-          categoryCandidates.map((candidate) => [candidate.googlePlaceId, candidate]),
-        ).values()];
-        const selectedCandidatesForCategory = uniqueCandidates
-          .filter((candidate) => candidate.reviewCount > 1000)
-          .sort((left, right) => right.rating - left.rating
-            || right.reviewCount - left.reviewCount
-            || left.displayName.localeCompare(right.displayName))
-          .slice(0, 10);
+        const selectedCandidatesForCategory = rankGoogleCandidates(
+          categoryCandidates,
+          minimumReviews,
+          selectionLimit,
+        );
 
         const { data: catalogRows, error: catalogError } = await supabase
           .from("catalog_items")
@@ -201,6 +204,7 @@ serve(async (request) => {
               catalogItemName: match?.item.name || null,
               matchScore: match?.score || null,
               matchMethod: match ? "name_distance_v1" : null,
+              qualityScore: Math.round(googleCandidateQualityScore(candidate) * 1_000) / 1_000,
             };
           });
 
@@ -238,6 +242,13 @@ serve(async (request) => {
       requestsUsed: requestCount,
       candidatesImported: candidateCount,
       candidatesSelected: selectedCandidates.length,
+      selectionScope: {
+        guarantee: "best_from_returned_google_candidate_set",
+        maximumCandidatesPerQuery: maxPages * 20,
+        minimumReviews,
+        selectionLimit,
+        ranking: "bayesian_rating_v1",
+      },
       // Google names, coordinates, ratings and counts are returned only for the
       // immediate admin review. Storage is limited to Place IDs and proposed
       // links to independently sourced catalogue rows.

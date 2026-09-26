@@ -10,6 +10,7 @@ credentials or emit SQL for review in Lovable Cloud's SQL editor.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import math
 import os
@@ -22,11 +23,15 @@ from typing import Any
 
 try:
     import duckdb
+    import pyarrow.compute as pc
+    import pyarrow.dataset as ds
+    import pyarrow.fs as pafs
+    import pyarrow.parquet as pq
 except ImportError as exc:  # pragma: no cover - setup guard
     raise SystemExit("Install importer dependencies: python3 -m pip install -r scripts/requirements-import.txt") from exc
 
 
-DEFAULT_RELEASE = "2026-08-19.0"
+DEFAULT_RELEASE = None
 PARQUET_URL = "s3://overturemaps-us-west-2/release/{release}/theme=places/type=place/*"
 PILOT_CITIES = {
     "paris-fr": {
@@ -45,6 +50,56 @@ CITY_ROW_PATTERN = re.compile(
     r"(?P<longitude>-?[0-9.]+),\s*(?P<market_rank>[0-9]+),\s*"
     r"(?P<search_radius_km>[0-9]+),\s*(?P<is_launch_city>true|false)\)"
 )
+
+STAC_FILE_CACHE: dict[str, list[dict[str, Any]]] = {}
+
+
+def get_latest_release() -> str:
+    with urllib.request.urlopen("https://stac.overturemaps.org/catalog.json", timeout=30) as response:
+        catalog = json.load(response)
+    release = catalog.get("latest")
+    if not release:
+        raise RuntimeError("Overture STAC catalogue did not advertise a latest release")
+    return str(release)
+
+
+def get_stac_place_files(release: str) -> list[dict[str, Any]]:
+    cached = STAC_FILE_CACHE.get(release)
+    if cached is not None:
+        return cached
+    url = f"https://stac.overturemaps.org/{release}/collections.parquet"
+    with urllib.request.urlopen(url, timeout=60) as response:
+        table = pq.read_table(io.BytesIO(response.read()), columns=["assets", "bbox"])
+    records: list[dict[str, Any]] = []
+    for row in table.to_pylist():
+        href = row.get("assets", {}).get("aws", {}).get("alternate", {}).get("s3", {}).get("href")
+        if href and "/theme=places/type=place/" in href:
+            records.append({"path": href.removeprefix("s3://"), "bbox": row["bbox"]})
+    if not records:
+        raise RuntimeError(f"No Overture Places files found in STAC release {release}")
+    STAC_FILE_CACHE[release] = records
+    return records
+
+
+def get_stac_place_reader(release: str, bbox: tuple[float, float, float, float]):
+    west, south, east, north = bbox
+    paths = [record["path"] for record in get_stac_place_files(release)
+             if record["bbox"]["xmin"] < east and record["bbox"]["xmax"] > west
+             and record["bbox"]["ymin"] < north and record["bbox"]["ymax"] > south]
+    if not paths:
+        return None
+    dataset = ds.dataset(paths, filesystem=pafs.S3FileSystem(anonymous=True, region="us-west-2"))
+    bbox_filter = (
+        (pc.field("bbox", "xmin") < east)
+        & (pc.field("bbox", "xmax") > west)
+        & (pc.field("bbox", "ymin") < north)
+        & (pc.field("bbox", "ymax") > south)
+    )
+    return dataset.scanner(
+        columns=["id", "names", "bbox", "basic_category", "taxonomy", "confidence"],
+        filter=bbox_filter,
+        use_threads=True,
+    ).to_reader()
 
 
 def api_request(method: str, path: str, body: Any | None = None) -> Any:
@@ -186,7 +241,109 @@ def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], re
 
 def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str, Any]], release: str,
                    minimum_confidence: float, limit_per_category: int) -> list[dict[str, Any]]:
-    """Extract many cities in one Overture scan and resolve overlapping bounds."""
+    """Use Overture's STAC index per bbox, then resolve cross-city duplicates."""
+    candidates: list[dict[str, Any]] = []
+    for city in cities:
+        radius = float(city["search_radius_km"])
+        latitude = float(city["latitude"])
+        longitude = float(city["longitude"])
+        latitude_delta = radius / 111.0
+        longitude_delta = radius / (111.0 * max(0.2, math.cos(math.radians(latitude))))
+        bbox = (
+            longitude - longitude_delta,
+            latitude - latitude_delta,
+            longitude + longitude_delta,
+            latitude + latitude_delta,
+        )
+        reader = get_stac_place_reader(release, bbox)
+        if reader is None:
+            continue
+        relation_name = "overture_city_places"
+        connection.register(relation_name, reader)
+        classifier = category_case()
+        rows = connection.execute(f"""
+          WITH categorized AS (
+            SELECT
+              id,
+              names.primary AS name,
+              bbox.ymin AS latitude,
+              bbox.xmin AS longitude,
+              basic_category,
+              confidence,
+              {classifier} AS canonical_category
+            FROM {relation_name}
+            WHERE names.primary IS NOT NULL
+              AND confidence >= ?
+          ), ranked AS (
+            SELECT *, row_number() OVER (
+              PARTITION BY canonical_category
+              ORDER BY confidence DESC, name
+            ) AS category_rank
+            FROM categorized
+            WHERE canonical_category IS NOT NULL
+          )
+          SELECT id, name, latitude, longitude, basic_category,
+            confidence, canonical_category
+          FROM ranked
+          WHERE category_rank <= ?
+        """, [minimum_confidence, limit_per_category * 2]).fetchall()
+        connection.unregister(relation_name)
+        candidates.extend({
+            "city_id": city.get("id"),
+            "city_slug": city["slug"],
+            "name": row[1],
+            "latitude": row[2],
+            "longitude": row[3],
+            "canonical_category": row[6],
+            "subcategory": row[4] or row[6],
+            "description": None,
+            "source": "overture",
+            "source_id": str(row[0]),
+            "source_confidence": row[5],
+            "quality_tier": "coverage",
+            "is_active": True,
+            "metadata": {"overture_release": release},
+        } for row in rows)
+
+    city_by_slug = {city["slug"]: city for city in cities}
+
+    def distance_to_city(item: dict[str, Any]) -> float:
+        city = city_by_slug[item["city_slug"]]
+        latitude_scale = 111.0
+        longitude_scale = 111.0 * max(0.2, math.cos(math.radians(float(city["latitude"]))))
+        return (
+            ((float(item["latitude"]) - float(city["latitude"])) * latitude_scale) ** 2
+            + ((float(item["longitude"]) - float(city["longitude"])) * longitude_scale) ** 2
+        )
+
+    # The same GERS feature can fall inside two nearby city bboxes. Keep it only
+    # for the nearest city so users never see cross-city duplicates.
+    nearest_by_source: dict[str, dict[str, Any]] = {}
+    for candidate in candidates:
+        existing = nearest_by_source.get(candidate["source_id"])
+        if existing is None or distance_to_city(candidate) < distance_to_city(existing):
+            nearest_by_source[candidate["source_id"]] = candidate
+
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for candidate in nearest_by_source.values():
+        key = (candidate["city_slug"], candidate["canonical_category"])
+        grouped.setdefault(key, []).append(candidate)
+
+    selected: list[dict[str, Any]] = []
+    for items in grouped.values():
+        items.sort(key=lambda item: (-float(item["source_confidence"]), item["name"]))
+        selected.extend(items[:limit_per_category])
+    return sorted(selected, key=lambda item: (
+        city_by_slug[item["city_slug"]]["market_rank"],
+        item["canonical_category"],
+        -float(item["source_confidence"]),
+        item["name"],
+    ))
+
+
+def extract_cities_legacy(connection: duckdb.DuckDBPyConnection, cities: list[dict[str, Any]], release: str,
+                          minimum_confidence: float, limit_per_category: int) -> list[dict[str, Any]]:
+    """Legacy single-scan implementation retained for reproducibility."""
     connection.execute("""
       CREATE OR REPLACE TEMP TABLE import_cities (
         slug text, latitude double, longitude double,
@@ -201,13 +358,10 @@ def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str,
         longitude = float(city["longitude"])
         latitude_delta = radius / 111.0
         longitude_delta = radius / (111.0 * max(0.2, math.cos(math.radians(latitude))))
-        bounds.append((
-            city["slug"], latitude, longitude,
-            latitude - latitude_delta, latitude + latitude_delta,
-            longitude - longitude_delta, longitude + longitude_delta,
-        ))
+        bounds.append((city["slug"], latitude, longitude, latitude - latitude_delta,
+                       latitude + latitude_delta, longitude - longitude_delta,
+                       longitude + longitude_delta))
     connection.executemany("INSERT INTO import_cities VALUES (?, ?, ?, ?, ?, ?, ?)", bounds)
-
     source = PARQUET_URL.format(release=release)
     classifier = category_case()
     rows = connection.execute(f"""
@@ -379,9 +533,9 @@ def main() -> int:
     if not cities:
         raise RuntimeError("No active catalogue cities matched")
 
+    release = args.release or get_latest_release()
     connection = duckdb.connect()
-    connection.execute("INSTALL httpfs; LOAD httpfs; SET s3_region='us-west-2'")
-    all_items = extract_cities(connection, cities, args.release, args.min_confidence, args.limit_per_category)
+    all_items = extract_cities(connection, cities, release, args.min_confidence, args.limit_per_category)
     for city in cities:
         items = [item for item in all_items if item["city_slug"] == city["slug"]]
         counts: dict[str, int] = {}

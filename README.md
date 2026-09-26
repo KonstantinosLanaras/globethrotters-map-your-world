@@ -55,12 +55,12 @@ recommendation scripts. It merges existing Hiking records into Nature without
 losing their trail, urban-hike or cycling subcategories.
 
 Run `lovable_city_metrics_foundation.sql` to move Explore scores into a
-provenance-aware data layer. The protected `generate-city-editorial-metrics`
-function can seed food, culture, nature, nightlife and temporary budget values
-as explicitly labelled LLM editorial estimates. Official and open-data records
-automatically take precedence when they are added later, followed by permitted
-published rankings; community scores take precedence only after at least 25
-contributions.
+provenance-aware data layer. Then run `lovable_city_metrics_editorial_seed.sql`
+to load the one-time Food, Culture, Nature, Nightlife and temporary Budget
+estimates for all 50 catalogue cities. This path requires no AI secret, deployed
+AI function or recurring API usage. Official and open-data records automatically
+take precedence when they are added later, followed by permitted published
+rankings; community scores take precedence only after at least 25 contributions.
 
 Run `lovable_social_feed_setup.sql` to enable the social feed audiences selected
 by users. It lets accepted connections read follower-only posts and their photos,

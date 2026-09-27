@@ -31,6 +31,25 @@ describe("Google candidate eligibility", () => {
       "food",
       candidate("All'Antico Vinaio", "sandwich_shop", ["restaurant"]),
     )).toBe(true);
+    expect(isEligibleGoogleCandidate(
+      "food",
+      candidate("Crazy Pizza Milan", "restaurant", ["restaurant"]),
+    )).toBe(false);
+  });
+
+  it("routes nightlife-first venues away from food", () => {
+    expect(isEligibleGoogleCandidate(
+      "food",
+      candidate("Spirit de Milan", "restaurant", ["restaurant", "dance_hall"]),
+    )).toBe(false);
+    expect(isEligibleGoogleCandidate(
+      "food",
+      candidate("N'Ombra de Vin", "wine_bar", ["wine_bar", "bar"]),
+    )).toBe(false);
+    expect(isEligibleGoogleCandidate(
+      "food",
+      candidate("Mercato Centrale", "food_court", ["restaurant", "food"]),
+    )).toBe(true);
   });
 
   it("keeps category boundaries without excluding mixed-use landmarks", () => {
@@ -42,5 +61,9 @@ describe("Google candidate eligibility", () => {
       "culture",
       candidate("Galleria Vittorio Emanuele II", "historical_landmark", ["shopping_mall"]),
     )).toBe(true);
+    expect(isEligibleGoogleCandidate(
+      "culture",
+      candidate("Monza Circuit", "race_course", ["race_course", "tourist_attraction"]),
+    )).toBe(false);
   });
 });

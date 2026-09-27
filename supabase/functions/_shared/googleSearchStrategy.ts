@@ -14,6 +14,7 @@ type NearbyStrategy = {
   method: "nearby_popularity";
   includedTypes: string[];
   excludedTypes?: string[];
+  radiusCapKm: number;
 };
 
 export type GoogleSearchStrategy = NearbyStrategy;
@@ -21,6 +22,7 @@ export type GoogleSearchStrategy = NearbyStrategy;
 export const GOOGLE_SEARCH_STRATEGIES: Record<CatalogSearchCategory, GoogleSearchStrategy> = {
   food: {
     method: "nearby_popularity",
+    radiusCapKm: 15,
     includedTypes: ["restaurant", "cafe", "bakery"],
     excludedTypes: [
       "fast_food_restaurant",
@@ -35,6 +37,7 @@ export const GOOGLE_SEARCH_STRATEGIES: Record<CatalogSearchCategory, GoogleSearc
   },
   culture: {
     method: "nearby_popularity",
+    radiusCapKm: 18,
     includedTypes: [
       "art_gallery",
       "castle",
@@ -54,6 +57,7 @@ export const GOOGLE_SEARCH_STRATEGIES: Record<CatalogSearchCategory, GoogleSearc
   },
   nature: {
     method: "nearby_popularity",
+    radiusCapKm: 50,
     includedTypes: [
       "beach",
       "botanical_garden",
@@ -67,6 +71,7 @@ export const GOOGLE_SEARCH_STRATEGIES: Record<CatalogSearchCategory, GoogleSearc
   },
   nightlife: {
     method: "nearby_popularity",
+    radiusCapKm: 15,
     includedTypes: ["night_club", "bar", "live_music_venue"],
   },
 };
@@ -107,7 +112,7 @@ export const buildGoogleSearchRequest = (
       locationRestriction: {
         circle: {
           center: { latitude: city.latitude, longitude: city.longitude },
-          radius: Math.min(50_000, city.search_radius_km * 1_000),
+          radius: Math.min(strategy.radiusCapKm, city.search_radius_km) * 1_000,
         },
       },
     },

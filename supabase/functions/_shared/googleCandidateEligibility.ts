@@ -18,12 +18,17 @@ const FOOD_INCOMPATIBLE_TYPES = new Set([
   "convenience_store",
   "department_store",
   "shopping_mall",
+  "dance_hall",
 ]);
 
 const FOOD_INCOMPATIBLE_PRIMARY_TYPES = new Set([
   ...FOOD_INCOMPATIBLE_TYPES,
   "night_club",
   "live_music_venue",
+  "bar",
+  "wine_bar",
+  "sports_bar",
+  "event_venue",
 ]);
 
 const CULTURE_INCOMPATIBLE_PRIMARY_TYPES = new Set([
@@ -35,6 +40,9 @@ const CULTURE_INCOMPATIBLE_PRIMARY_TYPES = new Set([
   "nature_preserve",
   "park",
   "scenic_spot",
+  "race_course",
+  "sports_complex",
+  "stadium",
 ]);
 
 // Deliberately narrow: this removes obvious multinational chains without
@@ -50,6 +58,7 @@ const GLOBAL_FOOD_CHAIN_NAMES = [
   /\bfive guys\b/i,
   /\bcosta coffee\b/i,
   /\bhard rock cafe\b/i,
+  /\bcrazy pizza\b/i,
 ];
 
 export const googleCandidateRejectionReason = (

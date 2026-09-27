@@ -30,7 +30,7 @@ describe("Google search strategy", () => {
         "supermarket",
         "grocery_store",
       ]),
-      locationRestriction: { circle: { radius: 25_000 } },
+      locationRestriction: { circle: { radius: 15_000 } },
     });
     expect(request.body).not.toHaveProperty("minRating");
     expect(request.fieldMask).not.toContain("nextPageToken");
@@ -51,7 +51,7 @@ describe("Google search strategy", () => {
         "monument",
         "museum",
       ]),
-      locationRestriction: { circle: { radius: 25_000 } },
+      locationRestriction: { circle: { radius: 18_000 } },
     });
     expect(request.body).not.toHaveProperty("pageToken");
     expect(request.fieldMask).not.toContain("nextPageToken");

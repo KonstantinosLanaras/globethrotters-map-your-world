@@ -260,8 +260,11 @@ const ExperienceCard = ({
                 target="_blank"
                 rel="sponsored noopener noreferrer"
                 onClick={(event) => {
-                  // Let the browser open the link natively in a new tab (Google refuses to load inside frames).
+                   event.preventDefault();
                   event.stopPropagation();
+                   // Open synchronously from the user's click so embedded previews do not
+                   // redirect Google Maps into the frame, where Google blocks rendering.
+                   window.open(link.url, "_blank", "noopener,noreferrer");
                   trackOutboundClick(link.provider, "experience", item.name, `${cityName}, ${countryName}`);
                 }}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-muted text-foreground hover:bg-muted/80 transition-colors"

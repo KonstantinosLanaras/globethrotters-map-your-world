@@ -264,7 +264,8 @@ const ExperienceCard = ({
                   event.stopPropagation();
                   trackOutboundClick(link.provider, "experience", item.name, `${cityName}, ${countryName}`);
                   // Open explicitly so embedded previews and map panels can't swallow the click.
-                  const opened = window.open(link.url, "_blank", "noopener,noreferrer");
+                  const opened = window.open(link.url, "_blank");
+                  if (opened) opened.opener = null;
                   if (!opened) {
                     try {
                       (window.top ?? window).location.href = link.url;

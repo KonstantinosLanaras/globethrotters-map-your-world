@@ -211,6 +211,13 @@ export type Database = {
             referencedRelation: "catalog_items"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "catalog_source_refs_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "google_candidate_match_review"
+            referencedColumns: ["catalog_item_id"]
+          },
         ]
       }
       city_metrics: {
@@ -692,33 +699,62 @@ export type Database = {
       }
       google_place_candidate_ids: {
         Row: {
+          catalog_item_id: string | null
           city_id: string
           fetched_at: string
           google_place_id: string
           id: string
           import_run_id: string
+          match_method: string | null
+          match_score: number | null
+          review_status: string
+          reviewed_at: string | null
           search_category: string
           selection_rank: number
         }
         Insert: {
+          catalog_item_id?: string | null
           city_id: string
           fetched_at?: string
           google_place_id: string
           id?: string
           import_run_id: string
+          match_method?: string | null
+          match_score?: number | null
+          review_status?: string
+          reviewed_at?: string | null
           search_category: string
           selection_rank: number
         }
         Update: {
+          catalog_item_id?: string | null
           city_id?: string
           fetched_at?: string
           google_place_id?: string
           id?: string
           import_run_id?: string
+          match_method?: string | null
+          match_score?: number | null
+          review_status?: string
+          reviewed_at?: string | null
           search_category?: string
           selection_rank?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "google_place_candidate_ids_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_place_candidate_ids_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "google_candidate_match_review"
+            referencedColumns: ["catalog_item_id"]
+          },
           {
             foreignKeyName: "google_place_candidate_ids_city_id_fkey"
             columns: ["city_id"]
@@ -796,6 +832,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_items"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_experiences_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "google_candidate_match_review"
+            referencedColumns: ["catalog_item_id"]
           },
           {
             foreignKeyName: "journey_experiences_experience_id_fkey"
@@ -1251,6 +1294,13 @@ export type Database = {
             referencedRelation: "catalog_items"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "places_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "google_candidate_match_review"
+            referencedColumns: ["catalog_item_id"]
+          },
         ]
       }
       profiles: {
@@ -1703,8 +1753,41 @@ export type Database = {
           },
         ]
       }
+      google_candidate_match_review: {
+        Row: {
+          candidate_id: string | null
+          canonical_category: string | null
+          catalog_item_id: string | null
+          catalog_item_name: string | null
+          catalog_source: string | null
+          catalog_source_id: string | null
+          city_name: string | null
+          city_slug: string | null
+          google_place_id: string | null
+          import_run_id: string | null
+          match_method: string | null
+          match_score: number | null
+          review_status: string | null
+          search_category: string | null
+          selection_rank: number | null
+          subcategory: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_place_candidate_ids_import_run_id_fkey"
+            columns: ["import_run_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_import_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      approve_google_catalog_match: {
+        Args: { candidate_id: string }
+        Returns: string
+      }
       get_catalog_recommendations: {
         Args: { p_categories?: string[]; p_city_slug: string; p_limit?: number }
         Returns: {

@@ -24,7 +24,12 @@ describe("Google search strategy", () => {
       rankPreference: "POPULARITY",
       maxResultCount: 20,
       includedTypes: ["restaurant", "cafe", "bakery"],
-      excludedTypes: ["fast_food_restaurant"],
+      excludedTypes: expect.arrayContaining([
+        "fast_food_restaurant",
+        "hotel",
+        "supermarket",
+        "grocery_store",
+      ]),
       locationRestriction: { circle: { radius: 25_000 } },
     });
     expect(request.body).not.toHaveProperty("minRating");

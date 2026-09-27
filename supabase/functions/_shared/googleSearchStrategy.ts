@@ -22,7 +22,16 @@ export const GOOGLE_SEARCH_STRATEGIES: Record<CatalogSearchCategory, GoogleSearc
   food: {
     method: "nearby_popularity",
     includedTypes: ["restaurant", "cafe", "bakery"],
-    excludedTypes: ["fast_food_restaurant"],
+    excludedTypes: [
+      "fast_food_restaurant",
+      "hotel",
+      "lodging",
+      "supermarket",
+      "grocery_store",
+      "convenience_store",
+      "department_store",
+      "shopping_mall",
+    ],
   },
   culture: {
     method: "nearby_popularity",

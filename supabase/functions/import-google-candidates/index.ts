@@ -5,6 +5,7 @@ import {
   googleCandidateQualityScore,
   rankGoogleCandidates,
 } from "../_shared/googleCandidateRanking.ts";
+import { isEligibleGoogleCandidate } from "../_shared/googleCandidateEligibility.ts";
 import {
   buildGoogleSearchRequest,
   estimateMaximumGoogleRequests,
@@ -92,6 +93,7 @@ serve(async (request) => {
 
   let requestCount = 0;
   let candidateCount = 0;
+  const rejectedByCategory: Partial<Record<Category, number>> = {};
   const selectedCandidates: SelectedCandidate[] = [];
 
   try {
@@ -145,8 +147,13 @@ serve(async (request) => {
           if (!pageToken) break;
         }
 
+        const eligibleCandidates = categoryCandidates.filter((candidate) =>
+          isEligibleGoogleCandidate(category, candidate)
+        );
+        rejectedByCategory[category] = categoryCandidates.length - eligibleCandidates.length;
+
         const selectedCandidatesForCategory = rankGoogleCandidates(
-          categoryCandidates,
+          eligibleCandidates,
           minimumReviews,
           selectionLimit,
           minRating,
@@ -222,6 +229,7 @@ serve(async (request) => {
         maximumRequestsForBatch: estimateMaximumGoogleRequests(cities.length, categories, maxTextPages),
         minimumReviews,
         selectionLimit,
+        rejectedByCategory,
         ranking: "bayesian_rating_v1",
         strategies: Object.fromEntries(categories.map((category) => [
           category,

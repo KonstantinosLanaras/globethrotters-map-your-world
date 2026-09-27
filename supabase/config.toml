@@ -1,1 +1,4 @@
 project_id = "qghawmrtwkchpdqthaof"
+
+[functions.import-google-candidates]
+verify_jwt = false

@@ -219,6 +219,7 @@ CURATED_PLACE_EXCLUSIONS = {
 }
 
 CURATED_SUBCATEGORY_OVERRIDES = {
+    "81802473-4350-4a51-91a0-657e42ed791f": "theatre_venue",
     "703c1e3f-c882-4293-b4be-b0b90160acbb": "ice_cream_shop",
     "60cc6141-e20b-4cae-b90d-34a739038a68": "bakery",
 }

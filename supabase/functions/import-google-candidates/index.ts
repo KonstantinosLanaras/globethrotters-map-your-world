@@ -67,7 +67,7 @@ serve(async (request) => {
   const maxTextPages = Math.min(3, Math.max(1, Number(body.maxPages) || 3));
   const minRating = Math.min(5, Math.max(0, Number(body.minRating) || 4));
   const minimumReviews = Math.min(100_000, Math.max(100, Number(body.minimumReviews) || 1_000));
-  const selectionLimit = Math.min(25, Math.max(1, Number(body.selectionLimit) || 10));
+  const selectionLimit = Math.min(20, Math.max(1, Number(body.selectionLimit) || 10));
 
   if (citySlugs.length === 0 || citySlugs.length > 5) {
     return json({ error: "Provide between one and five citySlugs per batch" }, 400);

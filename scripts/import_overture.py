@@ -87,6 +87,33 @@ COUNTRY_DEFAULT_LANGUAGE = {
     "NO": "no", "PL": "pl", "PT": "pt", "SE": "sv", "TR": "tr",
 }
 
+# Editorial corrections for high-value records where Overture's primary name
+# is untranslated or omits a widely used visitor-facing name. These are keyed
+# by stable GERS ID, remain independently sourced Overture records, and are
+# intentionally small and auditable.
+CURATED_PLACE_OVERRIDES = {
+    "3b8ece8c-380f-4a9f-aaf2-65fc39611c36": {
+        "name": "Duomo di Milano",
+        "aliases": ["Milan Cathedral", "Katedra w Mediolanie"],
+    },
+    "c5bb3981-1e23-4f62-988f-7382592b75d9": {
+        "name": "Museo del Cenacolo Vinciano",
+        "aliases": ["The Last Supper", "Cenacolo Vinciano"],
+    },
+    "50518fc3-4040-4473-8cf4-1431a6b852ad": {
+        "name": "Pinacoteca di Brera",
+        "aliases": ["Museo di Brera", "Brera Art Gallery"],
+    },
+    "d11a5f91-fec0-4229-867a-84f9aa301e0f": {
+        "name": "Pinacoteca Ambrosiana",
+        "aliases": ["Ambrosiana Art Gallery"],
+    },
+    "81802473-4350-4a51-91a0-657e42ed791f": {
+        "name": "Teatro alla Scala",
+        "aliases": ["La Scala", "La Scala Opera"],
+    },
+}
+
 # These phrases are strong evidence that a feature classified as a park is
 # actually vehicle infrastructure. Keep the list deliberately narrow so the
 # importer does not silently make subjective editorial decisions.
@@ -267,6 +294,22 @@ def preferred_place_name(primary: str, common: Any, country_code: str | None) ->
     return primary
 
 
+def apply_curated_place_override(item: dict[str, Any]) -> dict[str, Any]:
+    override = CURATED_PLACE_OVERRIDES.get(str(item["source_id"]))
+    if not override:
+        return item
+    original_name = item["name"]
+    item["name"] = override["name"]
+    aliases = collect_place_names(
+        item["name"],
+        {"source": original_name},
+        [{"value": alias} for alias in override["aliases"]],
+    )
+    item["metadata"]["alternate_names"] = aliases
+    item["metadata"]["editorial_name_override"] = True
+    return item
+
+
 def quality_rejection_reason(item: dict[str, Any]) -> str | None:
     normalized = normalize_place_name(item["name"])
     if len(normalized) < 2:
@@ -311,6 +354,7 @@ def select_quality_candidates(
             # Balance proximity with confidence so iconic, well-established
             # landmarks are not displaced by every slightly nearer small POI.
             items.sort(key=lambda item: (
+                0 if str(item["source_id"]) in CURATED_PLACE_OVERRIDES else 1,
                 subtype_priority.get(item["subcategory"], 9),
                 item["distance_to_center_km"]
                 - max(0.0, float(item["source_confidence"]) - 0.8) * 8,
@@ -390,6 +434,9 @@ def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], re
           bbox.xmin AS longitude,
           basic_category,
           confidence,
+          power((bbox.ymin - {latitude}) * 111.0, 2)
+            + power((bbox.xmin - {longitude}) * 111.0
+              * greatest(0.2, cos(radians({latitude}))), 2) AS distance_squared,
           {classifier} AS canonical_category
         FROM read_parquet(?, hive_partitioning=1)
         WHERE bbox.xmin BETWEEN ? AND ?
@@ -399,7 +446,7 @@ def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], re
       ), ranked AS (
         SELECT *, row_number() OVER (
           PARTITION BY canonical_category
-          ORDER BY confidence DESC, name
+          ORDER BY distance_squared, confidence DESC, name
         ) AS category_rank
         FROM candidates
         WHERE canonical_category IS NOT NULL
@@ -418,7 +465,7 @@ def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], re
         minimum_confidence,
         limit_per_category,
     ]).fetchall()
-    return [{
+    return [apply_curated_place_override({
         "city_id": city.get("id"),
         "city_slug": city["slug"],
         "name": preferred_place_name(row[1], row[2], city.get("country_code")),
@@ -436,7 +483,7 @@ def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], re
             "overture_release": release,
             "alternate_names": collect_place_names(row[1], row[2], row[3]),
         },
-    } for row in rows]
+    }) for row in rows]
 
 
 def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str, Any]], release: str,
@@ -472,6 +519,9 @@ def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str,
               bbox.xmin AS longitude,
               basic_category,
               confidence,
+              power((bbox.ymin - {latitude}) * 111.0, 2)
+                + power((bbox.xmin - {longitude}) * 111.0
+                  * greatest(0.2, cos(radians({latitude}))), 2) AS distance_squared,
               {classifier} AS canonical_category
             FROM {relation_name}
             WHERE names.primary IS NOT NULL
@@ -479,7 +529,7 @@ def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str,
           ), ranked AS (
             SELECT *, row_number() OVER (
               PARTITION BY canonical_category
-              ORDER BY confidence DESC, name
+              ORDER BY distance_squared, confidence DESC, name
             ) AS category_rank
             FROM categorized
             WHERE canonical_category IS NOT NULL
@@ -490,7 +540,7 @@ def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str,
           WHERE category_rank <= ?
         """, [minimum_confidence, max(limit_per_category * 25, 250)]).fetchall()
         connection.unregister(relation_name)
-        candidates.extend({
+        candidates.extend(apply_curated_place_override({
             "city_id": city.get("id"),
             "city_slug": city["slug"],
             "name": preferred_place_name(row[1], row[2], city.get("country_code")),
@@ -508,7 +558,7 @@ def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str,
                 "overture_release": release,
                 "alternate_names": collect_place_names(row[1], row[2], row[3]),
             },
-        } for row in rows)
+        }) for row in rows)
 
     city_by_slug = {city["slug"]: city for city in cities}
 

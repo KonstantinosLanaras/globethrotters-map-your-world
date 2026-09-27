@@ -141,7 +141,7 @@ class ImportQualityTests(unittest.TestCase):
             3,
         )
 
-    def test_balances_subtype_with_distance_band(self):
+    def test_balances_subtype_with_geographic_spread(self):
         items = [
             candidate("Far Bar", "nightlife", "bar", lat=50.1, confidence=0.99),
             candidate("Near Bar", "nightlife", "bar", lat=50.01, confidence=0.85),
@@ -151,9 +151,9 @@ class ImportQualityTests(unittest.TestCase):
         selected, _ = select_quality_candidates(items, {"test-city": CITY}, 2)
 
         self.assertEqual([item["name"] for item in selected], ["Near Bar", "Music Hall"])
-        self.assertEqual(selected[0]["metadata"]["selection_basis"], "coverage_quality_gate_v2")
+        self.assertEqual(selected[0]["metadata"]["selection_basis"], "coverage_quality_gate_v3")
 
-    def test_spreads_food_across_city_distance_bands(self):
+    def test_spreads_food_without_band_edge_pileups(self):
         items = [
             candidate(f"Inner {index}", lat=50.001 + index * 0.0001, confidence=0.99)
             for index in range(8)
@@ -167,7 +167,7 @@ class ImportQualityTests(unittest.TestCase):
 
         self.assertEqual(
             [item["name"] for item in selected],
-            ["Inner 0", "Middle Restaurant", "Inner 1", "Outer Restaurant"],
+            ["Inner 0", "Middle Restaurant", "Outer Restaurant", "Edge Restaurant"],
         )
 
     def test_applies_verified_food_subcategory_override(self):

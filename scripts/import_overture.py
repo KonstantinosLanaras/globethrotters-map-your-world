@@ -63,6 +63,7 @@ CATEGORY_SUBTYPE_PRIORITY = {
     },
     "food": {
         "food_market": 0, "restaurant": 1, "bakery": 2, "cafe": 2,
+        "ice_cream_shop": 2,
     },
     "nature": {
         "nature_reserve": 0, "botanical_garden": 0, "garden": 1,
@@ -71,6 +72,29 @@ CATEGORY_SUBTYPE_PRIORITY = {
     "nightlife": {
         "live_music_venue": 0, "concert_hall": 0, "nightclub": 1, "bar": 2,
     },
+}
+
+CATEGORY_DISTANCE_BANDS_KM = {
+    "culture": (2.0, 5.0, 10.0),
+    "food": (1.0, 3.0, 7.0),
+    "nature": (3.0, 8.0, 15.0),
+    "nightlife": (1.0, 3.0, 7.0),
+}
+
+CATEGORY_DISTANCE_PATTERN = {
+    "culture": (0, 0, 0, 0, 1, 1, 2, 3),
+    "food": (0, 1, 0, 1, 2, 3, 0, 1, 2, 3),
+    "nature": (0, 1, 2, 3),
+    "nightlife": (0, 1, 0, 1, 2, 3, 0, 1, 2, 3),
+}
+
+CATEGORY_SUBTYPE_PATTERN = {
+    "food": ("food_market", "restaurant", "bakery", "cafe", "ice_cream_shop", "restaurant"),
+    "nature": (
+        "nature_reserve", "botanical_garden", "garden", "hiking_trail",
+        "trailhead", "beach", "park", "park",
+    ),
+    "nightlife": ("live_music_venue", "concert_hall", "nightclub", "bar", "bar"),
 }
 
 CATEGORY_RADIUS_CAP_KM = {
@@ -124,9 +148,9 @@ CURATED_PLACE_OVERRIDES = {
         "name": "Da Ponti 1881",
         "aliases": ["Ristorante Da Ponti"],
     },
-    "aa47b1e1-2ba0-4a0c-90f9-9766dcbf80a4": {
-        "name": "Deodato Arte",
-        "aliases": ["Deodato Arte Milano Santa Marta"],
+    "61fcf83c-2690-4af7-8ffa-68cb7eafb878": {
+        "name": "Museo Botanico Aurelia Josz",
+        "aliases": ["Museum Botanical Aurelia Josz", "Comunemente Verde"],
     },
 }
 
@@ -149,11 +173,22 @@ CURATED_PLACE_EXCLUSIONS = {
     "bf4a3e63-d6e3-41eb-97fc-77512280fa0c",
     "81500b87-f0a5-47bb-b2d3-e37fc6fb9ca8",
     "ee9cb3fe-f99f-4b8b-8c3d-c48250324663",
+    "37e1df0e-2bee-4c9f-b25b-f8ec0a2187a4",
+    "8b6f96cf-0383-4fd1-aa2b-44cb465d0864",
+    "eeccb4f5-b3fa-4522-b4e4-0047abb473e2",
+    "aa47b1e1-2ba0-4a0c-90f9-9766dcbf80a4",
+    "8ec46be5-6575-45e3-af3b-1bc322d142f4",
+    "3321ce27-8a69-499b-95df-187b51b8169e",
+    "a6655f6c-7932-4f02-a09f-7675b1ec8baf",
+    "b126d365-0f58-40d1-a7a1-e869ef8c58b1",
+    "bfbc1465-1685-4d66-8d3c-28640869d6ec",
+    "f4716f05-a885-429b-933d-1526b0a60f48",
     # Food: brand listing and generic/non-actionable records.
     "7bea980b-c661-4618-a7a1-ab48598978f5",
     "ad98a744-eeef-41da-9a6c-218d19c1eeae",
     "debbe2e9-ba56-4403-9fac-f7f066fee8e4",
     "b3309ebd-9382-4f79-a8d6-7a7782113535",
+    "c38c1874-29e2-46f2-99de-e8c0900e37bd",
     # Nature: squares, equipment/attractions, and erroneous inland beaches.
     "6f888011-9b6c-4f68-a19e-46ef03f126aa",
     "7ea592ca-4598-419c-8e3b-4e1e1338ab24",
@@ -165,6 +200,10 @@ CURATED_PLACE_EXCLUSIONS = {
     "c79a19e3-5f18-42da-ab8f-ece793a5ec48",
     "756d207f-e8a4-461f-ae72-3d39c39f8c38",
     "1610fc30-4b9b-43ca-92c1-6bd59cab4127",
+    "7a8b8321-7cf9-40d0-829e-e19db0b6256e",
+    "9c81241b-fdb0-4d41-b7bb-d113e2d36559",
+    "18fa090a-fecf-4e3b-a37b-bd1c4096ef14",
+    "a9624031-ae44-4b32-afb7-96e7d143bb12",
     # Nightlife: transit, retail, beauty, clothing, and pastry records.
     "e2aea142-f02c-4830-8bfd-e23e31b1a10d",
     "0c979d20-c1d4-4e2e-8e79-61b2b864761e",
@@ -173,6 +212,15 @@ CURATED_PLACE_EXCLUSIONS = {
     "1a7f439e-ee24-43a3-a0e1-629dc3d71e40",
     "bedd6611-99f2-47cc-ade5-7d177060fc02",
     "5cb1a771-a816-454c-a0df-220333ddbd69",
+    "4a89c19b-2037-4f61-8d0f-092f3e655ce1",
+    "1a205b5e-7329-430f-b598-74ecf444745a",
+    "527bf617-3c99-4f0a-8ebc-fe7f67f555df",
+    "acd0c3d1-f9cf-4eb2-9831-8c5e388ae9bc",
+}
+
+CURATED_SUBCATEGORY_OVERRIDES = {
+    "703c1e3f-c882-4293-b4be-b0b90160acbb": "ice_cream_shop",
+    "60cc6141-e20b-4cae-b90d-34a739038a68": "bakery",
 }
 
 # These phrases are strong evidence that a feature classified as a park is
@@ -188,8 +236,9 @@ NATURE_NAME_BLOCKLIST = (
 # international chains; regional businesses remain eligible for review.
 FOOD_CHAIN_PREFIX_BLOCKLIST = (
     "autogrill", "burger king", "domino s pizza", "five guys", "i love poke", "kfc",
-    "mcdonald s", "mcdonalds", "old wild west", "pizza hut", "rossopomodoro",
-    "spontini", "starbucks", "subway", "temakinho",
+    "mcdonald s", "mcdonalds", "obica", "old wild west", "panino giusto",
+    "pizza hut", "poke house",
+    "rossopomodoro", "spontini", "starbucks", "subway", "temakinho",
 )
 
 
@@ -357,19 +406,81 @@ def preferred_place_name(primary: str, common: Any, country_code: str | None) ->
 
 
 def apply_curated_place_override(item: dict[str, Any]) -> dict[str, Any]:
-    override = CURATED_PLACE_OVERRIDES.get(str(item["source_id"]))
-    if not override:
-        return item
-    original_name = item["name"]
-    item["name"] = override["name"]
-    aliases = collect_place_names(
-        item["name"],
-        {"source": original_name},
-        [{"value": alias} for alias in override["aliases"]],
-    )
-    item["metadata"]["alternate_names"] = aliases
-    item["metadata"]["editorial_name_override"] = True
+    source_id = str(item["source_id"])
+    override = CURATED_PLACE_OVERRIDES.get(source_id)
+    if override:
+        original_name = item["name"]
+        item["name"] = override["name"]
+        aliases = collect_place_names(
+            item["name"],
+            {"source": original_name},
+            [{"value": alias} for alias in override["aliases"]],
+        )
+        item["metadata"]["alternate_names"] = aliases
+        item["metadata"]["editorial_name_override"] = True
+    subcategory = CURATED_SUBCATEGORY_OVERRIDES.get(source_id)
+    if subcategory:
+        item["subcategory"] = subcategory
+        item["metadata"]["editorial_subcategory_override"] = True
     return item
+
+
+def interleave_by_pattern(
+    items: list[dict[str, Any]],
+    key_function,
+    pattern: tuple[Any, ...],
+) -> list[dict[str, Any]]:
+    """Interleave ranked buckets while preserving order inside each bucket."""
+    buckets: dict[Any, list[dict[str, Any]]] = {}
+    for item in items:
+        buckets.setdefault(key_function(item), []).append(item)
+    ordered: list[dict[str, Any]] = []
+    pattern_keys = set(pattern)
+    fallback_keys = sorted((key for key in buckets if key not in pattern_keys), key=str)
+    while any(buckets.values()):
+        progressed = False
+        for key in (*pattern, *fallback_keys):
+            bucket = buckets.get(key)
+            if bucket:
+                ordered.append(bucket.pop(0))
+                progressed = True
+        if not progressed:
+            break
+    return ordered
+
+
+def diversify_candidates(items: list[dict[str, Any]], category: str) -> list[dict[str, Any]]:
+    """Spread results across useful subtypes and city distance bands."""
+    protected: list[dict[str, Any]] = []
+    if category == "culture":
+        protected = [
+            item for item in items
+            if str(item["source_id"]) in PROTECTED_CULTURE_IDS
+        ]
+        items = [
+            item for item in items
+            if str(item["source_id"]) not in PROTECTED_CULTURE_IDS
+        ]
+    thresholds = CATEGORY_DISTANCE_BANDS_KM[category]
+
+    def distance_band(item: dict[str, Any]) -> int:
+        distance = item["distance_to_center_km"]
+        return sum(distance > threshold for threshold in thresholds)
+
+    by_band: dict[int, list[dict[str, Any]]] = {}
+    for item in items:
+        by_band.setdefault(distance_band(item), []).append(item)
+    subtype_pattern = CATEGORY_SUBTYPE_PATTERN.get(category)
+    if subtype_pattern:
+        for band, band_items in by_band.items():
+            by_band[band] = interleave_by_pattern(
+                band_items, lambda item: item["subcategory"], subtype_pattern,
+            )
+    flattened = [item for band in sorted(by_band) for item in by_band[band]]
+    diversified = interleave_by_pattern(
+        flattened, distance_band, CATEGORY_DISTANCE_PATTERN[category],
+    )
+    return [*protected, *diversified]
 
 
 def quality_rejection_reason(item: dict[str, Any]) -> str | None:
@@ -434,6 +545,7 @@ def select_quality_candidates(
                 -float(item["source_confidence"]),
                 normalize_place_name(item["name"]),
             ))
+        items = diversify_candidates(items, category)
         city_report = report["cities"].setdefault(city_slug, {"categories": {}})
         category_report = {
             "available": len(items), "selected": 0, "target": limit_per_category,
@@ -464,7 +576,7 @@ def select_quality_candidates(
                 continue
             seen_names.update(name_keys)
             item["metadata"]["distance_to_center_km"] = item["distance_to_center_km"]
-            item["metadata"]["selection_basis"] = "coverage_quality_gate_v1"
+            item["metadata"]["selection_basis"] = "coverage_quality_gate_v2"
             selected.append(item)
             category_report["selected"] += 1
             category_report["selected_names"].append(item["name"])
@@ -511,7 +623,7 @@ def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], re
           AND confidence >= ?
       ), ranked AS (
         SELECT *, row_number() OVER (
-          PARTITION BY canonical_category
+          PARTITION BY canonical_category, basic_category
           ORDER BY distance_squared, confidence DESC, name
         ) AS category_rank
         FROM candidates
@@ -594,7 +706,7 @@ def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str,
               AND confidence >= ?
           ), ranked AS (
             SELECT *, row_number() OVER (
-              PARTITION BY canonical_category
+              PARTITION BY canonical_category, basic_category
               ORDER BY distance_squared, confidence DESC, name
             ) AS category_rank
             FROM categorized
@@ -604,7 +716,7 @@ def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str,
             basic_category, confidence, canonical_category
           FROM ranked
           WHERE category_rank <= ?
-        """, [minimum_confidence, max(limit_per_category * 25, 250)]).fetchall()
+        """, [minimum_confidence, max(limit_per_category * 10, 100)]).fetchall()
         connection.unregister(relation_name)
         candidates.extend(apply_curated_place_override({
             "city_id": city.get("id"),
@@ -809,7 +921,7 @@ GROUP BY city.slug ORDER BY city.slug;
 
 
 def write_quality_report(report: dict[str, Any], destination: str, release: str) -> None:
-    report = {"overture_release": release, "quality_gate": "coverage_quality_gate_v1", **report}
+    report = {"overture_release": release, "quality_gate": "coverage_quality_gate_v2", **report}
     with open(destination, "w", encoding="utf-8") as output:
         json.dump(report, output, ensure_ascii=False, indent=2, sort_keys=True)
         output.write("\n")

@@ -420,6 +420,7 @@ def select_quality_candidates(
             items.sort(key=lambda item: (
                 0 if str(item["source_id"]) in PROTECTED_CULTURE_IDS else 1,
                 subtype_priority.get(item["subcategory"], 9),
+                0 if str(item["source_id"]) in CURATED_PLACE_OVERRIDES else 1,
                 item["distance_to_center_km"]
                 - max(0.0, float(item["source_confidence"]) - 0.8) * 8,
                 item["distance_to_center_km"],
@@ -428,6 +429,7 @@ def select_quality_candidates(
         else:
             items.sort(key=lambda item: (
                 subtype_priority.get(item["subcategory"], 9),
+                0 if str(item["source_id"]) in CURATED_PLACE_OVERRIDES else 1,
                 item["distance_to_center_km"],
                 -float(item["source_confidence"]),
                 normalize_place_name(item["name"]),

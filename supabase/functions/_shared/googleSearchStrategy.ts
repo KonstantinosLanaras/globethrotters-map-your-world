@@ -37,7 +37,7 @@ export const GOOGLE_SEARCH_STRATEGIES: Record<CatalogSearchCategory, GoogleSearc
   },
   culture: {
     method: "nearby_popularity",
-    radiusCapKm: 18,
+    radiusCapKm: 25,
     includedTypes: [
       "art_gallery",
       "castle",

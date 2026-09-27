@@ -64,6 +64,6 @@ describe("Google candidate eligibility", () => {
     expect(isEligibleGoogleCandidate(
       "culture",
       candidate("Monza Circuit", "race_course", ["race_course", "tourist_attraction"]),
-    )).toBe(false);
+    )).toBe(true);
   });
 });

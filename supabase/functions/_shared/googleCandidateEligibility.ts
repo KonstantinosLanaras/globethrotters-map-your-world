@@ -40,7 +40,6 @@ const CULTURE_INCOMPATIBLE_PRIMARY_TYPES = new Set([
   "nature_preserve",
   "park",
   "scenic_spot",
-  "race_course",
   "sports_complex",
   "stadium",
 ]);

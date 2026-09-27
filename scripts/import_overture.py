@@ -74,27 +74,30 @@ CATEGORY_SUBTYPE_PRIORITY = {
     },
 }
 
-CATEGORY_DISTANCE_BANDS_KM = {
-    "culture": (2.0, 5.0, 10.0),
-    "food": (1.0, 3.0, 7.0),
-    "nature": (3.0, 8.0, 15.0),
-    "nightlife": (1.0, 3.0, 7.0),
+CATEGORY_SPREAD_SCALE_KM = {
+    "culture": 2.0,
+    "food": 1.5,
+    "nature": 3.0,
+    "nightlife": 1.5,
 }
 
-CATEGORY_DISTANCE_PATTERN = {
-    "culture": (0, 0, 0, 0, 1, 1, 2, 3),
-    "food": (0, 1, 0, 1, 2, 3, 0, 1, 2, 3),
-    "nature": (0, 1, 2, 3),
-    "nightlife": (0, 1, 0, 1, 2, 3, 0, 1, 2, 3),
-}
-
-CATEGORY_SUBTYPE_PATTERN = {
-    "food": ("food_market", "restaurant", "bakery", "cafe", "ice_cream_shop", "restaurant"),
-    "nature": (
-        "nature_reserve", "botanical_garden", "garden", "hiking_trail",
-        "trailhead", "beach", "park", "park",
-    ),
-    "nightlife": ("live_music_venue", "concert_hall", "nightclub", "bar", "bar"),
+# These are selection preferences rather than hard quotas. Missing subtypes do
+# not block a city import, and remaining slots are always filled by the best
+# eligible records available in that city.
+CATEGORY_SUBTYPE_TARGET_SHARE = {
+    "food": {
+        "restaurant": 0.50, "cafe": 0.20, "food_market": 0.10,
+        "bakery": 0.10, "ice_cream_shop": 0.10,
+    },
+    "nature": {
+        "park": 0.35, "garden": 0.15, "botanical_garden": 0.10,
+        "nature_reserve": 0.20, "hiking_trail": 0.10,
+        "trailhead": 0.05, "beach": 0.05,
+    },
+    "nightlife": {
+        "bar": 0.40, "nightclub": 0.25, "live_music_venue": 0.25,
+        "concert_hall": 0.10,
+    },
 }
 
 CATEGORY_RADIUS_CAP_KM = {
@@ -426,32 +429,24 @@ def apply_curated_place_override(item: dict[str, Any]) -> dict[str, Any]:
     return item
 
 
-def interleave_by_pattern(
+def distance_between_items(
+    first: dict[str, Any], second: dict[str, Any], city_latitude: float,
+) -> float:
+    latitude_scale = 111.0
+    longitude_scale = 111.0 * max(0.2, math.cos(math.radians(city_latitude)))
+    return math.sqrt(
+        ((float(first["latitude"]) - float(second["latitude"])) * latitude_scale) ** 2
+        + ((float(first["longitude"]) - float(second["longitude"])) * longitude_scale) ** 2
+    )
+
+
+def diversify_candidates(
     items: list[dict[str, Any]],
-    key_function,
-    pattern: tuple[Any, ...],
+    category: str,
+    city: dict[str, Any],
+    limit_per_category: int,
 ) -> list[dict[str, Any]]:
-    """Interleave ranked buckets while preserving order inside each bucket."""
-    buckets: dict[Any, list[dict[str, Any]]] = {}
-    for item in items:
-        buckets.setdefault(key_function(item), []).append(item)
-    ordered: list[dict[str, Any]] = []
-    pattern_keys = set(pattern)
-    fallback_keys = sorted((key for key in buckets if key not in pattern_keys), key=str)
-    while any(buckets.values()):
-        progressed = False
-        for key in (*pattern, *fallback_keys):
-            bucket = buckets.get(key)
-            if bucket:
-                ordered.append(bucket.pop(0))
-                progressed = True
-        if not progressed:
-            break
-    return ordered
-
-
-def diversify_candidates(items: list[dict[str, Any]], category: str) -> list[dict[str, Any]]:
-    """Spread results across useful subtypes and city distance bands."""
+    """Rank by quality, geographic novelty and soft subtype targets."""
     protected: list[dict[str, Any]] = []
     if category == "culture":
         protected = [
@@ -462,26 +457,42 @@ def diversify_candidates(items: list[dict[str, Any]], category: str) -> list[dic
             item for item in items
             if str(item["source_id"]) not in PROTECTED_CULTURE_IDS
         ]
-    thresholds = CATEGORY_DISTANCE_BANDS_KM[category]
-
-    def distance_band(item: dict[str, Any]) -> int:
-        distance = item["distance_to_center_km"]
-        return sum(distance > threshold for threshold in thresholds)
-
-    by_band: dict[int, list[dict[str, Any]]] = {}
-    for item in items:
-        by_band.setdefault(distance_band(item), []).append(item)
-    subtype_pattern = CATEGORY_SUBTYPE_PATTERN.get(category)
-    if subtype_pattern:
-        for band, band_items in by_band.items():
-            by_band[band] = interleave_by_pattern(
-                band_items, lambda item: item["subcategory"], subtype_pattern,
-            )
-    flattened = [item for band in sorted(by_band) for item in by_band[band]]
-    diversified = interleave_by_pattern(
-        flattened, distance_band, CATEGORY_DISTANCE_PATTERN[category],
+    ordered = list(protected)
+    remaining = list(items)
+    subtype_counts: dict[str, int] = {}
+    for item in ordered:
+        subtype_counts[item["subcategory"]] = subtype_counts.get(item["subcategory"], 0) + 1
+    target_shares = CATEGORY_SUBTYPE_TARGET_SHARE.get(category, {})
+    spread_scale = CATEGORY_SPREAD_SCALE_KM[category]
+    category_radius = min(
+        float(city.get("search_radius_km", 50)),
+        CATEGORY_RADIUS_CAP_KM.get(category, float(city.get("search_radius_km", 50))),
     )
-    return [*protected, *diversified]
+    city_latitude = float(city["latitude"])
+
+    while remaining and len(ordered) < limit_per_category:
+        def selection_score(item: dict[str, Any]) -> tuple[float, float]:
+            if ordered:
+                nearest_selected = min(
+                    distance_between_items(item, chosen, city_latitude)
+                    for chosen in ordered
+                )
+            else:
+                nearest_selected = spread_scale
+            novelty = min(1.0, nearest_selected / spread_scale)
+            confidence = float(item["source_confidence"])
+            centrality = max(0.0, 1.0 - item["distance_to_center_km"] / max(1.0, category_radius))
+            target = target_shares.get(item["subcategory"], 0.0) * limit_per_category
+            current = subtype_counts.get(item["subcategory"], 0)
+            subtype_need = max(0.0, target - current) / max(1.0, target)
+            score = 0.40 * confidence + 0.30 * novelty + 0.10 * centrality + 0.20 * subtype_need
+            return score, confidence
+
+        best = max(remaining, key=selection_score)
+        remaining.remove(best)
+        ordered.append(best)
+        subtype_counts[best["subcategory"]] = subtype_counts.get(best["subcategory"], 0) + 1
+    return ordered[:limit_per_category]
 
 
 def quality_rejection_reason(item: dict[str, Any]) -> str | None:
@@ -525,28 +536,14 @@ def select_quality_candidates(
 
     selected: list[dict[str, Any]] = []
     for (city_slug, category), items in grouped.items():
-        subtype_priority = CATEGORY_SUBTYPE_PRIORITY.get(category, {})
-        if category == "culture":
-            # Balance proximity with confidence so iconic, well-established
-            # landmarks are not displaced by every slightly nearer small POI.
-            items.sort(key=lambda item: (
-                0 if str(item["source_id"]) in PROTECTED_CULTURE_IDS else 1,
-                subtype_priority.get(item["subcategory"], 9),
-                0 if str(item["source_id"]) in CURATED_PLACE_OVERRIDES else 1,
-                item["distance_to_center_km"]
-                - max(0.0, float(item["source_confidence"]) - 0.8) * 8,
-                item["distance_to_center_km"],
-                normalize_place_name(item["name"]),
-            ))
-        else:
-            items.sort(key=lambda item: (
-                subtype_priority.get(item["subcategory"], 9),
-                0 if str(item["source_id"]) in CURATED_PLACE_OVERRIDES else 1,
-                item["distance_to_center_km"],
-                -float(item["source_confidence"]),
-                normalize_place_name(item["name"]),
-            ))
-        items = diversify_candidates(items, category)
+        city = city_by_slug[city_slug]
+        items.sort(key=lambda item: (
+            0 if str(item["source_id"]) in PROTECTED_CULTURE_IDS else 1,
+            0 if str(item["source_id"]) in CURATED_PLACE_OVERRIDES else 1,
+            -float(item["source_confidence"]),
+            item["distance_to_center_km"],
+            normalize_place_name(item["name"]),
+        ))
         city_report = report["cities"].setdefault(city_slug, {"categories": {}})
         category_report = {
             "available": len(items), "selected": 0, "target": limit_per_category,
@@ -554,9 +551,10 @@ def select_quality_candidates(
         }
         city_report["categories"][category] = category_report
         seen_names: set[str] = set()
+        eligible: list[dict[str, Any]] = []
         for item in items:
             reason = quality_rejection_reason(item)
-            city_radius = float(city_by_slug[city_slug].get("search_radius_km", 50))
+            city_radius = float(city.get("search_radius_km", 50))
             category_radius = min(city_radius, CATEGORY_RADIUS_CAP_KM.get(category, city_radius))
             if reason is None and item["distance_to_center_km"] > category_radius:
                 reason = "outside_category_radius"
@@ -571,13 +569,17 @@ def select_quality_candidates(
                 category_report["rejected"][reason] = category_report["rejected"].get(reason, 0) + 1
                 report["summary"]["rejected"] += 1
                 continue
-            if category_report["selected"] >= limit_per_category:
-                category_report["rejected"]["below_cutoff"] = category_report["rejected"].get("below_cutoff", 0) + 1
-                report["summary"]["rejected"] += 1
-                continue
             seen_names.update(name_keys)
+            eligible.append(item)
+
+        ordered = diversify_candidates(eligible, category, city, limit_per_category)
+        below_cutoff = len(eligible) - len(ordered)
+        if below_cutoff:
+            category_report["rejected"]["below_cutoff"] = below_cutoff
+            report["summary"]["rejected"] += below_cutoff
+        for item in ordered:
             item["metadata"]["distance_to_center_km"] = item["distance_to_center_km"]
-            item["metadata"]["selection_basis"] = "coverage_quality_gate_v2"
+            item["metadata"]["selection_basis"] = "coverage_quality_gate_v3"
             selected.append(item)
             category_report["selected"] += 1
             category_report["selected_names"].append(item["name"])
@@ -624,8 +626,11 @@ def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], re
           AND confidence >= ?
       ), ranked AS (
         SELECT *, row_number() OVER (
-          PARTITION BY canonical_category, basic_category
-          ORDER BY distance_squared, confidence DESC, name
+          PARTITION BY canonical_category, basic_category,
+            floor((latitude - {latitude}) * 111.0 / 2.0),
+            floor((longitude - {longitude}) * 111.0
+              * greatest(0.2, cos(radians({latitude}))) / 2.0)
+          ORDER BY confidence DESC, distance_squared, name
         ) AS category_rank
         FROM candidates
         WHERE canonical_category IS NOT NULL
@@ -642,7 +647,7 @@ def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], re
         latitude - latitude_delta,
         latitude + latitude_delta,
         minimum_confidence,
-        limit_per_category,
+        max(3, math.ceil(limit_per_category / 8)),
     ]).fetchall()
     return [apply_curated_place_override({
         "city_id": city.get("id"),
@@ -707,8 +712,11 @@ def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str,
               AND confidence >= ?
           ), ranked AS (
             SELECT *, row_number() OVER (
-              PARTITION BY canonical_category, basic_category
-              ORDER BY distance_squared, confidence DESC, name
+              PARTITION BY canonical_category, basic_category,
+                floor((latitude - {latitude}) * 111.0 / 2.0),
+                floor((longitude - {longitude}) * 111.0
+                  * greatest(0.2, cos(radians({latitude}))) / 2.0)
+              ORDER BY confidence DESC, distance_squared, name
             ) AS category_rank
             FROM categorized
             WHERE canonical_category IS NOT NULL
@@ -717,7 +725,7 @@ def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str,
             basic_category, confidence, canonical_category
           FROM ranked
           WHERE category_rank <= ?
-        """, [minimum_confidence, max(limit_per_category * 10, 100)]).fetchall()
+        """, [minimum_confidence, max(3, math.ceil(limit_per_category / 8))]).fetchall()
         connection.unregister(relation_name)
         candidates.extend(apply_curated_place_override({
             "city_id": city.get("id"),
@@ -922,7 +930,7 @@ GROUP BY city.slug ORDER BY city.slug;
 
 
 def write_quality_report(report: dict[str, Any], destination: str, release: str) -> None:
-    report = {"overture_release": release, "quality_gate": "coverage_quality_gate_v2", **report}
+    report = {"overture_release": release, "quality_gate": "coverage_quality_gate_v3", **report}
     with open(destination, "w", encoding="utf-8") as output:
         json.dump(report, output, ensure_ascii=False, indent=2, sort_keys=True)
         output.write("\n")

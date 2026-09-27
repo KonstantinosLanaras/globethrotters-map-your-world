@@ -1,3 +1,6 @@
 project_id = "qghawmrtwkchpdqthaof"
 [functions.tmp-catalog-ops]
 verify_jwt = false
+
+[functions.import-google-candidates]
+verify_jwt = false

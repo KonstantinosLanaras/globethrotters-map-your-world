@@ -6,6 +6,7 @@ export type MatchablePlace = {
 export type MatchableCatalogItem = MatchablePlace & {
   id: string;
   name: string;
+  aliases?: string[];
 };
 
 export const normalizePlaceName = (value: string) => value
@@ -45,7 +46,10 @@ export const findCatalogMatch = <T extends MatchableCatalogItem>(
   items: T[],
 ) => {
   const ranked = items.map((item) => {
-    const nameScore = placeNameSimilarity(candidate.displayName, item.name);
+    const names = [item.name, ...(item.aliases || [])];
+    const nameScore = Math.max(...names.map((name) =>
+      placeNameSimilarity(candidate.displayName, name)
+    ));
     const distance = placeDistanceMeters(candidate, item);
     const distanceScore = Math.max(0, 1 - distance / 750);
     return { item, nameScore, distance, score: nameScore * 0.75 + distanceScore * 0.25 };

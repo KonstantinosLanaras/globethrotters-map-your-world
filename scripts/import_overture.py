@@ -56,8 +56,10 @@ STAC_FILE_CACHE: dict[str, list[dict[str, Any]]] = {}
 
 CATEGORY_SUBTYPE_PRIORITY = {
     "culture": {
-        "historic_site": 0, "museum": 0, "monument": 1,
-        "art_gallery": 1, "cultural_center": 2,
+        "historic_site": 0, "museum": 0, "art_museum": 0,
+        "art_gallery": 0, "christian_place_of_worship": 0,
+        "roman_catholic_place_of_worship": 0, "music_venue": 0,
+        "theatre_venue": 0, "monument": 1, "cultural_center": 2,
     },
     "food": {
         "food_market": 0, "restaurant": 1, "bakery": 2, "cafe": 2,
@@ -69,6 +71,20 @@ CATEGORY_SUBTYPE_PRIORITY = {
     "nightlife": {
         "live_music_venue": 0, "concert_hall": 0, "nightclub": 1, "bar": 2,
     },
+}
+
+CATEGORY_RADIUS_CAP_KM = {
+    "food": 15.0,
+    "culture": 25.0,
+    "nature": 20.0,
+    "nightlife": 15.0,
+}
+
+COUNTRY_DEFAULT_LANGUAGE = {
+    "AT": "de", "BE": "fr", "CH": "de", "CZ": "cs", "DE": "de",
+    "DK": "da", "ES": "es", "FR": "fr", "GB": "en", "GR": "el",
+    "HU": "hu", "IE": "en", "IS": "is", "IT": "it", "NL": "nl",
+    "NO": "no", "PL": "pl", "PT": "pt", "SE": "sv", "TR": "tr",
 }
 
 # These phrases are strong evidence that a feature classified as a park is
@@ -162,7 +178,7 @@ def api_request(method: str, path: str, body: Any | None = None) -> Any:
 
 
 def get_cities(slugs: list[str]) -> list[dict[str, Any]]:
-    query = "catalog_cities?select=id,slug,name,country,latitude,longitude,search_radius_km&is_active=eq.true&order=market_rank.asc"
+    query = "catalog_cities?select=id,slug,name,country,country_code,latitude,longitude,search_radius_km&is_active=eq.true&order=market_rank.asc"
     if slugs:
         quoted = ",".join(f'"{slug}"' for slug in slugs)
         query += f"&slug=in.({urllib.parse.quote(quoted, safe=',\"')})"
@@ -200,7 +216,12 @@ def category_case() -> str:
           OR basic_category IN ('restaurant', 'cafe', 'bakery', 'food_market') THEN 'food'
         WHEN list_contains(taxonomy.hierarchy, 'museum')
           OR list_contains(taxonomy.hierarchy, 'historic_site')
-          OR basic_category IN ('museum', 'art_gallery', 'monument', 'cultural_center') THEN 'culture'
+          OR list_contains(taxonomy.hierarchy, 'place_of_worship')
+          OR list_contains(taxonomy.hierarchy, 'performing_arts_venue')
+          OR basic_category IN (
+            'museum', 'art_gallery', 'monument', 'cultural_center',
+            'music_venue', 'theatre_venue'
+          ) THEN 'culture'
         WHEN basic_category IN ('hiking_trail', 'trailhead')
           OR list_contains(taxonomy.hierarchy, 'hiking_trail') THEN 'nature'
         WHEN basic_category IN ('park', 'botanical_garden', 'garden', 'beach', 'nature_reserve') THEN 'nature'
@@ -214,6 +235,36 @@ def normalize_place_name(value: str) -> str:
     """Return a stable key for conservative within-city name deduplication."""
     ascii_value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
     return " ".join(re.sub(r"[^a-z0-9]+", " ", ascii_value.lower()).split())
+
+
+def collect_place_names(primary: str, common: Any = None, rules: Any = None) -> list[str]:
+    """Collect stable primary, localized and alternate names from Overture."""
+    values: list[str] = [primary]
+    if isinstance(common, dict):
+        values.extend(value for value in common.values() if isinstance(value, str))
+    if isinstance(rules, list):
+        values.extend(
+            rule.get("value") for rule in rules
+            if isinstance(rule, dict) and isinstance(rule.get("value"), str)
+        )
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        key = normalize_place_name(value)
+        if key and key not in seen:
+            seen.add(key)
+            result.append(value)
+    return result
+
+
+def preferred_place_name(primary: str, common: Any, country_code: str | None) -> str:
+    """Prefer a destination-language common name while retaining every alias."""
+    language = COUNTRY_DEFAULT_LANGUAGE.get((country_code or "").upper())
+    if language and isinstance(common, dict):
+        localized = common.get(language)
+        if isinstance(localized, str) and localized.strip():
+            return localized.strip()
+    return primary
 
 
 def quality_rejection_reason(item: dict[str, Any]) -> str | None:
@@ -256,12 +307,23 @@ def select_quality_candidates(
     selected: list[dict[str, Any]] = []
     for (city_slug, category), items in grouped.items():
         subtype_priority = CATEGORY_SUBTYPE_PRIORITY.get(category, {})
-        items.sort(key=lambda item: (
-            subtype_priority.get(item["subcategory"], 9),
-            item["distance_to_center_km"],
-            -float(item["source_confidence"]),
-            normalize_place_name(item["name"]),
-        ))
+        if category == "culture":
+            # Balance proximity with confidence so iconic, well-established
+            # landmarks are not displaced by every slightly nearer small POI.
+            items.sort(key=lambda item: (
+                subtype_priority.get(item["subcategory"], 9),
+                item["distance_to_center_km"]
+                - max(0.0, float(item["source_confidence"]) - 0.8) * 8,
+                item["distance_to_center_km"],
+                normalize_place_name(item["name"]),
+            ))
+        else:
+            items.sort(key=lambda item: (
+                subtype_priority.get(item["subcategory"], 9),
+                item["distance_to_center_km"],
+                -float(item["source_confidence"]),
+                normalize_place_name(item["name"]),
+            ))
         city_report = report["cities"].setdefault(city_slug, {"categories": {}})
         category_report = {
             "available": len(items), "selected": 0, "target": limit_per_category,
@@ -271,8 +333,16 @@ def select_quality_candidates(
         seen_names: set[str] = set()
         for item in items:
             reason = quality_rejection_reason(item)
-            normalized_name = normalize_place_name(item["name"])
-            if reason is None and normalized_name in seen_names:
+            city_radius = float(city_by_slug[city_slug].get("search_radius_km", 50))
+            category_radius = min(city_radius, CATEGORY_RADIUS_CAP_KM.get(category, city_radius))
+            if reason is None and item["distance_to_center_km"] > category_radius:
+                reason = "outside_category_radius"
+            name_keys = {
+                normalize_place_name(value)
+                for value in [item["name"], *item["metadata"].get("alternate_names", [])]
+                if value
+            }
+            if reason is None and seen_names.intersection(name_keys):
                 reason = "duplicate_name"
             if reason is not None:
                 category_report["rejected"][reason] = category_report["rejected"].get(reason, 0) + 1
@@ -282,7 +352,7 @@ def select_quality_candidates(
                 category_report["rejected"]["below_cutoff"] = category_report["rejected"].get("below_cutoff", 0) + 1
                 report["summary"]["rejected"] += 1
                 continue
-            seen_names.add(normalized_name)
+            seen_names.update(name_keys)
             item["metadata"]["distance_to_center_km"] = item["distance_to_center_km"]
             item["metadata"]["selection_basis"] = "coverage_quality_gate_v1"
             selected.append(item)
@@ -314,6 +384,8 @@ def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], re
         SELECT
           id,
           names.primary AS name,
+          names.common AS common_names,
+          names.rules AS name_rules,
           bbox.ymin AS latitude,
           bbox.xmin AS longitude,
           basic_category,
@@ -332,7 +404,8 @@ def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], re
         FROM candidates
         WHERE canonical_category IS NOT NULL
       )
-      SELECT id, name, latitude, longitude, basic_category, confidence, canonical_category
+      SELECT id, name, common_names, name_rules, latitude, longitude,
+        basic_category, confidence, canonical_category
       FROM ranked
       WHERE category_rank <= ?
     """
@@ -348,18 +421,21 @@ def extract_city(connection: duckdb.DuckDBPyConnection, city: dict[str, Any], re
     return [{
         "city_id": city.get("id"),
         "city_slug": city["slug"],
-        "name": row[1],
-        "latitude": row[2],
-        "longitude": row[3],
-        "canonical_category": row[6],
-        "subcategory": row[4] or row[6],
+        "name": preferred_place_name(row[1], row[2], city.get("country_code")),
+        "latitude": row[4],
+        "longitude": row[5],
+        "canonical_category": row[8],
+        "subcategory": row[6] or row[8],
         "description": None,
         "source": "overture",
         "source_id": row[0],
-        "source_confidence": row[5],
+        "source_confidence": row[7],
         "quality_tier": "coverage",
         "is_active": True,
-        "metadata": {"overture_release": release},
+        "metadata": {
+            "overture_release": release,
+            "alternate_names": collect_place_names(row[1], row[2], row[3]),
+        },
     } for row in rows]
 
 
@@ -390,6 +466,8 @@ def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str,
             SELECT
               id,
               names.primary AS name,
+              names.common AS common_names,
+              names.rules AS name_rules,
               bbox.ymin AS latitude,
               bbox.xmin AS longitude,
               basic_category,
@@ -406,27 +484,30 @@ def extract_cities(connection: duckdb.DuckDBPyConnection, cities: list[dict[str,
             FROM categorized
             WHERE canonical_category IS NOT NULL
           )
-          SELECT id, name, latitude, longitude, basic_category,
-            confidence, canonical_category
+          SELECT id, name, common_names, name_rules, latitude, longitude,
+            basic_category, confidence, canonical_category
           FROM ranked
           WHERE category_rank <= ?
-        """, [minimum_confidence, max(limit_per_category * 12, 100)]).fetchall()
+        """, [minimum_confidence, max(limit_per_category * 25, 250)]).fetchall()
         connection.unregister(relation_name)
         candidates.extend({
             "city_id": city.get("id"),
             "city_slug": city["slug"],
-            "name": row[1],
-            "latitude": row[2],
-            "longitude": row[3],
-            "canonical_category": row[6],
-            "subcategory": row[4] or row[6],
+            "name": preferred_place_name(row[1], row[2], city.get("country_code")),
+            "latitude": row[4],
+            "longitude": row[5],
+            "canonical_category": row[8],
+            "subcategory": row[6] or row[8],
             "description": None,
             "source": "overture",
             "source_id": str(row[0]),
-            "source_confidence": row[5],
+            "source_confidence": row[7],
             "quality_tier": "coverage",
             "is_active": True,
-            "metadata": {"overture_release": release},
+            "metadata": {
+                "overture_release": release,
+                "alternate_names": collect_place_names(row[1], row[2], row[3]),
+            },
         } for row in rows)
 
     city_by_slug = {city["slug"]: city for city in cities}

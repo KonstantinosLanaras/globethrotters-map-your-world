@@ -35,4 +35,20 @@ describe("Google-to-catalogue matching", () => {
     expect(match).toBeNull();
     expect(placeNameSimilarity("Museum of Modern Art", "Joe's Pizza")).toBe(0);
   });
+
+  it("matches a localized candidate through an independently sourced alias", () => {
+    const match = findCatalogMatch(
+      { displayName: "Duomo di Milano", latitude: 45.46416, longitude: 9.19139 },
+      [{
+        id: "duomo",
+        name: "Katedra w Mediolanie",
+        aliases: ["Duomo di Milano", "Milan Cathedral"],
+        latitude: 45.46416,
+        longitude: 9.19139,
+      }],
+    );
+
+    expect(match?.item.id).toBe("duomo");
+    expect(match?.score).toBe(1);
+  });
 });

@@ -1,11 +1,17 @@
 import unittest
 
-from import_overture import normalize_place_name, select_quality_candidates
+from import_overture import (
+    collect_place_names,
+    normalize_place_name,
+    preferred_place_name,
+    select_quality_candidates,
+)
 
 
 CITY = {
     "slug": "test-city", "name": "Test City", "country": "Testland",
-    "latitude": 50.0, "longitude": 10.0, "market_rank": 1,
+    "country_code": "IT", "latitude": 50.0, "longitude": 10.0,
+    "market_rank": 1, "search_radius_km": 25,
 }
 
 
@@ -20,6 +26,19 @@ def candidate(name, category="food", subcategory="restaurant", lat=50.0, confide
 class ImportQualityTests(unittest.TestCase):
     def test_normalizes_accents_and_punctuation(self):
         self.assertEqual(normalize_place_name("Café d'Art!"), "cafe d art")
+
+    def test_prefers_localized_name_and_preserves_aliases(self):
+        common = {"it": "Duomo di Milano", "en": "Milan Cathedral"}
+        rules = [{"value": "Duomo", "variant": "short", "language": "it"}]
+
+        self.assertEqual(
+            preferred_place_name("Katedra w Mediolanie", common, "IT"),
+            "Duomo di Milano",
+        )
+        self.assertEqual(
+            collect_place_names("Katedra w Mediolanie", common, rules),
+            ["Katedra w Mediolanie", "Duomo di Milano", "Milan Cathedral", "Duomo"],
+        )
 
     def test_deduplicates_names_and_blocks_parking_noise(self):
         items = [
@@ -64,6 +83,20 @@ class ImportQualityTests(unittest.TestCase):
 
         self.assertEqual([item["name"] for item in selected], ["Music Hall", "Near Bar"])
         self.assertEqual(selected[0]["metadata"]["selection_basis"], "coverage_quality_gate_v1")
+
+    def test_rejects_candidates_beyond_the_category_radius(self):
+        items = [
+            candidate("Central Park", "nature", "park", lat=50.05),
+            candidate("Remote Park", "nature", "park", lat=50.25),
+        ]
+
+        selected, report = select_quality_candidates(items, {"test-city": CITY}, 10)
+
+        self.assertEqual([item["name"] for item in selected], ["Central Park"])
+        self.assertEqual(
+            report["cities"]["test-city"]["categories"]["nature"]["rejected"]["outside_category_radius"],
+            1,
+        )
 
 
 if __name__ == "__main__":

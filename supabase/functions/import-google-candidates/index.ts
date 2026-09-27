@@ -161,12 +161,20 @@ serve(async (request) => {
 
         const { data: catalogRows, error: catalogError } = await supabase
           .from("catalog_items")
-          .select("id,name,latitude,longitude")
+          .select("id,name,latitude,longitude,metadata")
           .eq("city_id", city.id)
           .eq("canonical_category", category)
           .eq("is_active", true);
         if (catalogError) throw catalogError;
-        const catalogItems = (catalogRows || []) as MatchableCatalogItem[];
+        const catalogItems = (catalogRows || []).map((item) => ({
+          id: item.id,
+          name: item.name,
+          latitude: item.latitude,
+          longitude: item.longitude,
+          aliases: Array.isArray(item.metadata?.alternate_names)
+            ? item.metadata.alternate_names.filter((value: unknown): value is string => typeof value === "string")
+            : [],
+        })) as MatchableCatalogItem[];
 
         const selected = selectedCandidatesForCategory
           .map((candidate, index): SelectedCandidate => {

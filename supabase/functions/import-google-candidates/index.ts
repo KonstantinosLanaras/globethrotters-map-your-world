@@ -5,8 +5,14 @@ import {
   googleCandidateQualityScore,
   rankGoogleCandidates,
 } from "../_shared/googleCandidateRanking.ts";
-
-type Category = "food" | "culture" | "nature" | "nightlife";
+import {
+  buildGoogleSearchRequest,
+  estimateMaximumGoogleRequests,
+  GOOGLE_SEARCH_STRATEGIES,
+  googleSearchPageLimit,
+  type CatalogSearchCategory as Category,
+  type GoogleSearchMethod,
+} from "../_shared/googleSearchStrategy.ts";
 
 type GoogleCandidate = {
   googlePlaceId: string;
@@ -29,25 +35,8 @@ type SelectedCandidate = GoogleCandidate & {
   matchScore: number | null;
   matchMethod: "name_distance_v1" | null;
   qualityScore: number;
+  searchMethod: GoogleSearchMethod;
 };
-
-const SEARCH_CONFIG: Record<Category, { query: string; includedType?: string }> = {
-  food: { query: "restaurants", includedType: "restaurant" },
-  culture: { query: "museums", includedType: "museum" },
-  nature: { query: "parks gardens hiking trails beaches and nature" },
-  nightlife: { query: "nightclubs", includedType: "night_club" },
-};
-
-const FIELD_MASK = [
-  "places.id",
-  "places.displayName",
-  "places.location",
-  "places.primaryType",
-  "places.types",
-  "places.rating",
-  "places.userRatingCount",
-  "nextPageToken",
-].join(",");
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -74,8 +63,8 @@ serve(async (request) => {
   // Food and culture are the cost-controlled default. Other categories can be
   // requested explicitly, but are better populated from open datasets first.
   const categories = (Array.isArray(body.categories) ? body.categories : ["food", "culture"])
-    .filter((value: unknown): value is Category => typeof value === "string" && value in SEARCH_CONFIG);
-  const maxPages = Math.min(3, Math.max(1, Number(body.maxPages) || 3));
+    .filter((value: unknown): value is Category => typeof value === "string" && value in GOOGLE_SEARCH_STRATEGIES);
+  const maxTextPages = Math.min(3, Math.max(1, Number(body.maxPages) || 3));
   const minRating = Math.min(5, Math.max(0, Number(body.minRating) || 4));
   const minimumReviews = Math.min(100_000, Math.max(100, Number(body.minimumReviews) || 1_000));
   const selectionLimit = Math.min(25, Math.max(1, Number(body.selectionLimit) || 10));
@@ -107,42 +96,22 @@ serve(async (request) => {
 
   try {
     for (const city of cities) {
-      const latDelta = city.search_radius_km / 111;
-      const lngDelta = city.search_radius_km / (111 * Math.max(0.2, Math.cos(city.latitude * Math.PI / 180)));
-
       for (const category of categories) {
-        const config = SEARCH_CONFIG[category];
         let pageToken: string | undefined;
         const categoryCandidates: GoogleCandidate[] = [];
+        const pageLimit = googleSearchPageLimit(category, maxTextPages);
+        const searchMethod = GOOGLE_SEARCH_STRATEGIES[category].method;
 
-        for (let page = 0; page < maxPages; page += 1) {
-          const searchBody: Record<string, unknown> = {
-            textQuery: `${config.query} in ${city.name}, ${city.country}`,
-            minRating,
-            pageSize: 20,
-            languageCode: "en",
-            regionCode: city.country_code,
-            locationRestriction: {
-              rectangle: {
-                low: { latitude: city.latitude - latDelta, longitude: city.longitude - lngDelta },
-                high: { latitude: city.latitude + latDelta, longitude: city.longitude + lngDelta },
-              },
-            },
-          };
-          if (config.includedType) {
-            searchBody.includedType = config.includedType;
-            searchBody.strictTypeFiltering = true;
-          }
-          if (pageToken) searchBody.pageToken = pageToken;
-
-          const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+        for (let page = 0; page < pageLimit; page += 1) {
+          const googleRequest = buildGoogleSearchRequest(category, city, minRating, pageToken);
+          const response = await fetch(googleRequest.url, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               "X-Goog-Api-Key": googleKey,
-              "X-Goog-FieldMask": FIELD_MASK,
+              "X-Goog-FieldMask": googleRequest.fieldMask,
             },
-            body: JSON.stringify(searchBody),
+            body: JSON.stringify(googleRequest.body),
           });
           requestCount += 1;
           if (!response.ok) throw new Error(`Google search failed (${response.status}): ${await response.text()}`);
@@ -180,6 +149,7 @@ serve(async (request) => {
           categoryCandidates,
           minimumReviews,
           selectionLimit,
+          minRating,
         );
 
         const { data: catalogRows, error: catalogError } = await supabase
@@ -205,6 +175,7 @@ serve(async (request) => {
               matchScore: match?.score || null,
               matchMethod: match ? "name_distance_v1" : null,
               qualityScore: Math.round(googleCandidateQualityScore(candidate) * 1_000) / 1_000,
+              searchMethod,
             };
           });
 
@@ -244,10 +215,18 @@ serve(async (request) => {
       candidatesSelected: selectedCandidates.length,
       selectionScope: {
         guarantee: "best_from_returned_google_candidate_set",
-        maximumCandidatesPerQuery: maxPages * 20,
+        maximumCandidatesPerCategory: Object.fromEntries(categories.map((category) => [
+          category,
+          googleSearchPageLimit(category, maxTextPages) * 20,
+        ])),
+        maximumRequestsForBatch: estimateMaximumGoogleRequests(cities.length, categories, maxTextPages),
         minimumReviews,
         selectionLimit,
         ranking: "bayesian_rating_v1",
+        strategies: Object.fromEntries(categories.map((category) => [
+          category,
+          GOOGLE_SEARCH_STRATEGIES[category].method,
+        ])),
       },
       // Google names, coordinates, ratings and counts are returned only for the
       // immediate admin review. Storage is limited to Place IDs and proposed

@@ -22,8 +22,9 @@ export const rankGoogleCandidates = <T extends RatedGoogleCandidate>(
   candidates: T[],
   minimumReviews: number,
   limit: number,
+  minimumRating = 0,
 ) => [...new Map(candidates.map((candidate) => [candidate.googlePlaceId, candidate])).values()]
-  .filter((candidate) => candidate.reviewCount >= minimumReviews)
+  .filter((candidate) => candidate.reviewCount >= minimumReviews && candidate.rating >= minimumRating)
   .sort((left, right) => googleCandidateQualityScore(right) - googleCandidateQualityScore(left)
     || right.reviewCount - left.reviewCount
     || right.rating - left.rating

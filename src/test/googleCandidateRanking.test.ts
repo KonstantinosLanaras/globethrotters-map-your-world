@@ -25,10 +25,11 @@ describe("Google candidate ranking", () => {
   it("enforces the evidence threshold, removes duplicate place IDs and respects the limit", () => {
     const ranked = rankGoogleCandidates([
       candidate("below-threshold", 5, 999),
+      candidate("below-rating", 3.9, 100_000),
       candidate("a", 4.7, 20_000),
       candidate("a", 4.7, 20_000),
       candidate("b", 4.6, 30_000),
-    ], 1_000, 1);
+    ], 1_000, 1, 4);
 
     expect(ranked).toHaveLength(1);
     expect(ranked[0].googlePlaceId).toBe("a");

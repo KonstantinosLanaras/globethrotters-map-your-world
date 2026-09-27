@@ -73,6 +73,38 @@ class ImportQualityTests(unittest.TestCase):
 
         self.assertEqual([item["name"] for item in selected], ["Duomo di Milano"])
 
+    def test_deduplicates_verified_aliases_across_distinct_overture_ids(self):
+        park = candidate(
+            "Giardini Pubblici Indro Montanelli", "nature", "park",
+        )
+        park["source_id"] = "6843d58e-af51-4d76-a197-ac49373a3441"
+        duplicate = candidate("Parco di Porta Venezia - Milano", "nature", "park")
+
+        selected, report = select_quality_candidates(
+            [apply_curated_place_override(park), duplicate], {"test-city": CITY}, 10,
+        )
+
+        self.assertEqual(
+            [item["name"] for item in selected],
+            ["Giardini Pubblici Indro Montanelli"],
+        )
+        self.assertEqual(
+            report["cities"]["test-city"]["categories"]["nature"]["rejected"]["duplicate_name"],
+            1,
+        )
+
+    def test_rejects_verified_bad_record_by_stable_id(self):
+        item = candidate("Fineco", "culture", "art_gallery")
+        item["source_id"] = "bf4a3e63-d6e3-41eb-97fc-77512280fa0c"
+
+        selected, report = select_quality_candidates([item], {"test-city": CITY}, 10)
+
+        self.assertEqual(selected, [])
+        self.assertEqual(
+            report["cities"]["test-city"]["categories"]["culture"]["rejected"]["editorial_exclusion"],
+            1,
+        )
+
     def test_deduplicates_names_and_blocks_parking_noise(self):
         items = [
             candidate("Tasty Poké"),

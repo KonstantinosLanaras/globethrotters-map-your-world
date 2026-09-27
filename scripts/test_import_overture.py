@@ -76,9 +76,13 @@ class ImportQualityTests(unittest.TestCase):
     def test_deduplicates_verified_aliases_across_distinct_overture_ids(self):
         park = candidate(
             "Giardini Pubblici Indro Montanelli", "nature", "park",
+            lat=50.01, confidence=0.80,
         )
         park["source_id"] = "6843d58e-af51-4d76-a197-ac49373a3441"
-        duplicate = candidate("Parco di Porta Venezia - Milano", "nature", "park")
+        duplicate = candidate(
+            "Parco di Porta Venezia - Milano", "nature", "park",
+            lat=50.0, confidence=0.99,
+        )
 
         selected, report = select_quality_candidates(
             [apply_curated_place_override(park), duplicate], {"test-city": CITY}, 10,

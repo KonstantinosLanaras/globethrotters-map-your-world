@@ -76,7 +76,7 @@ class ImportQualityTests(unittest.TestCase):
         items = [
             candidate("Far Bar", "nightlife", "bar", lat=50.1, confidence=0.99),
             candidate("Near Bar", "nightlife", "bar", lat=50.01, confidence=0.85),
-            candidate("Music Hall", "nightlife", "live_music_venue", lat=50.2, confidence=0.80),
+            candidate("Music Hall", "nightlife", "live_music_venue", lat=50.12, confidence=0.80),
         ]
 
         selected, _ = select_quality_candidates(items, {"test-city": CITY}, 2)

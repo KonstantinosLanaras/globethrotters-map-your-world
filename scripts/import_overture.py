@@ -112,6 +112,67 @@ CURATED_PLACE_OVERRIDES = {
         "name": "Teatro alla Scala",
         "aliases": ["La Scala", "La Scala Opera"],
     },
+    "5954c044-0547-4cef-b7be-3a0c2b67bc00": {
+        "name": "Castello Sforzesco",
+        "aliases": ["Sforza Castle", "Milan Castle", "Cortile della Rocchetta"],
+    },
+    "6843d58e-af51-4d76-a197-ac49373a3441": {
+        "name": "Giardini Pubblici Indro Montanelli",
+        "aliases": ["Parco di Porta Venezia - Milano"],
+    },
+    "49eded4c-04f0-40dc-a8fa-967cbb518dd2": {
+        "name": "Da Ponti 1881",
+        "aliases": ["Ristorante Da Ponti"],
+    },
+    "aa47b1e1-2ba0-4a0c-90f9-9766dcbf80a4": {
+        "name": "Deodato Arte",
+        "aliases": ["Deodato Arte Milano Santa Marta"],
+    },
+}
+
+PROTECTED_CULTURE_IDS = {
+    "3b8ece8c-380f-4a9f-aaf2-65fc39611c36",  # Duomo di Milano
+    "c5bb3981-1e23-4f62-988f-7382592b75d9",  # Museo del Cenacolo Vinciano
+    "50518fc3-4040-4473-8cf4-1431a6b852ad",  # Pinacoteca di Brera
+    "d11a5f91-fec0-4229-867a-84f9aa301e0f",  # Pinacoteca Ambrosiana
+    "81802473-4350-4a51-91a0-657e42ed791f",  # Teatro alla Scala
+    "5954c044-0547-4cef-b7be-3a0c2b67bc00",  # Castello Sforzesco
+}
+
+# Verified bad or non-visitor records from the Milan pilot. IDs make these
+# exclusions narrow and auditable even when a misleading Overture category
+# (for example, a bank tagged as an art gallery) looks otherwise eligible.
+CURATED_PLACE_EXCLUSIONS = {
+    # Culture: restaurant, showroom, bank, shop, and fan club.
+    "ff3866d4-0309-4ba7-b5ff-072ddfd02489",
+    "70046ae8-eab7-42f5-b093-28196f3692e5",
+    "bf4a3e63-d6e3-41eb-97fc-77512280fa0c",
+    "81500b87-f0a5-47bb-b2d3-e37fc6fb9ca8",
+    "ee9cb3fe-f99f-4b8b-8c3d-c48250324663",
+    # Food: brand listing and generic/non-actionable records.
+    "7bea980b-c661-4618-a7a1-ab48598978f5",
+    "ad98a744-eeef-41da-9a6c-218d19c1eeae",
+    "debbe2e9-ba56-4403-9fac-f7f066fee8e4",
+    "b3309ebd-9382-4f79-a8d6-7a7782113535",
+    # Nature: squares, equipment/attractions, and erroneous inland beaches.
+    "6f888011-9b6c-4f68-a19e-46ef03f126aa",
+    "7ea592ca-4598-419c-8e3b-4e1e1338ab24",
+    "fbb977ff-a9e8-4a80-bd41-195fe1d24fa9",
+    "38cedf7a-5d8e-44e9-912f-e7b8ca462a6e",
+    "bb4a997f-e185-4ea3-8f67-d5f3c870ea02",
+    "35b775be-bb5d-4315-812b-5a6154591872",
+    "95da2f2c-a320-4a29-ab41-9735bb4a5d98",
+    "c79a19e3-5f18-42da-ab8f-ece793a5ec48",
+    "756d207f-e8a4-461f-ae72-3d39c39f8c38",
+    "1610fc30-4b9b-43ca-92c1-6bd59cab4127",
+    # Nightlife: transit, retail, beauty, clothing, and pastry records.
+    "e2aea142-f02c-4830-8bfd-e23e31b1a10d",
+    "0c979d20-c1d4-4e2e-8e79-61b2b864761e",
+    "56e59b85-1e8a-4e3d-b018-49586f36b10b",
+    "c44d44ad-dd0b-4ccd-a903-72e43eb5047e",
+    "1a7f439e-ee24-43a3-a0e1-629dc3d71e40",
+    "bedd6611-99f2-47cc-ade5-7d177060fc02",
+    "5cb1a771-a816-454c-a0df-220333ddbd69",
 }
 
 # These phrases are strong evidence that a feature classified as a park is
@@ -126,8 +187,9 @@ NATURE_NAME_BLOCKLIST = (
 # dominate dense-city food results. This is deliberately limited to obvious
 # international chains; regional businesses remain eligible for review.
 FOOD_CHAIN_PREFIX_BLOCKLIST = (
-    "burger king", "domino s pizza", "five guys", "kfc", "mcdonald s", "mcdonalds",
-    "pizza hut", "starbucks", "subway",
+    "autogrill", "burger king", "domino s pizza", "five guys", "i love poke", "kfc",
+    "mcdonald s", "mcdonalds", "old wild west", "pizza hut", "rossopomodoro",
+    "spontini", "starbucks", "subway", "temakinho",
 )
 
 
@@ -311,6 +373,8 @@ def apply_curated_place_override(item: dict[str, Any]) -> dict[str, Any]:
 
 
 def quality_rejection_reason(item: dict[str, Any]) -> str | None:
+    if str(item["source_id"]) in CURATED_PLACE_EXCLUSIONS:
+        return "editorial_exclusion"
     normalized = normalize_place_name(item["name"])
     if len(normalized) < 2:
         return "invalid_name"
@@ -354,7 +418,7 @@ def select_quality_candidates(
             # Balance proximity with confidence so iconic, well-established
             # landmarks are not displaced by every slightly nearer small POI.
             items.sort(key=lambda item: (
-                0 if str(item["source_id"]) in CURATED_PLACE_OVERRIDES else 1,
+                0 if str(item["source_id"]) in PROTECTED_CULTURE_IDS else 1,
                 subtype_priority.get(item["subcategory"], 9),
                 item["distance_to_center_km"]
                 - max(0.0, float(item["source_confidence"]) - 0.8) * 8,

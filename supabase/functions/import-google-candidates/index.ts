@@ -63,7 +63,7 @@ serve(async (request) => {
   const citySlugs = Array.isArray(body.citySlugs) ? body.citySlugs.filter((value: unknown) => typeof value === "string") : [];
   // Food and culture are the cost-controlled default. Other categories can be
   // requested explicitly, but are better populated from open datasets first.
-  const categories = (Array.isArray(body.categories) ? body.categories : ["food", "culture"])
+  const categories: Category[] = (Array.isArray(body.categories) ? body.categories : ["food", "culture"])
     .filter((value: unknown): value is Category => typeof value === "string" && value in GOOGLE_SEARCH_STRATEGIES);
   const maxTextPages = Math.min(3, Math.max(1, Number(body.maxPages) || 3));
   const minRating = Math.min(5, Math.max(0, Number(body.minRating) || 4));
@@ -242,7 +242,11 @@ serve(async (request) => {
       selected: selectedCandidates,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Import failed";
+    const message = error instanceof Error
+      ? error.message
+      : (error && typeof error === "object" && "message" in error)
+        ? String((error as { message: unknown }).message)
+        : "Import failed";
     await supabase.from("catalog_import_runs").update({
       status: "failed",
       request_count: requestCount,

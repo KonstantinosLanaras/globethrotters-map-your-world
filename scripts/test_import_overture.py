@@ -1,6 +1,7 @@
 import unittest
 
 from import_overture import (
+    apply_curated_place_override,
     collect_place_names,
     normalize_place_name,
     preferred_place_name,
@@ -39,6 +40,38 @@ class ImportQualityTests(unittest.TestCase):
             collect_place_names("Katedra w Mediolanie", common, rules),
             ["Katedra w Mediolanie", "Duomo di Milano", "Milan Cathedral", "Duomo"],
         )
+
+    def test_applies_auditable_landmark_name_override(self):
+        item = candidate(
+            "Katedra w Mediolanie", "culture", "christian_place_of_worship",
+        )
+        item["source_id"] = "3b8ece8c-380f-4a9f-aaf2-65fc39611c36"
+        item["metadata"]["alternate_names"] = ["Katedra w Mediolanie"]
+
+        result = apply_curated_place_override(item)
+
+        self.assertEqual(result["name"], "Duomo di Milano")
+        self.assertEqual(
+            result["metadata"]["alternate_names"],
+            ["Duomo di Milano", "Katedra w Mediolanie", "Milan Cathedral"],
+        )
+        self.assertTrue(result["metadata"]["editorial_name_override"])
+
+    def test_keeps_curated_landmark_inside_a_tight_culture_limit(self):
+        landmark = candidate(
+            "Duomo di Milano", "culture", "christian_place_of_worship",
+            lat=50.1, confidence=0.8,
+        )
+        landmark["source_id"] = "3b8ece8c-380f-4a9f-aaf2-65fc39611c36"
+        ordinary = candidate(
+            "Nearby Museum", "culture", "museum", lat=50.001, confidence=0.99,
+        )
+
+        selected, _ = select_quality_candidates(
+            [ordinary, landmark], {"test-city": CITY}, 1,
+        )
+
+        self.assertEqual([item["name"] for item in selected], ["Duomo di Milano"])
 
     def test_deduplicates_names_and_blocks_parking_noise(self):
         items = [

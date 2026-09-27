@@ -141,7 +141,7 @@ class ImportQualityTests(unittest.TestCase):
             3,
         )
 
-    def test_prefers_subtype_then_city_center(self):
+    def test_balances_subtype_with_distance_band(self):
         items = [
             candidate("Far Bar", "nightlife", "bar", lat=50.1, confidence=0.99),
             candidate("Near Bar", "nightlife", "bar", lat=50.01, confidence=0.85),
@@ -150,8 +150,34 @@ class ImportQualityTests(unittest.TestCase):
 
         selected, _ = select_quality_candidates(items, {"test-city": CITY}, 2)
 
-        self.assertEqual([item["name"] for item in selected], ["Music Hall", "Near Bar"])
-        self.assertEqual(selected[0]["metadata"]["selection_basis"], "coverage_quality_gate_v1")
+        self.assertEqual([item["name"] for item in selected], ["Near Bar", "Music Hall"])
+        self.assertEqual(selected[0]["metadata"]["selection_basis"], "coverage_quality_gate_v2")
+
+    def test_spreads_food_across_city_distance_bands(self):
+        items = [
+            candidate(f"Inner {index}", lat=50.001 + index * 0.0001, confidence=0.99)
+            for index in range(8)
+        ] + [
+            candidate("Middle Restaurant", lat=50.015, confidence=0.90),
+            candidate("Outer Restaurant", lat=50.04, confidence=0.90),
+            candidate("Edge Restaurant", lat=50.08, confidence=0.90),
+        ]
+
+        selected, _ = select_quality_candidates(items, {"test-city": CITY}, 4)
+
+        self.assertEqual(
+            [item["name"] for item in selected],
+            ["Inner 0", "Middle Restaurant", "Inner 1", "Outer Restaurant"],
+        )
+
+    def test_applies_verified_food_subcategory_override(self):
+        item = candidate("Gelateria Ambrosiana")
+        item["source_id"] = "703c1e3f-c882-4293-b4be-b0b90160acbb"
+
+        result = apply_curated_place_override(item)
+
+        self.assertEqual(result["subcategory"], "ice_cream_shop")
+        self.assertTrue(result["metadata"]["editorial_subcategory_override"])
 
     def test_rejects_candidates_beyond_the_category_radius(self):
         items = [

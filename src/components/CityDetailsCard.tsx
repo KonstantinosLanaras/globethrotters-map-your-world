@@ -259,7 +259,21 @@ const ExperienceCard = ({
                 href={link.url}
                 target="_blank"
                 rel="sponsored noopener noreferrer"
-                onClick={() => trackOutboundClick(link.provider, "experience", item.name, `${cityName}, ${countryName}`)}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  trackOutboundClick(link.provider, "experience", item.name, `${cityName}, ${countryName}`);
+                  // Open explicitly so embedded previews and map panels can't swallow the click.
+                  const opened = window.open(link.url, "_blank");
+                  if (opened) opened.opener = null;
+                  if (!opened) {
+                    try {
+                      (window.top ?? window).location.href = link.url;
+                    } catch {
+                      window.location.href = link.url;
+                    }
+                  }
+                }}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-muted text-foreground hover:bg-muted/80 transition-colors"
                 aria-label={`${link.label} for ${item.name} (opens an external website)`}
               >

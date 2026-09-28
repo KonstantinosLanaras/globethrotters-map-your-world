@@ -163,12 +163,16 @@ class ImportQualityTests(unittest.TestCase):
             candidate("Edge Restaurant", lat=50.08, confidence=0.90),
         ]
 
-        selected, _ = select_quality_candidates(items, {"test-city": CITY}, 4)
+        selected, report = select_quality_candidates(items, {"test-city": CITY}, 4)
 
         self.assertEqual(
             [item["name"] for item in selected],
             ["Inner 0", "Middle Restaurant", "Outer Restaurant", "Edge Restaurant"],
         )
+        metrics = report["cities"]["test-city"]["categories"]["food"]["spatial_metrics"]
+        self.assertGreater(metrics["distinct_2km_cells"], 1)
+        self.assertGreater(metrics["distance_to_center_km"]["p90"], 1)
+        self.assertGreater(metrics["median_nearest_neighbour_km"], 0)
 
     def test_applies_verified_food_subcategory_override(self):
         item = candidate("Gelateria Ambrosiana")

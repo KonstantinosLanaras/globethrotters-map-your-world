@@ -15,6 +15,7 @@ import json
 import math
 import os
 import re
+import statistics
 import sys
 import unicodedata
 import urllib.error
@@ -547,7 +548,8 @@ def select_quality_candidates(
         city_report = report["cities"].setdefault(city_slug, {"categories": {}})
         category_report = {
             "available": len(items), "selected": 0, "target": limit_per_category,
-            "rejected": {}, "selected_names": [],
+            "rejected": {}, "selected_names": [], "selected_subtypes": {},
+            "spatial_metrics": {},
         }
         city_report["categories"][category] = category_report
         seen_names: set[str] = set()
@@ -577,20 +579,66 @@ def select_quality_candidates(
         if below_cutoff:
             category_report["rejected"]["below_cutoff"] = below_cutoff
             report["summary"]["rejected"] += below_cutoff
+        group_selected: list[dict[str, Any]] = []
         for item in ordered:
             item["metadata"]["distance_to_center_km"] = item["distance_to_center_km"]
             item["metadata"]["selection_basis"] = "coverage_quality_gate_v3"
             selected.append(item)
+            group_selected.append(item)
             category_report["selected"] += 1
             category_report["selected_names"].append(item["name"])
+            subtype = item["subcategory"]
+            category_report["selected_subtypes"][subtype] = (
+                category_report["selected_subtypes"].get(subtype, 0) + 1
+            )
             report["summary"]["selected"] += 1
+
+        if group_selected:
+            latitude_scale = 111.0
+            longitude_scale = 111.0 * max(
+                0.2, math.cos(math.radians(float(city["latitude"])))
+            )
+            cells = {
+                (
+                    math.floor(
+                        (float(item["latitude"]) - float(city["latitude"]))
+                        * latitude_scale / 2.0
+                    ),
+                    math.floor(
+                        (float(item["longitude"]) - float(city["longitude"]))
+                        * longitude_scale / 2.0
+                    ),
+                )
+                for item in group_selected
+            }
+            distances = sorted(item["distance_to_center_km"] for item in group_selected)
+            p90_index = max(0, math.ceil(len(distances) * 0.90) - 1)
+            nearest_neighbours = [
+                min(
+                    distance_between_items(item, other, float(city["latitude"]))
+                    for other in group_selected if other is not item
+                )
+                for item in group_selected
+            ] if len(group_selected) > 1 else [0.0]
+            category_report["spatial_metrics"] = {
+                "distinct_2km_cells": len(cells),
+                "distance_to_center_km": {
+                    "median": round(statistics.median(distances), 2),
+                    "p90": round(distances[p90_index], 2),
+                    "max": round(max(distances), 2),
+                },
+                "median_nearest_neighbour_km": round(
+                    statistics.median(nearest_neighbours), 2
+                ),
+            }
 
     for city_slug in city_by_slug:
         city_report = report["cities"].setdefault(city_slug, {"categories": {}})
         for category in CATEGORY_SUBTYPE_PRIORITY:
             city_report["categories"].setdefault(category, {
                 "available": 0, "selected": 0, "target": limit_per_category,
-                "rejected": {}, "selected_names": [],
+                "rejected": {}, "selected_names": [], "selected_subtypes": {},
+                "spatial_metrics": {},
             })
     return selected, report
 

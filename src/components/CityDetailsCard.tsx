@@ -7,7 +7,7 @@ import {
   Moon, Compass, Image, FileText, Share2, Send, Plane, Info, ExternalLink as ExternalLinkIcon
 } from "lucide-react";
 import { City } from "@/data/cities";
-import { Place, useAddPlace, useUpdatePlace, usePlaces } from "@/hooks/usePlaces";
+import { Place, useAddPlace, useUpdatePlace, useDeletePlace, usePlaces } from "@/hooks/usePlaces";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useUnifiedExperiences, UnifiedExperience, useToggleExperienceSave, useExperienceSaves } from "@/hooks/useCityExperiences";
@@ -322,6 +322,7 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
   const { user } = useAuth();
   const addPlace = useAddPlace();
   const updatePlace = useUpdatePlace();
+  const deletePlace = useDeletePlace();
   const { data: profile } = useProfile();
   const { data: allPlaces = [] } = usePlaces();
   const { sponsored, allSeeded, loading: unifiedLoading } = useUnifiedExperiences(city.name, city.country);
@@ -435,10 +436,12 @@ const CityDetailsCard = ({ city, savedPlace, onClose }: CityDetailsCardProps) =>
       return;
     }
     if (isSaved && savedPlace.type === type) {
-      if (type === "visited") {
-        // If already visited, open rating
-        setRatingPlaceId(savedPlace.id);
-        setShowRating(true);
+      try {
+        await deletePlace.mutateAsync(savedPlace.id);
+        toast.success(type === "visited" ? `${city.name} removed from visited` : `${city.name} removed from wishlist`);
+      } catch (err) {
+        console.error("Remove city error:", err);
+        toast.error("Couldn't remove city. Please try again.");
       }
       return;
     }

@@ -219,9 +219,13 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
     layer.clearLayers();
     if (mapFilter !== "all") return;
 
+    // Routes and other items without a point location must not break the layer.
+    const locatedItems = catalogItems.filter(
+      (item) => Number.isFinite(item.lat) && Number.isFinite(item.lng),
+    );
     const visibleItems = activeTags.length === 0
-      ? catalogItems
-      : catalogItems.filter((item) => activeTags.includes(item.category as ActivityTag));
+      ? locatedItems
+      : locatedItems.filter((item) => activeTags.includes(item.category as ActivityTag));
 
     visibleItems.forEach((item) => {
       const isFeatured = item.qualityTier === "popular" || item.qualityTier === "editorial";

@@ -84,7 +84,7 @@ const MapControls = ({
         <Layers className="w-3.5 h-3.5" /> All
       </button>
       <button
-        onClick={() => onFilterChange("visited")}
+        onClick={() => onFilterChange(mapFilter === "visited" ? "all" : "visited")}
         className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
           mapFilter === "visited" ? "bg-visited/15 text-visited" : "text-muted-foreground hover:text-foreground"
         }`}
@@ -94,7 +94,7 @@ const MapControls = ({
         {stats.visited > 0 && <span className="text-[10px] opacity-60">{stats.visited}</span>}
       </button>
       <button
-        onClick={() => onFilterChange("wishlist")}
+        onClick={() => onFilterChange(mapFilter === "wishlist" ? "all" : "wishlist")}
         className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
           mapFilter === "wishlist" ? "bg-wishlist/15 text-wishlist" : "text-muted-foreground hover:text-foreground"
         }`}

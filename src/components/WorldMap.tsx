@@ -250,7 +250,10 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
     if (!layer) return;
     layer.clearLayers();
 
-    let filtered = mapFilter === "all" ? places : places.filter((p) => p.type === mapFilter);
+    // Saved-place pins only appear when Visited or Wishlist is selected;
+    // "All" shows the discovery layer without personal pins on top.
+    if (mapFilter === "all") return;
+    let filtered = places.filter((p) => p.type === mapFilter);
     
     // Apply activity tag filtering
     if (activeTags.length > 0) {

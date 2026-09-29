@@ -43,6 +43,7 @@ const Index = () => {
 
   const handleCityClick = useCallback((city: City) => {
     setSelectedCity(city);
+    setExploreBarVisible(false);
   }, []);
 
   const handlePlaceClick = useCallback((place: Place) => {
@@ -50,8 +51,10 @@ const Index = () => {
       (c) => c.name.toLowerCase() === place.name.toLowerCase()
     );
     if (matchingCity) {
+      setExploreBarVisible(false);
       setSelectedCity(matchingCity);
     } else {
+      setExploreBarVisible(false);
       setSelectedCity({
         name: place.name,
         country: place.country,
@@ -73,6 +76,7 @@ const Index = () => {
       (candidate) => candidate.name.toLowerCase() === item.city.toLowerCase()
         && candidate.country.toLowerCase() === item.country.toLowerCase(),
     );
+    setExploreBarVisible(false);
     setSelectedCity(matchingCity || {
       name: item.city,
       country: item.country,

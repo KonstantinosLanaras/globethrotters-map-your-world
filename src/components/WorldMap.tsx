@@ -217,7 +217,8 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
     const layer = catalogLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
-    if (mapFilter !== "all") return;
+    // Experience dots only appear once an activity is picked; default shows destinations only.
+    if (mapFilter !== "all" || activeTags.length === 0) return;
 
     // Routes and other items without a point location must not break the layer.
     const locatedItems = catalogItems.filter(
@@ -250,17 +251,12 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
     if (!layer) return;
     layer.clearLayers();
 
-    // Saved-place pins only appear when Visited or Wishlist is selected;
-    // "All" shows the discovery layer without personal pins on top.
-    if (mapFilter === "all") return;
-    let filtered = places.filter((p) => p.type === mapFilter);
-    
-    // Apply activity tag filtering
+    // One pin per destination (city). Experiences never get their own pin.
+    let filtered = mapFilter === "all" ? places : places.filter((p) => p.type === mapFilter);
     if (activeTags.length > 0) {
       filtered = filtered.filter(p => placeMatchesTags(p, activeTags));
     }
 
-    // Group pins by destination (city)
     const destMap = new Map<string, Place[]>();
     filtered.forEach((place) => {
       const destination = (place.city || place.name).toLowerCase();
@@ -274,25 +270,30 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
       const destinationName = representative.city || representative.name;
       const hasVisited = destPlaces.some(p => p.type === "visited");
       const pinType = hasVisited ? "visited" : representative.type as "visited" | "wishlist";
+      const matchedCity = cities.find(
+        (c) => c.name.toLowerCase() === destinationName.toLowerCase()
+          && c.country.toLowerCase() === representative.country.toLowerCase(),
+      );
+      const city: City = matchedCity || {
+        name: destinationName,
+        country: representative.country,
+        lat: representative.lat,
+        lng: representative.lng,
+        continent: "",
+      };
 
-      const marker = L.marker([representative.lat, representative.lng], {
+      const marker = L.marker([city.lat, city.lng], {
         icon: createSavedPinIcon(pinType),
         zIndexOffset: 1000,
       });
-
-      // Tooltip only — no popup (removed the floating mini-menu)
-      const subExperiences = destPlaces.filter(p => p.name.toLowerCase() !== destinationName.toLowerCase());
-      const countLabel = subExperiences.length > 0 ? ` · ${subExperiences.length} experience${subExperiences.length > 1 ? "s" : ""}` : "";
       marker.bindTooltip(
-        `<span style="font-weight:600;font-size:12px;">${destinationName}${countLabel}</span><br/><span style="font-size:10px;color:#888;">${representative.country}</span>`,
+        `<span style="font-weight:600;font-size:12px;">${escapeTooltip(city.name)}</span><br/><span style="font-size:10px;color:#888;">${escapeTooltip(city.country)}</span>`,
         { direction: "top", offset: [0, -36], className: "city-tooltip" }
       );
-
-      // Click opens the right panel via onPlaceClick — no popup
-      marker.on("click", () => onPlaceClick(representative));
+      marker.on("click", () => onCityClick(city));
       layer.addLayer(marker);
     });
-  }, [places, experiences, mapFilter, activeTags, onPlaceClick]);
+  }, [places, cities, mapFilter, activeTags, onCityClick]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 };

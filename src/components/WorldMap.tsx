@@ -252,7 +252,12 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
     layer.clearLayers();
 
     // One pin per destination (city). Experiences never get their own pin.
-    let filtered = mapFilter === "all" ? places : places.filter((p) => p.type === mapFilter);
+    // Under "All", only cities saved themselves get a pin — saved experiences
+    // (a place inside a city) only show when Visited/Wishlist is toggled on.
+    const isCityLevel = (p: Place) => !p.city || p.city.toLowerCase() === p.name.toLowerCase();
+    let filtered = mapFilter === "all"
+      ? places.filter(isCityLevel)
+      : places.filter((p) => p.type === mapFilter);
     if (activeTags.length > 0) {
       filtered = filtered.filter(p => placeMatchesTags(p, activeTags));
     }

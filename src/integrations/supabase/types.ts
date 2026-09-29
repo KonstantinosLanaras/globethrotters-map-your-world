@@ -100,19 +100,24 @@ export type Database = {
       }
       catalog_items: {
         Row: {
+          area_name: string | null
           canonical_category: string
           city_id: string
+          content_kind: string
           created_at: string
           description: string | null
+          geometry_geojson: Json | null
+          geometry_type: string | null
           id: string
           is_active: boolean
           last_verified_at: string | null
-          latitude: number
-          longitude: number
+          latitude: number | null
+          longitude: number | null
           metadata: Json
           name: string
           published_at: string
           quality_tier: string
+          recommended_time: string | null
           selection_rank: number | null
           source: string
           source_confidence: number | null
@@ -122,19 +127,24 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          area_name?: string | null
           canonical_category: string
           city_id: string
+          content_kind?: string
           created_at?: string
           description?: string | null
+          geometry_geojson?: Json | null
+          geometry_type?: string | null
           id?: string
           is_active?: boolean
           last_verified_at?: string | null
-          latitude: number
-          longitude: number
+          latitude?: number | null
+          longitude?: number | null
           metadata?: Json
           name: string
           published_at?: string
           quality_tier?: string
+          recommended_time?: string | null
           selection_rank?: number | null
           source: string
           source_confidence?: number | null
@@ -144,19 +154,24 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          area_name?: string | null
           canonical_category?: string
           city_id?: string
+          content_kind?: string
           created_at?: string
           description?: string | null
+          geometry_geojson?: Json | null
+          geometry_type?: string | null
           id?: string
           is_active?: boolean
           last_verified_at?: string | null
-          latitude?: number
-          longitude?: number
+          latitude?: number | null
+          longitude?: number | null
           metadata?: Json
           name?: string
           published_at?: string
           quality_tier?: string
+          recommended_time?: string | null
           selection_rank?: number | null
           source?: string
           source_confidence?: number | null
@@ -172,6 +187,115 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_cities"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalog_review_queue: {
+        Row: {
+          candidate_name: string | null
+          candidate_payload: Json
+          candidate_source: string | null
+          candidate_source_id: string | null
+          canonical_category: string
+          city_id: string
+          content_kind: string
+          created_at: string
+          current_match_status: string
+          description: string | null
+          editorial_key: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          match_score: number | null
+          name: string
+          proposed_payload: Json
+          reason_flags: string[]
+          resolved_catalog_item_id: string | null
+          review_notes: string | null
+          review_status: string
+          reviewed_at: string | null
+          selection_rank: number | null
+          source_run: string | null
+          subcategory: string
+          updated_at: string
+        }
+        Insert: {
+          candidate_name?: string | null
+          candidate_payload?: Json
+          candidate_source?: string | null
+          candidate_source_id?: string | null
+          canonical_category: string
+          city_id: string
+          content_kind?: string
+          created_at?: string
+          current_match_status: string
+          description?: string | null
+          editorial_key: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          match_score?: number | null
+          name: string
+          proposed_payload?: Json
+          reason_flags?: string[]
+          resolved_catalog_item_id?: string | null
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          selection_rank?: number | null
+          source_run?: string | null
+          subcategory: string
+          updated_at?: string
+        }
+        Update: {
+          candidate_name?: string | null
+          candidate_payload?: Json
+          candidate_source?: string | null
+          candidate_source_id?: string | null
+          canonical_category?: string
+          city_id?: string
+          content_kind?: string
+          created_at?: string
+          current_match_status?: string
+          description?: string | null
+          editorial_key?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          match_score?: number | null
+          name?: string
+          proposed_payload?: Json
+          reason_flags?: string[]
+          resolved_catalog_item_id?: string | null
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          selection_rank?: number | null
+          source_run?: string | null
+          subcategory?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_review_queue_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_review_queue_resolved_catalog_item_id_fkey"
+            columns: ["resolved_catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_review_queue_resolved_catalog_item_id_fkey"
+            columns: ["resolved_catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "google_candidate_match_review"
+            referencedColumns: ["catalog_item_id"]
           },
         ]
       }

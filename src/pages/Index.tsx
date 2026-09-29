@@ -51,8 +51,10 @@ const Index = () => {
       (c) => c.name.toLowerCase() === place.name.toLowerCase()
     );
     if (matchingCity) {
+      setExploreBarVisible(false);
       setSelectedCity(matchingCity);
     } else {
+      setExploreBarVisible(false);
       setSelectedCity({
         name: place.name,
         country: place.country,

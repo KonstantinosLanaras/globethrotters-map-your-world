@@ -217,8 +217,8 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
     const layer = catalogLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
-    // Experience dots only appear once an activity is picked; default shows destinations only.
-    if (mapFilter !== "all" || activeTags.length === 0) return;
+    // Experience dots show under "All"; activity tags narrow them down.
+    if (mapFilter !== "all") return;
 
     // Routes and other items without a point location must not break the layer.
     const locatedItems = catalogItems.filter(

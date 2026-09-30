@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Building2, Eye, EyeOff, Layers,
+  Building2, Eye, EyeOff, Sparkles, SlidersHorizontal,
   Utensils, Landmark, TreePine, Moon, Compass,
-  Gem, Home, Plus, Minus, Check
+  Gem, Home, ChevronDown, Check
 } from "lucide-react";
 
 export const ACTIVITY_TAGS = [
@@ -22,6 +22,8 @@ export type ActivityTag = typeof ACTIVITY_TAGS[number]["id"];
 interface MapControlsProps {
   showCities: boolean;
   onToggleCities: () => void;
+  showExperiences: boolean;
+  onToggleExperiences: () => void;
   mapFilter: "all" | "visited" | "wishlist";
   onFilterChange: (f: "all" | "visited" | "wishlist") => void;
   stats: { visited: number; wishlist: number; countries: number };
@@ -29,27 +31,20 @@ interface MapControlsProps {
   onTagToggle: (tag: ActivityTag) => void;
 }
 
+const layerBtn = (on: boolean) =>
+  `flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
+    on ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+  }`;
+
 const MapControls = ({
-  showCities,
-  onToggleCities,
-  mapFilter,
-  onFilterChange,
-  stats,
-  activeTags,
-  onTagToggle,
+  showCities, onToggleCities, showExperiences, onToggleExperiences,
+  mapFilter, onFilterChange, stats, activeTags, onTagToggle,
 }: MapControlsProps) => {
-  const [activitiesOpen, setActivitiesOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const activeCount = activeTags.length;
 
-  const clearAll = () => {
-    activeTags.forEach(t => onTagToggle(t));
-  };
-
-  const selectAll = () => {
-    ACTIVITY_TAGS.forEach(t => {
-      if (!activeTags.includes(t.id)) onTagToggle(t.id);
-    });
-  };
+  const clearAll = () => activeTags.forEach(t => onTagToggle(t));
+  const selectAll = () => ACTIVITY_TAGS.forEach(t => { if (!activeTags.includes(t.id)) onTagToggle(t.id); });
 
   return (
     <motion.div
@@ -58,31 +53,19 @@ const MapControls = ({
       transition={{ delay: 0.2 }}
       className="fixed top-[72px] left-3 z-[1000] flex flex-col gap-1 p-1.5 bg-card/90 backdrop-blur-xl rounded-2xl border border-border shadow-lg"
     >
-      {/* Destinations toggle */}
-      <button
-        onClick={onToggleCities}
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
-          showCities
-            ? "bg-primary text-primary-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-        }`}
-      >
+      <button onClick={onToggleCities} className={layerBtn(showCities)}>
         <Building2 className="w-3.5 h-3.5" />
-        Destinations
+        <span className="flex-1 text-left">Destinations</span>
         {showCities ? <Eye className="w-3 h-3 opacity-70" /> : <EyeOff className="w-3 h-3 opacity-50" />}
+      </button>
+      <button onClick={onToggleExperiences} className={layerBtn(showExperiences)}>
+        <Sparkles className="w-3.5 h-3.5" />
+        <span className="flex-1 text-left">Experiences</span>
+        {showExperiences ? <Eye className="w-3 h-3 opacity-70" /> : <EyeOff className="w-3 h-3 opacity-50" />}
       </button>
 
       <div className="h-px bg-border mx-1" />
 
-      {/* Status filters */}
-      <button
-        onClick={() => onFilterChange("all")}
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
-          mapFilter === "all" ? "bg-foreground/10 text-foreground" : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        <Layers className="w-3.5 h-3.5" /> All
-      </button>
       <button
         onClick={() => onFilterChange(mapFilter === "visited" ? "all" : "visited")}
         className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
@@ -106,36 +89,25 @@ const MapControls = ({
 
       <div className="h-px bg-border mx-1" />
 
-      {/* Activities collapsible */}
+      {/* Filter experiences by type (bottom of the bar) */}
       <button
-        onClick={() => setActivitiesOpen(!activitiesOpen)}
-        className={`group flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
-          activeCount > 0
-            ? "text-primary font-semibold"
-            : "text-muted-foreground hover:text-foreground"
+        onClick={() => setFilterOpen(!filterOpen)}
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
+          activeCount > 0 ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground"
         }`}
       >
-        <span className={`w-4 h-4 rounded-md flex items-center justify-center transition-all ${
-          activitiesOpen
-            ? "bg-primary/15 text-primary"
-            : "bg-orange-500/15 text-orange-500 group-hover:bg-orange-500/25"
-        }`}>
-          {activitiesOpen
-            ? <Minus className="w-2.5 h-2.5" />
-            : <Plus className="w-2.5 h-2.5" />
-          }
-        </span>
-        Activities
+        <SlidersHorizontal className="w-3.5 h-3.5" />
+        <span className="flex-1 text-left">Filter</span>
         {activeCount > 0 && (
           <span className="w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center font-bold">
             {activeCount}
           </span>
         )}
+        <ChevronDown className={`w-3 h-3 transition-transform ${filterOpen ? "rotate-180" : ""}`} />
       </button>
 
-      {/* Dropdown */}
       <AnimatePresence>
-        {activitiesOpen && (
+        {filterOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
@@ -144,17 +116,23 @@ const MapControls = ({
             className="overflow-hidden"
           >
             <div className="pl-2 space-y-0.5 pb-1">
+              {!showExperiences && (
+                <p className="px-2.5 pb-1 text-[10px] text-muted-foreground max-w-[150px] whitespace-normal">
+                  Turn on Experiences to see these on the map.
+                </p>
+              )}
               {ACTIVITY_TAGS.map((tag) => {
                 const Icon = tag.icon;
                 const isActive = activeTags.includes(tag.id);
                 return (
                   <button
                     key={tag.id}
-                    onClick={() => onTagToggle(tag.id)}
+                    onClick={() => {
+                      onTagToggle(tag.id);
+                      if (!showExperiences && !isActive) onToggleExperiences();
+                    }}
                     className={`w-full flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                      isActive
-                        ? "bg-primary/15 text-primary"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                      isActive ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -163,22 +141,10 @@ const MapControls = ({
                   </button>
                 );
               })}
-
-              {/* Select/Clear controls */}
               <div className="flex items-center gap-2 px-2.5 pt-1">
-                <button
-                  onClick={selectAll}
-                  className="text-[10px] text-muted-foreground hover:text-foreground"
-                >
-                  Select all
-                </button>
+                <button onClick={selectAll} className="text-[10px] text-muted-foreground hover:text-foreground">Select all</button>
                 <span className="text-muted-foreground/30">·</span>
-                <button
-                  onClick={clearAll}
-                  className="text-[10px] text-muted-foreground hover:text-foreground"
-                >
-                  Clear
-                </button>
+                <button onClick={clearAll} className="text-[10px] text-muted-foreground hover:text-foreground">Clear</button>
               </div>
             </div>
           </motion.div>

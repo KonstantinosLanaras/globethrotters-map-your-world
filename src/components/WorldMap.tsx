@@ -257,7 +257,7 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
     const isCityLevel = (p: Place) => !p.city || p.city.toLowerCase() === p.name.toLowerCase();
     let filtered = mapFilter === "all"
       ? places.filter(isCityLevel)
-      : places.filter((p) => p.type === mapFilter);
+      : places.filter((p) => p.type === mapFilter && (showExperiences || isCityLevel(p)));
     if (showExperiences && activeTags.length > 0) {
       filtered = filtered.filter(p => placeMatchesTags(p, activeTags));
     }

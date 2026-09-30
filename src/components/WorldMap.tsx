@@ -258,7 +258,7 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
     let filtered = mapFilter === "all"
       ? places.filter(isCityLevel)
       : places.filter((p) => p.type === mapFilter);
-    if (activeTags.length > 0) {
+    if (showExperiences && activeTags.length > 0) {
       filtered = filtered.filter(p => placeMatchesTags(p, activeTags));
     }
 
@@ -298,7 +298,7 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
       marker.on("click", () => onCityClick(city));
       layer.addLayer(marker);
     });
-  }, [places, cities, mapFilter, activeTags, onCityClick]);
+  }, [places, cities, mapFilter, activeTags, showExperiences, onCityClick]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 };

@@ -43,10 +43,10 @@ const createCityIcon = (status: "none" | "visited" | "wishlist") => {
     });
   }
   return L.divIcon({
-    html: `<div style="width:7px;height:7px;border-radius:50%;background:${DEFAULT_COLOR};border:1.5px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.16);opacity:0.58;"></div>`,
+    html: `<div style="width:11px;height:11px;border-radius:50%;background:#E8833A;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);cursor:pointer;"></div>`,
     className: "city-marker-default",
-    iconSize: [7, 7],
-    iconAnchor: [3.5, 3.5],
+    iconSize: [11, 11],
+    iconAnchor: [5.5, 5.5],
   });
 };
 

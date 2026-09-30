@@ -14,7 +14,7 @@ import { useCatalogMapItems, type CatalogItem } from "@/hooks/useCatalog";
 const Index = () => {
   // Keep the world view calm by default. Visitors can reveal the full city
   // layer from MapControls, while catalogue and saved-place pins remain visible.
-  const [showCities, setShowCities] = useState(false);
+  const [showCities, setShowCities] = useState(true);
   const [mapFilter, setMapFilter] = useState<"all" | "visited" | "wishlist">("all");
   const [activeTags, setActiveTags] = useState<ActivityTag[]>([]);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);

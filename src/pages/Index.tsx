@@ -15,6 +15,7 @@ const Index = () => {
   // Keep the world view calm by default. Visitors can reveal the full city
   // layer from MapControls, while catalogue and saved-place pins remain visible.
   const [showCities, setShowCities] = useState(true);
+  const [showExperiences, setShowExperiences] = useState(false);
   const [mapFilter, setMapFilter] = useState<"all" | "visited" | "wishlist">("all");
   const [activeTags, setActiveTags] = useState<ActivityTag[]>([]);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
@@ -107,6 +108,8 @@ const Index = () => {
       <MapControls
         showCities={showCities}
         onToggleCities={() => setShowCities(!showCities)}
+        showExperiences={showExperiences}
+        onToggleExperiences={() => setShowExperiences(!showExperiences)}
         mapFilter={mapFilter}
         onFilterChange={setMapFilter}
         stats={stats}
@@ -128,6 +131,7 @@ const Index = () => {
           experiences={experiences}
           catalogItems={catalogItems}
           showCities={showCities}
+          showExperiences={showExperiences}
           mapFilter={mapFilter}
           activeTags={activeTags}
           onCityClick={handleCityClick}

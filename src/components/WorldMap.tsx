@@ -102,6 +102,7 @@ interface WorldMapProps {
   experiences?: ExperienceWithPhotos[];
   catalogItems?: CatalogItem[];
   showCities: boolean;
+  showExperiences?: boolean;
   mapFilter: "all" | "visited" | "wishlist";
   activeTags?: ActivityTag[];
   onCityClick: (city: City) => void;
@@ -109,7 +110,7 @@ interface WorldMapProps {
   onCatalogItemClick?: (item: CatalogItem) => void;
 }
 
-const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCities, mapFilter, activeTags = [], onCityClick, onPlaceClick, onCatalogItemClick }: WorldMapProps) => {
+const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCities, showExperiences = false, mapFilter, activeTags = [], onCityClick, onPlaceClick, onCatalogItemClick }: WorldMapProps) => {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cityLayerRef = useRef<L.LayerGroup | null>(null);
@@ -217,10 +218,9 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
     const layer = catalogLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
-    // Experience dots show under "All"; activity tags narrow them down.
-    if (mapFilter !== "all") return;
+    // Experience dots only show when the Experiences layer is switched on.
+    if (!showExperiences || mapFilter !== "all") return;
 
-    // Routes and other items without a point location must not break the layer.
     const locatedItems = catalogItems.filter(
       (item) => Number.isFinite(item.lat) && Number.isFinite(item.lng),
     );
@@ -244,7 +244,7 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
       marker.on("click", () => onCatalogItemClick?.(item));
       layer.addLayer(marker);
     });
-  }, [catalogItems, mapFilter, activeTags, onCatalogItemClick]);
+  }, [catalogItems, showExperiences, mapFilter, activeTags, onCatalogItemClick]);
 
   useEffect(() => {
     const layer = placeLayerRef.current;

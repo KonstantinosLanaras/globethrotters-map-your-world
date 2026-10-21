@@ -196,6 +196,10 @@ GROUP BY city.slug,item.canonical_category ORDER BY item.canonical_category;
 
 
 def main() -> None:
+    # Prevent stale extra batches from a previous run being mistaken for this
+    # run's complete output when a provider returns fewer candidates.
+    for old_file in OUT.glob("*_part_*.sql"):
+        old_file.unlink()
     report = {}
     for index, (slug, lat, lon, radius, target) in enumerate(CITY_ROWS, 1):
         if slug == "madeira-pt":

@@ -99,6 +99,8 @@ def choose(items,market,slug):
  chosen.extend(leftovers[:max(0,target-len(chosen))])
  return chosen[:target],len(unique)
 
+def q(s):return "'"+str(s).replace("'","''")+"'"
+
 def make_sql(slug,rows):
  # Twenty records per file; coverage remains hidden until editorial review.
  for idx in range(0,len(rows),20):

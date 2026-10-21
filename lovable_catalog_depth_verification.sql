@@ -2,6 +2,15 @@
 -- Distinguishes active rows from rows eligible for the public recommendation
 -- policy; this is essential because raw 'coverage' rows are intentionally hidden.
 
+WITH requested(slug, target) AS (
+  VALUES ('barcelona-es', 115), ('madeira-pt', 80), ('milan-it', 105)
+)
+SELECT requested.slug AS requested_city_slug, requested.target,
+       city.id IS NOT NULL AS city_is_seeded
+FROM requested
+LEFT JOIN public.catalog_cities AS city ON city.slug = requested.slug
+ORDER BY requested.slug;
+
 SELECT
   city.slug AS city_slug,
   item.canonical_category,

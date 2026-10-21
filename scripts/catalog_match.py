@@ -16,10 +16,14 @@ from typing import Any, Iterable
 
 TYPE_FAMILIES = {
     "museum": "culture", "gallery": "culture", "historic": "culture",
+    "attraction": "culture", "castle": "culture", "archaeological_site": "culture",
+    "theatre": "culture", "arts_centre": "culture",
     "monument": "culture", "place_of_worship": "culture", "theatre": "culture",
     "park": "nature", "garden": "nature", "viewpoint": "nature",
+    "peak": "nature", "waterfall": "nature",
     "beach": "nature", "trail": "nature", "nature_reserve": "nature",
-    "restaurant": "food", "cafe": "food", "bar": "nightlife",
+    "restaurant": "food", "cafe": "food", "marketplace": "food", "bakery": "food", "bar": "nightlife",
+    "pub": "nightlife",
     "nightclub": "nightlife", "music_venue": "nightlife",
 }
 

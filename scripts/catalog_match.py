@@ -98,7 +98,8 @@ def match_candidate(candidate: dict[str, Any], overture: Iterable[dict[str, Any]
     selects between near-tied distinct Overture identities automatically.
     """
     rows = list(overture)
-    source_id = candidate.get("overture_id") or candidate.get("source_id")
+    # Never compare a generic source_id: on the candidate it may be an OSM ID.
+    source_id = candidate.get("overture_id")
     if source_id:
         exact = [r for r in rows if str(r.get("source_id")) == str(source_id)]
         if len(exact) == 1:

@@ -18,6 +18,16 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+FAMILY_BY_TYPE = {
+    "food":"food", "restaurant":"food", "cafe":"food", "bakery":"food", "marketplace":"food",
+    "culture":"culture", "museum":"culture", "gallery":"culture", "monument":"culture",
+    "castle":"culture", "historic":"culture", "attraction":"culture", "theatre":"culture",
+    "nature":"nature", "viewpoint":"nature", "beach":"nature", "trail":"nature",
+    "route":"nature", "peak":"nature", "waterfall":"nature", "park":"nature",
+    "nightlife":"nightlife", "bar":"nightlife", "pub":"nightlife", "nightclub":"nightlife",
+    "music_venue":"nightlife",
+}
+
 
 def normalize(value: Any) -> str:
     text = unicodedata.normalize("NFKD", str(value or "").casefold())
@@ -77,6 +87,10 @@ def compare_one(candidate: dict[str, Any], provider: str,
         shared_names = candidate_names.intersection(name_set(row))
         if not shared_names:
             continue
+        candidate_family = FAMILY_BY_TYPE.get(normalize(candidate.get("category"))) or FAMILY_BY_TYPE.get(normalize(candidate.get("subcategory")))
+        source_family = FAMILY_BY_TYPE.get(normalize(row.get("canonical_category"))) or FAMILY_BY_TYPE.get(normalize(row.get("feature_type"))) or FAMILY_BY_TYPE.get(normalize(row.get("category")))
+        if candidate_family and source_family and candidate_family != source_family:
+            continue
         row_locality = normalize(row.get("locality"))
         if locality and row_locality and locality != row_locality:
             continue
@@ -88,6 +102,13 @@ def compare_one(candidate: dict[str, Any], provider: str,
     if not ranked:
         return {"source":provider,"status":"unmatched","matches":[],
                 "rationale":"No exact or alternate-name match passed locality and distance checks."}
+    if len(ranked) == 1 and ranked[0][0] is None and not (
+        locality and normalize(ranked[0][1].get("locality")) == locality
+    ):
+        distance, row, shared = ranked[0]
+        return {"source":provider,"status":"ambiguous","method":"name_only",
+                "matches":[_summary(row,distance)],"shared_names":shared,
+                "rationale":"Name agrees, but neither coordinates nor a matching locality confirms identity."}
     ranked.sort(key=lambda item:(item[0] if item[0] is not None else float("inf"),str(item[1].get("id", ""))))
     if len(ranked) > 1:
         first, second = ranked[:2]

@@ -70,7 +70,7 @@ def get_places(market):
    matches=[(cat,sub) for cat,sub,k,v in group if tags.get(k)==v]
    if not matches:continue
    cat,sub=matches[0]
-   result.append({'source_id':f"{e['type']}/{e['id']}",'element_type':e['type'],'feature_type':sub,'name':name,'lat':float(lat),'lon':float(lon),'category':cat,'subcategory':sub,'osm_tags':tags})
+   result.append({'source_id':f"{e['type']}/{e['id']}",'element_type':e['type'],'feature_type':sub,'name':name,'lat':float(lat),'lon':float(lon),'latitude':float(lat),'longitude':float(lon),'category':cat,'subcategory':sub,'osm_tags':tags})
   time.sleep(2)
  return result
 

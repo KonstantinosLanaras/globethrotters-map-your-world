@@ -49,16 +49,26 @@ The helper's unit tests can be run with:
 PYTHONPATH=scripts python -m unittest scripts/test_catalog_match.py -v
 ```
 
-## What remains before claiming the targets
+## Current beachhead rollout
 
-- Seed and verify Madeira as a destination using a reviewed island geometry
-  or an explicitly selected representative point and import boundary.
-- Run `scripts/build_catalog_batches.py` to collect OSM candidates into SQL files of at most 20 rows. The script keeps records as hidden `coverage`, records grouped OSM IDs, and prints candidate counts; generated batches still need editorial review and manual execution.
-- Produce additional source-backed editorial selections from official tourism/geographic sources, review duplicates and quality, then promote approved candidates to `editorial` or `popular` with stable provenance.
-- Run the verification SQL after each import. Counts must use
-  `quality_tier IN ('popular', 'editorial', 'community')`; raw coverage is not
-  a publishable experience.
-- Keep SQL batches near 20 records and include per-batch idempotency checks.
+The active scope is the 42-destination beachhead and its ten pilots: Milan,
+Barcelona, the Balearic Islands, Madeira, Iceland, the Dolomites, Japan,
+Thailand, Patagonia and Morocco. This supersedes the earlier 50-European-city
+rollout as the current catalogue strategy. See
+`docs/beachhead-market-rollout.md` for the sequence and source roles.
+
+Milan's experience-selection and matching workflow remains the baseline. The
+next implementation is strategy-first: create Madeira's 25–35 traveller
+destination strategy and candidate pool, then perform a read-only comparison
+against appropriate sources. The source comparison must not drive desirability
+or automatically publish matching records. Use
+`docs/madeira-strategy-first-pilot.md` and the Overpass query under `queries/`.
+
+Only after editorial review should approved records be imported in small,
+idempotent batches. Counts use
+`quality_tier IN ('popular', 'editorial', 'community')`; raw `coverage` is not a
+publishable experience. No live database write or publication is performed by
+these repository changes.
 
 No live database write or publication is performed by these repository-only
 changes.

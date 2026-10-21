@@ -53,9 +53,8 @@ PYTHONPATH=scripts python -m unittest scripts/test_catalog_match.py -v
 
 - Seed and verify Madeira as a destination using a reviewed island geometry
   or an explicitly selected representative point and import boundary.
-- Produce source-backed Barcelona and Madeira candidate batches, review
-  duplicates and quality, then promote approved candidates to `editorial` or
-  `popular` with stable provenance.
+- Run `scripts/build_catalog_batches.py` to collect OSM candidates into SQL files of at most 20 rows. The script keeps records as hidden `coverage`, records grouped OSM IDs, and prints candidate counts; generated batches still need editorial review and manual execution.
+- Produce additional source-backed editorial selections from official tourism/geographic sources, review duplicates and quality, then promote approved candidates to `editorial` or `popular` with stable provenance.
 - Run the verification SQL after each import. Counts must use
   `quality_tier IN ('popular', 'editorial', 'community')`; raw coverage is not
   a publishable experience.

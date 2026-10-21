@@ -24,7 +24,7 @@ to distinguish missing city rows, hidden coverage, and publishable records.
 
 ## Matching workflow
 
-Use `scripts/catalog_match.py` to normalize multilingual names, group OSM
+Use `scripts/match_catalog_candidates.py` to normalize multilingual names, group OSM
 geometry representations, and match candidates to Overture identities. The
 matching order is:
 
@@ -34,10 +34,16 @@ matching order is:
 3. A near tie across distinct Overture IDs is marked ambiguous for human review.
 4. No candidate is automatically selected based on proximity alone.
 
-Persist the returned `status`, `method`, `score`, candidate source IDs, and
-alternatives alongside the import run when wiring this helper into a live
-staging process. Keep all `ambiguous` and `unmatched` candidates out of public
-catalogue rows. The helper's unit tests can be run with:
+The CLI accepts JSON with `osm` and `overture` arrays, writes a review JSON
+including source IDs and alternatives, and never writes to Supabase itself:
+
+```sh
+PYTHONPATH=scripts python scripts/match_catalog_candidates.py \
+  --input candidates.json --output match-review.json
+```
+
+Keep all `ambiguous` and `unmatched` candidates out of public catalogue rows.
+The helper's unit tests can be run with:
 
 ```sh
 PYTHONPATH=scripts python -m unittest scripts/test_catalog_match.py -v

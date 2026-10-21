@@ -113,6 +113,22 @@ The report must distinguish database coverage from editorial approval. An
 unmatched but credible neighbourhood walk can remain a curated recommendation;
 an OSM match alone does not make a candidate publishable.
 
+For normalized source exports, the read-only comparator is
+`scripts/compare_madeira_sources.py`. Its input has `candidates` and `sources`
+arrays; source rows use `id`, `name`, `alt_names`, `latitude`, `longitude`,
+`feature_type`, `locality` and `url`. Run it with:
+
+```sh
+PYTHONPATH=scripts python scripts/compare_madeira_sources.py \
+  --input data/madeira/source-audit-input.json \
+  --output data/madeira/source-audit-report.json
+```
+
+The comparison report is separate from the editorial candidate file. Missing
+source exports report as `not_checked`; they are never treated as a successful
+match. This command reads local snapshots only and makes no network or database
+calls.
+
 ## Data and licensing boundary
 
 Overture places are point representations and expose structured names,

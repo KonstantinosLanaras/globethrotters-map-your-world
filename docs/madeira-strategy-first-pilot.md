@@ -57,7 +57,7 @@ coordinates and forbids fabricated verification.
 > afternoon/evening combinations. Do not fill a category quota.
 >
 > Return JSON with a strategy summary and a list of distinct candidates. Every
-> candidate must include: `candidate_id`, `name`, `content_kind` (`place`,
+> candidate must include: `candidate_id`, `name`, `destination_scope` (`Madeira`), `content_kind` (`place`,
 > `route`, `area`, or `timed_experience`), proposed top-level category and
 > subcategory, concise useful editorial description, audience-fit score,
 > essentiality, local distinctiveness, value, social potential (each 0–5 with a
@@ -65,6 +65,13 @@ coordinates and forbids fabricated verification.
 > best season/time, expected locality/region, and confidence that the named
 > entity/experience genuinely exists (0–1 with rationale). Add `source_checks`
 > as an empty array and set `verification_status` to `unverified_candidate`.
+> Add `entity_components` for named physical anchors that make up a broader
+> recommendation (for example, a sunrise outing can refer to its named summit
+> and trail relation). The parent recommendation may have no coordinates; that
+> must not prevent matching its named components to source records. Coordinates
+> and geometry returned by a confirmed source match are enrichment and should
+> be kept with the match provenance, not fabricated onto the LLM candidate.
+>
 > Coordinates, provider IDs, route geometry, current access, prices, ratings,
 > opening hours and source claims must be null/unknown until independently
 > verified. Never invent a location or claim that a source was checked.
@@ -116,7 +123,13 @@ an OSM match alone does not make a candidate publishable.
 For normalized source exports, the read-only comparator is
 `scripts/compare_madeira_sources.py`. Its input has `candidates` and `sources`
 arrays; source rows use `id`, `name`, `alt_names`, `latitude`, `longitude`,
-`feature_type`, `locality` and `url`. Run it with:
+`feature_type`, `locality` and `url`. A source may also be supplied as an object
+with an explicit `scope` and `records` array, for example a Madeira-bounded
+Overpass export. A unique exact name within that declared destination scope can
+match without candidate coordinates; returned coordinates/geometry become
+traceable enrichment. Name-only matches without locality or an explicit source
+scope stay ambiguous. Named `entity_components` are compared separately from
+the parent experience. Run it with:
 
 ```sh
 PYTHONPATH=scripts python scripts/compare_madeira_sources.py \

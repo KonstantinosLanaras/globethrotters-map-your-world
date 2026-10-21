@@ -1,6 +1,7 @@
 import unittest
 
 from catalog_match import group_osm_features, match_candidate
+from match_catalog_candidates import build_report
 
 
 def feature(name, lat=41.387, lon=2.17, source_id=None, element_type="node",
@@ -53,6 +54,14 @@ class CatalogMatchTests(unittest.TestCase):
         candidate = feature("Mirador", feature_type="viewpoint")
         wrong_type = feature("Mirador", feature_type="restaurant", source_id="ov-1")
         self.assertEqual(match_candidate(candidate, [wrong_type])["status"], "unmatched")
+
+    def test_report_retains_osm_provenance_and_match_decision(self):
+        osm = feature("Mirador", source_id="901", element_type="node")
+        overture = feature("Mirador", source_id="gers-1")
+        report = build_report({"osm": [osm], "overture": [overture]})
+        self.assertEqual(report["summary"]["matched"], 1)
+        self.assertEqual(report["decisions"][0]["osm_source_ids"], ["901"])
+        self.assertEqual(report["decisions"][0]["overture_source_id"], "gers-1")
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ import { usePlaces, Place } from "@/hooks/usePlaces";
 import { useExperiencesWithPhotos } from "@/hooks/useExperiences";
 import { useAuth } from "@/hooks/useAuth";
 import { worldCities, City } from "@/data/cities";
-import { useCatalogMapItems, type CatalogItem } from "@/hooks/useCatalog";
+import { useCatalogDestinations, useCatalogMapItems, type CatalogItem } from "@/hooks/useCatalog";
 
 const Index = () => {
   // Keep the world view calm by default. Visitors can reveal the full city
@@ -25,6 +25,25 @@ const Index = () => {
   const { data: places = [] } = usePlaces();
   const { data: experiences = [] } = useExperiencesWithPhotos();
   const { data: catalogItems = [] } = useCatalogMapItems();
+  const { data: catalogDestinations = [] } = useCatalogDestinations();
+
+  const mapDestinations = useMemo(() => {
+    const destinations = [...worldCities];
+    const known = new Set(
+      destinations.map((destination) =>
+        `${destination.name.toLocaleLowerCase()}::${destination.country.toLocaleLowerCase()}`
+      ),
+    );
+
+    for (const destination of catalogDestinations) {
+      const key = `${destination.name.toLocaleLowerCase()}::${destination.country.toLocaleLowerCase()}`;
+      if (known.has(key)) continue;
+      known.add(key);
+      destinations.push(destination);
+    }
+
+    return destinations;
+  }, [catalogDestinations]);
 
   const stats = useMemo(() => ({
     visited: places.filter((p) => p.type === "visited").length,
@@ -126,7 +145,8 @@ const Index = () => {
       
       <div className="absolute inset-0 pt-[60px]">
         <WorldMap
-          cities={worldCities}
+          cities={mapDestinations}
+          catalogDestinations={catalogDestinations}
           places={places}
           experiences={experiences}
           catalogItems={catalogItems}

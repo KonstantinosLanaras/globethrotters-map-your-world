@@ -98,6 +98,7 @@ const placeMatchesTags = (place: Place, tags: ActivityTag[]): boolean => {
 
 interface WorldMapProps {
   cities: City[];
+  catalogDestinations?: City[];
   places: Place[];
   experiences?: ExperienceWithPhotos[];
   catalogItems?: CatalogItem[];
@@ -110,7 +111,7 @@ interface WorldMapProps {
   onCatalogItemClick?: (item: CatalogItem) => void;
 }
 
-const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCities, showExperiences = false, mapFilter, activeTags = [], onCityClick, onPlaceClick, onCatalogItemClick }: WorldMapProps) => {
+const WorldMap = ({ cities, catalogDestinations = [], places, experiences = [], catalogItems = [], showCities, showExperiences = false, mapFilter, activeTags = [], onCityClick, onPlaceClick, onCatalogItemClick }: WorldMapProps) => {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cityLayerRef = useRef<L.LayerGroup | null>(null);
@@ -193,9 +194,16 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
     const layer = cityLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
-    if (!showCities) return;
+
+    const publishedDestinationKeys = new Set(
+      catalogDestinations.map((destination) =>
+        `${destination.name.toLocaleLowerCase()}::${destination.country.toLocaleLowerCase()}`
+      ),
+    );
 
     cities.forEach((city) => {
+      const destinationKey = `${city.name.toLocaleLowerCase()}::${city.country.toLocaleLowerCase()}`;
+      if (!showCities && !publishedDestinationKeys.has(destinationKey)) return;
       const status = getCityStatus(city);
       if (mapFilter === "visited" && status !== "visited") return;
       if (mapFilter === "wishlist" && status !== "wishlist") return;
@@ -212,7 +220,7 @@ const WorldMap = ({ cities, places, experiences = [], catalogItems = [], showCit
       marker.on("click", () => onCityClick(city));
       layer.addLayer(marker);
     });
-  }, [cities, showCities, mapFilter, getCityStatus, onCityClick]);
+  }, [cities, catalogDestinations, showCities, mapFilter, getCityStatus, onCityClick]);
 
   useEffect(() => {
     const layer = catalogLayerRef.current;

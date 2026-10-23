@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { curatedExperiences } from "@/data/curatedExperiences";
 import { supabase } from "@/integrations/supabase/client";
+import type { City, DestinationType } from "@/data/cities";
 
 export type CatalogCategory = "food" | "culture" | "nature" | "nightlife";
 export type CatalogQualityTier = "coverage" | "popular" | "editorial" | "community";
@@ -170,6 +171,52 @@ export const useCatalogMapItems = () =>
 
       const rows = allRows.map(rowToCatalogItem).filter((item): item is CatalogItem => item !== null);
       return mergeWithCurated(rows);
+    },
+    staleTime: 15 * 60 * 1000,
+  });
+
+/** Active destinations with at least one public catalogue item. */
+export const useCatalogDestinations = () =>
+  useQuery({
+    queryKey: ["catalog-destinations"],
+    queryFn: async (): Promise<City[]> => {
+      if (isDemoMode) return [];
+
+      const { data, error } = await supabase
+        .from("catalog_cities")
+        .select(`
+          name,
+          country,
+          latitude,
+          longitude,
+          destination_type,
+          catalog_items!inner(id)
+        `)
+        .eq("is_active", true)
+        .eq("catalog_items.is_active", true)
+        .neq("catalog_items.quality_tier", "coverage");
+
+      if (error) {
+        console.warn("Catalogue destinations unavailable", error.message);
+        return [];
+      }
+
+      return ((data || []) as unknown as Array<{
+        name: string;
+        country: string;
+        latitude: number;
+        longitude: number;
+        destination_type: string;
+      }>)
+        .filter((row) => Number.isFinite(row.latitude) && Number.isFinite(row.longitude))
+        .map((row) => ({
+          name: row.name,
+          country: row.country,
+          lat: row.latitude,
+          lng: row.longitude,
+          continent: "",
+          type: row.destination_type as DestinationType,
+        }));
     },
     staleTime: 15 * 60 * 1000,
   });

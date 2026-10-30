@@ -10,57 +10,104 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
       catalog_cities: {
         Row: {
+          beachhead_status: string
+          beachhead_tier: number | null
+          bounds_geojson: Json | null
+          content_target: number | null
           country: string
           country_code: string
+          country_codes: string[]
           created_at: string
+          destination_type: string
           id: string
           is_active: boolean
           is_launch_city: boolean
           latitude: number
           longitude: number
           market_rank: number | null
+          matching_strategy: string
           name: string
+          parent_destination_id: string | null
           search_radius_km: number
           slug: string
+          target_audience: string
+          trip_styles: string[]
+          typical_nights_max: number | null
+          typical_nights_min: number | null
           updated_at: string
+          young_traveller_fit_score: number | null
         }
         Insert: {
+          beachhead_status?: string
+          beachhead_tier?: number | null
+          bounds_geojson?: Json | null
+          content_target?: number | null
           country: string
           country_code: string
+          country_codes?: string[]
           created_at?: string
+          destination_type?: string
           id?: string
           is_active?: boolean
           is_launch_city?: boolean
           latitude: number
           longitude: number
           market_rank?: number | null
+          matching_strategy?: string
           name: string
+          parent_destination_id?: string | null
           search_radius_km?: number
           slug: string
+          target_audience?: string
+          trip_styles?: string[]
+          typical_nights_max?: number | null
+          typical_nights_min?: number | null
           updated_at?: string
+          young_traveller_fit_score?: number | null
         }
         Update: {
+          beachhead_status?: string
+          beachhead_tier?: number | null
+          bounds_geojson?: Json | null
+          content_target?: number | null
           country?: string
           country_code?: string
+          country_codes?: string[]
           created_at?: string
+          destination_type?: string
           id?: string
           is_active?: boolean
           is_launch_city?: boolean
           latitude?: number
           longitude?: number
           market_rank?: number | null
+          matching_strategy?: string
           name?: string
+          parent_destination_id?: string | null
           search_radius_km?: number
           slug?: string
+          target_audience?: string
+          trip_styles?: string[]
+          typical_nights_max?: number | null
+          typical_nights_min?: number | null
           updated_at?: string
+          young_traveller_fit_score?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "catalog_cities_parent_destination_id_fkey"
+            columns: ["parent_destination_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_cities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       catalog_import_runs: {
         Row: {
@@ -101,6 +148,8 @@ export type Database = {
       catalog_items: {
         Row: {
           area_name: string | null
+          audience_scores: Json
+          budget_level: string | null
           canonical_category: string
           city_id: string
           content_kind: string
@@ -118,16 +167,25 @@ export type Database = {
           published_at: string
           quality_tier: string
           recommended_time: string | null
+          seasonality: string[]
           selection_rank: number | null
+          selection_reasons: string[]
           source: string
           source_confidence: number | null
           source_id: string
           source_url: string | null
           subcategory: string
+          suitable_for: string[]
+          target_audience: string
+          trip_styles: string[]
+          typical_duration_minutes: number | null
           updated_at: string
+          young_traveller_score: number | null
         }
         Insert: {
           area_name?: string | null
+          audience_scores?: Json
+          budget_level?: string | null
           canonical_category: string
           city_id: string
           content_kind?: string
@@ -145,16 +203,25 @@ export type Database = {
           published_at?: string
           quality_tier?: string
           recommended_time?: string | null
+          seasonality?: string[]
           selection_rank?: number | null
+          selection_reasons?: string[]
           source: string
           source_confidence?: number | null
           source_id: string
           source_url?: string | null
           subcategory: string
+          suitable_for?: string[]
+          target_audience?: string
+          trip_styles?: string[]
+          typical_duration_minutes?: number | null
           updated_at?: string
+          young_traveller_score?: number | null
         }
         Update: {
           area_name?: string | null
+          audience_scores?: Json
+          budget_level?: string | null
           canonical_category?: string
           city_id?: string
           content_kind?: string
@@ -172,13 +239,20 @@ export type Database = {
           published_at?: string
           quality_tier?: string
           recommended_time?: string | null
+          seasonality?: string[]
           selection_rank?: number | null
+          selection_reasons?: string[]
           source?: string
           source_confidence?: number | null
           source_id?: string
           source_url?: string | null
           subcategory?: string
+          suitable_for?: string[]
+          target_audience?: string
+          trip_styles?: string[]
+          typical_duration_minutes?: number | null
           updated_at?: string
+          young_traveller_score?: number | null
         }
         Relationships: [
           {
@@ -1928,6 +2002,37 @@ export type Database = {
           recommendation_score: number
           source: string
           subcategory: string
+        }[]
+      }
+      get_nearby_catalog_items: {
+        Args: {
+          p_category?: string
+          p_latitude: number
+          p_limit?: number
+          p_longitude: number
+          p_radius_km?: number
+        }
+        Returns: {
+          area_name: string
+          catalog_item_id: string
+          category: string
+          content_kind: string
+          country: string
+          description: string
+          destination_name: string
+          destination_slug: string
+          distance_km: number
+          geometry_type: string
+          latitude: number
+          longitude: number
+          name: string
+          nearby_score: number
+          quality_tier: string
+          recommended_time: string
+          source: string
+          source_id: string
+          subcategory: string
+          young_traveller_score: number
         }[]
       }
       is_journey_invitee: {

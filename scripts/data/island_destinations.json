@@ -1,0 +1,7 @@
+{
+  "mallorca-es": {"name":"Mallorca","country":"Spain","country_code":"ES","destination_type":"island","latitude":39.6953,"longitude":3.0176,"target":100,"radius":60},
+  "ibiza-es": {"name":"Ibiza","country":"Spain","country_code":"ES","destination_type":"island","latitude":38.98,"longitude":1.43,"target":100,"radius":32},
+  "menorca-es": {"name":"Menorca","country":"Spain","country_code":"ES","destination_type":"island","latitude":39.99,"longitude":4.08,"target":70,"radius":45},
+  "formentera-es": {"name":"Formentera","country":"Spain","country_code":"ES","destination_type":"island","latitude":38.705,"longitude":1.465,"target":50,"radius":20},
+  "lisbon-pt": {"name":"Lisbon","country":"Portugal","country_code":"PT","destination_type":"city","latitude":38.7223,"longitude":-9.1393,"target":180,"radius":30}
+}

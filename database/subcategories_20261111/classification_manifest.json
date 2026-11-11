@@ -1,0 +1,32 @@
+{
+  "change_set": "catalogue-subcategories-20261111-v1",
+  "taxonomy_version": "2026-11-11-v1",
+  "snapshot_rows": 882,
+  "classified_rows": 837,
+  "classification_review_rows": 45,
+  "rows_updated_including_category_normalization": 838,
+  "hiking_rows_normalized": 10,
+  "counts": {
+    "nightlife/nightlife_areas": 44,
+    "food/restaurants": 123,
+    "nature/parks_gardens": 64,
+    "food/food_markets": 23,
+    "culture/historic_sites": 70,
+    "culture/museums_galleries": 84,
+    "nature/beaches_lakes": 107,
+    "nature/sunsets_views": 36,
+    "nature/natural_sites": 41,
+    "food/food_experiences": 44,
+    "nightlife/clubs": 40,
+    "culture/neighbourhoods_walks": 39,
+    "nature/hikes_trails": 29,
+    "nightlife/live_music": 30,
+    "nightlife/bars": 38,
+    "nightlife/rooftops": 6,
+    "food/cafes_bakeries": 16,
+    "food/street_food": 3
+  },
+  "snapshot_scope": "publicly_visible_catalogue_rows_only",
+  "live_database_changed": false,
+  "apply_sha256": "c635af6bf553525521378220590fbed9cbf66167b405bcd6249a21e8b24c47a4"
+}

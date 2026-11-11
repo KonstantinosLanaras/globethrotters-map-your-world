@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { curatedExperiences } from "@/data/curatedExperiences";
 import { supabase } from "@/integrations/supabase/client";
+import { subcategoryLabel } from "../../supabase/functions/_shared/catalogTaxonomy";
 import type { City, DestinationType } from "@/data/cities";
 
 export type CatalogCategory = "food" | "culture" | "nature" | "nightlife";
@@ -16,6 +17,7 @@ export interface CatalogItem {
   lng: number;
   category: CatalogCategory;
   subcategory: string;
+  subcategoryKey?: string | null;
   description: string;
   source: "curated" | "overture" | "osm" | "wikidata";
   sourceId: string;
@@ -32,6 +34,7 @@ type CatalogRow = {
   longitude: number;
   canonical_category: string;
   subcategory: string;
+  subcategory_key?: string | null;
   description: string | null;
   source: string;
   source_id: string;
@@ -72,15 +75,16 @@ const rowToCatalogItem = (row: CatalogRow): CatalogItem | null => {
     name: row.name,
     lat: row.latitude,
     lng: row.longitude,
-    category: row.canonical_category as CatalogCategory,
-    subcategory: row.subcategory,
+    category: (row.canonical_category === "hiking" ? "nature" : row.canonical_category) as CatalogCategory,
+    subcategory: subcategoryLabel(row.canonical_category, row.subcategory_key) || row.subcategory,
+    subcategoryKey: row.subcategory_key || null,
     description: row.description || "",
     source: row.source as CatalogItem["source"],
     sourceId: row.source_id,
     qualityTier: row.quality_tier as CatalogQualityTier,
     selectionRank: row.selection_rank,
     confidence: row.source_confidence,
-    tags: [row.canonical_category, row.subcategory],
+    tags: [row.canonical_category, row.subcategory, row.subcategory_key, subcategoryLabel(row.canonical_category, row.subcategory_key)].filter((value): value is string => Boolean(value)),
   };
 };
 
@@ -99,6 +103,7 @@ const catalogSelect = `
   longitude,
   canonical_category,
   subcategory,
+  subcategory_key,
   description,
   source,
   source_id,

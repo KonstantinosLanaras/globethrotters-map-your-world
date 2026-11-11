@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "require_destination_outdoor_plan_for_new_batches": true,
+  "frozen_legacy_batches": ["islands-pilot-001", "islands-pilot-002", "cities-pilot-003"],
+  "note": "Existing prepared/imported packages are not silently rewritten. New batches must declare outdoor relevance before selection and run source routing. The signed overall 60% threshold is unchanged; unsafe/unverified individual hikes remain queued."
+}

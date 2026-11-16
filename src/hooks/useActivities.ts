@@ -19,6 +19,7 @@ export interface Activity {
   popularity_score?: number;
   quality_tier?: CatalogQualityTier;
   subcategory?: string;
+  subcategory_key?: string | null;
   tags?: string[];
   city_slug?: string;
 }
@@ -46,6 +47,7 @@ export const useActivities = (placeName: string | null, country: string | null):
     popularity_score: item.qualityTier === "popular" ? 100 : item.qualityTier === "editorial" ? 90 : 50,
     quality_tier: item.qualityTier,
     subcategory: item.subcategory,
+    subcategory_key: item.subcategoryKey,
     tags: item.tags,
     city_slug: item.citySlug,
   })), [query.data]);

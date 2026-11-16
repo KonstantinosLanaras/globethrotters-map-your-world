@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+import { CATALOG_TAXONOMY, categoryKeys, subcategoryKeys, taxonomyPrompt, contentKinds, isCanonicalActivity, isCurrentActivityCache } from "../_shared/catalogTaxonomy.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -35,7 +37,7 @@ serve(async (req) => {
 
     if (cached) {
       const age = Date.now() - new Date(cached.updated_at).getTime();
-      if (age < 7 * 24 * 60 * 60 * 1000) {
+      if (age < 7 * 24 * 60 * 60 * 1000 && isCurrentActivityCache(cached.activities)) {
         return new Response(JSON.stringify({ activities: cached.activities, cached: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -62,15 +64,14 @@ serve(async (req) => {
           },
           {
             role: "user",
-            content: `Generate 18-25 real, specific activities and places to visit in ${placeName}, ${country}. Include a rich mix across ALL categories:
-- Food (5-6): specific restaurants, street food spots, markets, cafes
-- Culture (3-4): museums, historic sites, temples, galleries
-- Nature (5-7): parks, gardens, viewpoints, beaches, trails, walks and treks. Use specific tags such as hiking or beach.
-- Scenic (2-3): viewpoints, photo spots, architectural landmarks
-- Hidden Gem (2-3): local-only spots, off-the-beaten-path places
-- Transport (1-2): unique local transport experiences
+            content: `Generate 18-25 real, specific places and recurring experiences in ${placeName}, ${country}.
+Use only these category/subcategory pairs:
+${taxonomyPrompt}
 
-Make names specific. Do not include ratings, review counts, prices, or booking availability.`,
+Choose a destination-appropriate mix; do not invent experiences to fill a quota.
+Editorial experiences belong to their interest category. For example, Sunset at Vraxakia in Athens is nature / sunsets_views / timed_experience with recommended_time="sunset". Food walks belong to food / food_experiences. Do not add scenic, transport, hidden_gem or editorial as top-level categories.
+Use content_kind=place for physical venues and landmarks; area_experience, route_experience or timed_experience for activities. Keep recommended_time blank when irrelevant. Named hikes remain Nature / hikes_trails and require separate route/access validation before catalogue publication. These suggestions are unverified; this endpoint does not publish to catalog_items.
+Do not include dated events, festivals or scheduled performances. Permanent live-music venues are allowed. Lakes do not imply swimming suitability. Make names specific. Do not invent ratings, review counts, coordinates, prices, opening status or booking availability.`,
           },
         ],
         tools: [
@@ -90,8 +91,11 @@ Make names specific. Do not include ratings, review counts, prices, or booking a
                         name: { type: "string", description: "Specific place or activity name" },
                         category: {
                           type: "string",
-                          enum: ["food", "nature", "culture", "scenic", "transport", "hidden_gem"],
+                          enum: categoryKeys,
                         },
+                        subcategory: { type: "string", enum: subcategoryKeys, description: "Must belong to the selected category" },
+                        content_kind: { type: "string", enum: contentKinds },
+                        recommended_time: { type: "string", description: "Recurring timing cue such as sunset, or empty string" },
                         description: { type: "string", description: "1-2 sentence description" },
                         difficulty: {
                           type: "string",
@@ -99,7 +103,7 @@ Make names specific. Do not include ratings, review counts, prices, or booking a
                         },
                         duration: { type: "string", description: "Estimated duration e.g. '2 hours'" },
                       },
-                      required: ["name", "category", "description", "difficulty", "duration"],
+                      required: ["name", "category", "subcategory", "content_kind", "recommended_time", "description", "difficulty", "duration"],
                       additionalProperties: false,
                     },
                   },
@@ -139,15 +143,22 @@ Make names specific. Do not include ratings, review counts, prices, or booking a
     }
 
     const parsed = JSON.parse(toolCall.function.arguments);
-    const activities = parsed.activities || [];
+    if (!Array.isArray(parsed.activities) || parsed.activities.length === 0 || !parsed.activities.every(isCanonicalActivity)) {
+      throw new Error("AI response contains missing or invalid category/subcategory pairs");
+    }
+    const activities = parsed.activities.map((activity: Record<string, unknown>) => ({
+      ...activity, taxonomy_version: CATALOG_TAXONOMY.version,
+    }));
 
     // Cache the result
-    await supabase
+    const { error: cacheError } = await supabase
       .from("destination_activities")
       .upsert(
         { place_name: placeName, country, activities, updated_at: new Date().toISOString() },
         { onConflict: "place_name,country" }
       );
+
+    if (cacheError) throw new Error("Could not store classified activity suggestions");
 
     return new Response(JSON.stringify({ activities, cached: false }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

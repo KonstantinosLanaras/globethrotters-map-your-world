@@ -1,0 +1,22 @@
+{
+  "menorca-es": {
+    "target_experiences": 70,
+    "baseline_editorial_count": 4,
+    "reserve": [
+      {"name":"Maó old-town lanes and local shops","category":"culture","subtype":"village afternoon","content_kind":"area_experience","area_name":"Maó old town","description":"Explore the old-town lanes and small shops above the harbour, leaving time for a square-side pause. This is distinct from a harbour dinner and does not depend on a museum opening."},
+      {"name":"Calesfonts waterfront evening","category":"nightlife","subtype":"waterfront evening","content_kind":"area_experience","area_name":"Calesfonts public waterfront, Es Castell","description":"Spend an early evening by the harbour, choosing an open terrace for a drink as the fishing port settles into its evening rhythm. No club event, private pier access or boat trip is included."},
+      {"name":"Es Mercadal village lunch pause","category":"food","subtype":"village food afternoon","content_kind":"area_experience","area_name":"Es Mercadal centre","description":"Allow time for an informal village lunch and a look at local bakeries or food shops. Choose open businesses on the day; this is not a fixed tasting or a farm reservation."},
+      {"name":"Sant Lluís whitewashed village afternoon","category":"culture","subtype":"village afternoon","content_kind":"area_experience","area_name":"Sant Lluís village centre","description":"Wander the public lanes around the village centre for a slower-paced afternoon, pairing the whitewashed streets with a café stop. No paid monument or guided tour is implied."}
+    ]
+  },
+  "formentera-es": {
+    "target_experiences": 50,
+    "baseline_editorial_count": 4,
+    "reserve": [
+      {"name":"El Pilar de la Mola village pause","category":"culture","subtype":"village afternoon","content_kind":"area_experience","area_name":"El Pilar de la Mola village centre","description":"Spend time in the village streets and choose an open café or craft shop. This remains a village outing outside the craft market's scheduled days; no market or lighthouse opening is promised."},
+      {"name":"Sant Ferran relaxed terrace evening","category":"nightlife","subtype":"village evening","content_kind":"area_experience","area_name":"Sant Ferran de ses Roques centre","description":"Return after dinner for a low-key drink on an open terrace and a village evening rather than a club night. Check any live programme separately; no event is included."},
+      {"name":"Migjorn slow coastal afternoon","category":"nature","subtype":"coastal afternoon","content_kind":"area_experience","area_name":"Public beach areas along Platja de Migjorn","description":"Choose an accessible public stretch of Migjorn for a relaxed afternoon, allowing time to sit by the sea instead of checking off several beaches. This is not a mapped end-to-end coastal route; conditions and access vary."},
+      {"name":"Formentera local-produce picnic stop","category":"food","subtype":"local food experience","content_kind":"area_experience","area_name":"Sant Francesc food shops and permitted public picnic areas","description":"Pick up local products from open village food shops for a simple picnic in a permitted public area. Respect protected-area rules, take litter away and use no fire; no fixed retailer, tasting or private access is included."}
+    ]
+  }
+}

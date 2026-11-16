@@ -1,0 +1,12 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { isCanonicalActivity, isCurrentActivityCache, isSubcategory, subcategoryLabel, CATALOG_TAXONOMY } from '../supabase/functions/_shared/catalogTaxonomy.ts';
+const sunset = { name:'Sunset at Vraxakia', category:'nature', subcategory:'sunsets_views', content_kind:'timed_experience', recommended_time:'sunset', description:'Recurring scenic experience.', difficulty:'none', duration:'45 minutes' };
+test('editorial sunset uses the Nature category and a regular subcategory', () => assert(isCanonicalActivity(sunset)));
+test('a subcategory from another interest category is rejected', () => assert(!isCanonicalActivity({...sunset, subcategory:'restaurants'})));
+test('editorial is not a fifth interest category', () => assert(!isCanonicalActivity({...sunset, category:'editorial'})));
+test('legacy cache is stale even when some fields happen to be valid', () => assert(!isCurrentActivityCache([sunset])));
+test('current classified JSON can be cached', () => assert(isCurrentActivityCache([{...sunset, taxonomy_version:CATALOG_TAXONOMY.version}])));
+test('a missing subcategory cannot pass structured-output validation', () => assert(!isCanonicalActivity({...sunset, subcategory:undefined})));
+test('removed shows/events group is unavailable', () => assert(!isSubcategory('culture','shows_events')));
+test('stable database key has a human-readable display label', () => assert.equal(subcategoryLabel('culture','museums_galleries'),'Museums & galleries'));

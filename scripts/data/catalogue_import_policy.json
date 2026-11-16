@@ -1,0 +1,8 @@
+{
+  "minimum_match_fraction": 0.60,
+  "threshold_stage": "provisional_mvp",
+  "approval_mode": "threshold",
+  "supervised_batches": 0,
+  "previous_supervised_batches": 10,
+  "initial_targets": {"mallorca-es": 100, "ibiza-es": 100, "menorca-es": 70, "formentera-es": 50, "lisbon-pt": 180}
+}

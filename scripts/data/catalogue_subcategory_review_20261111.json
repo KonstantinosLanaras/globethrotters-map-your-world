@@ -1,0 +1,744 @@
+{
+  "snapshot_date": "2026-11-11",
+  "scope": "classification_only_not_identity_or_access_reverification",
+  "items": {
+    "05987b87-138b-4be0-9510-8a5bdd1033d4": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "079d2033-b800-49b2-92c2-416fd0ba9272": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "2239e3d7-8331-460f-a5d2-0ec98a879665": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "23517e79-b9cc-4cf1-8cd9-eb0d344a3971": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "25811bbc-0f52-45a0-96ac-cadce6ccdfb8": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "27556185-450c-496c-bf23-468a8841a5b7": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "2e3b4f48-a33d-4d84-90f6-9537b6816ddd": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "2f0666ce-801f-4a11-8d3f-8e99c8fef22c": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "305ada40-86a6-4314-a229-6b60cd66c8e7": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "4781153e-f350-4db8-bdb8-f5360131a2fd": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "4daf5846-7ef3-4e95-983b-3448198a1822": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "5177d977-6174-43ed-bf01-9edfbe604870": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "6295c334-8760-45a4-bf70-7540a4fe48ff": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "62f32cfd-6662-494d-bf87-1ebc8bc1a400": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "6c76c6c6-5848-4020-8b6e-3d157d7a2065": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "745bba71-4f4c-4135-89ca-bc783aa017c7": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "77c8f881-6377-46a1-a3f7-04a6a9af7ce3": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "80f1d2cf-3a98-45a6-bdfd-47790f18af0d": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "955262c0-7b94-4407-a87d-eeb8588f6db7": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "a133fd20-f73a-42b8-9a6d-fd63f5423cab": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "a2ffc509-8439-4708-b077-89ba4633a375": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "ab651b0e-b006-4316-aabc-f0daf763c2fc": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "ac34be6c-6728-4fa1-a8d2-49dcd327de85": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "bf80443c-6a42-437d-ab83-235f8f519c9b": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "bfb0390a-fd56-4ee0-af6f-17569081f0f7": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "d40bf136-a266-4898-bd13-7ced00f092cf": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "d8a8e004-4044-4430-a9d4-ea73e78f9500": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "e01b6f53-6519-4b35-aa15-f425ddce3d3c": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "e50b90f4-6bd6-4dd7-ae7b-9c822de0e09b": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "eafa7679-58e8-435b-ad30-9d736056e938": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "f000858f-37db-4480-a011-577ea7e33cfb": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "f015fc4e-5ec7-452e-b4a5-36a4060a8fce": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "f6ad0ed3-6c46-4ee8-9ab4-7f6508e7d3d7": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected natural coastal/cove/beach identity. Grouping only; no new swimming, access, pin-precision or operating claim."
+    },
+    "5054ae10-3cf1-48a8-b226-26faf81c8f47": {
+      "category": "nature",
+      "subcategory_key": "natural_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing mountain identity; no named trail or visitor access is implied."
+    },
+    "7ec8da97-6fbb-4d1d-8198-e4df6fc2438e": {
+      "category": "nature",
+      "subcategory_key": "natural_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing protected wetland/nature-reserve identity; retain access and coordinate notes."
+    },
+    "02c916f0-ec4a-4c63-afb5-26d69f06bb8b": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "0d0cdbcb-ea56-4bf5-9237-db87338a47ef": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "36d82dea-5423-4748-ad8d-664f57807646": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "3eab2472-484d-4bf7-840b-7ece90f21fa9": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "50be1b7e-7c45-4eaa-afe6-285c29bc3653": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "7a05fd76-8b1e-4e52-be75-787532c18813": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "8660ff29-4531-4f59-a0f0-5109efa558ea": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "866f5803-10f1-425c-9981-3f46bc09d505": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "9b07a8e9-83b3-4dfa-98d4-4fea2cfabc82": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "cc17768f-51aa-4221-a33a-6519241d45d0": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "f48943cd-05c0-4524-b703-a2cb2e3f60bd": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "f6b39cc5-12d6-43ff-90c9-04730b6085d6": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "1c7bb492-e9b0-41b6-9a9b-a3673f7cdf50": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "a6a451d8-4096-4370-8cc3-927eec9d8ffd": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "1d8b44a4-9b03-469b-bee5-cea9e5a119ba": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "69b77724-4013-44ed-85d9-16efff6aee72": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "a329a18e-9494-45b1-a17d-4f79b7a5f9ff": {
+      "category": "culture",
+      "subcategory_key": "historic_sites",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing permanent heritage/architectural site. Group the site, not a scheduled performance or event."
+    },
+    "b3672164-bb68-4135-b8d3-637a11426c9e": {
+      "category": "culture",
+      "subcategory_key": "museums_galleries",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing museum/exhibition identity; no opening or admission claim."
+    },
+    "ac635cf5-8037-4950-b200-ef9f5d7e3b45": {
+      "category": "culture",
+      "subcategory_key": "museums_galleries",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing museum/exhibition identity; no opening or admission claim."
+    },
+    "13bccf93-6173-4af3-a646-940b9885db3e": {
+      "category": "nature",
+      "subcategory_key": "parks_gardens",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing botanical/garden identity; correct interest category while preserving source ID and all saved references."
+    },
+    "39b6abaf-1a1e-420b-a3bd-ec69edb80929": {
+      "category": "nature",
+      "subcategory_key": "parks_gardens",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing botanical/garden identity; correct interest category while preserving source ID and all saved references."
+    },
+    "05946b8c-2e9d-4961-98cd-30def5989b08": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "10b3d449-8056-4d28-8607-66cc8c652680": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "2ed25554-851e-4de3-afd4-9c1fe817f5a4": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "3a8e731b-ef20-44cd-9a02-802b9e5980a8": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "9ee1de3c-1b66-4293-b0e2-dd765f6f0e13": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "af2876a1-f99b-4723-af47-801c1b59d3f4": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "af9f8e54-b6a2-46b6-9a6e-929a6af8dc59": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "bf3d7d47-4c05-4daf-82ca-642c91c1e62d": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "d347538c-ab2b-4ed6-8483-b9ad92514378": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "de062db6-7d15-4673-a3a4-e456f5ebb613": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "109817c2-3d6a-4058-afbe-c7c4ae3fe5a9": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "38f5e3e1-810d-42f7-bd4e-4088d30bc74b": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "3ff57666-730e-4103-8fcd-8b8641394df9": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "51e7ca33-acb4-4d0c-8108-a4198937cd91": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "602adfa6-2764-415f-b798-9ce2ada0f433": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "78060ba9-71f4-42ef-b902-617ecec3b30e": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "90089c41-bea2-4b75-8dfa-31cb8c96b175": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "9236465b-9405-461a-b4bc-dd4ca15fa6d8": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "929254b4-c7ff-48bd-8f4a-f25cebf08c40": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "97f9937f-b097-4717-8402-a123ca87043d": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "a259bd7f-b43a-41d0-b353-2ce03c273787": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "b8d5a2ca-f436-40f2-96d8-65d94583be14": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "ceb5542f-59de-41ae-815a-899134c9291b": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "d966d63c-390a-4286-833b-650ba13a43ef": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "df95b4d5-874c-40a3-bfba-5f7cac5ead4e": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "e2a8e82b-1dc5-408d-8c83-6bb0d071c13b": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "f23e9f8b-01d1-4bd8-afaf-a1d1a1a85bb6": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "f2698656-6966-42d2-b023-b4ff1e1e73a8": {
+      "category": "food",
+      "subcategory_key": "restaurants",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model classification of the existing selected food venue. Does not re-verify its identity, location, present operating status or availability."
+    },
+    "b8caf5ed-7692-4732-afad-db1965850aee": {
+      "category": "food",
+      "subcategory_key": "cafes_bakeries",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected café/pastry venue; classification does not verify opening status."
+    },
+    "3afe54b3-3bbc-4c32-88ac-3af4303c1f99": {
+      "category": "food",
+      "subcategory_key": "food_markets",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing market identity; no new restaurant or booking claim."
+    },
+    "6980c2a3-8a43-4009-9795-d42f1de7470d": {
+      "category": "food",
+      "subcategory_key": "food_experiences",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing producer/winery outing; no organised tasting, reservation or access is promised."
+    },
+    "e9ccd5ea-e339-47b0-8726-b48ac4b6bc85": {
+      "category": "food",
+      "subcategory_key": "food_experiences",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing producer/winery outing; no organised tasting, reservation or access is promised."
+    },
+    "011ed67d-08eb-44a5-b830-cdb339742c89": {
+      "category": "nightlife",
+      "subcategory_key": "nightlife_areas",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing area outing rather than a named nightlife venue."
+    },
+    "06d908f4-cf9a-496a-9817-beef2954a65c": {
+      "category": "nature",
+      "subcategory_key": "sunsets_views",
+      "method": "model_review_existing_catalogue",
+      "reason": "Title and existing description explicitly identify a recurring scenic/viewing pause; no new geometry or access claim."
+    },
+    "7248bfdd-93e4-4bc9-803a-bc4cce82e016": {
+      "category": "nature",
+      "subcategory_key": "sunsets_views",
+      "method": "model_review_existing_catalogue",
+      "reason": "Title and existing description explicitly identify a recurring scenic/viewing pause; no new geometry or access claim."
+    },
+    "c072579b-9b39-48b6-aff1-d5146b087205": {
+      "category": "nature",
+      "subcategory_key": "sunsets_views",
+      "method": "model_review_existing_catalogue",
+      "reason": "Title and existing description explicitly identify a recurring scenic/viewing pause; no new geometry or access claim."
+    },
+    "b649f580-bc79-47d9-8a3e-800201e8bc65": {
+      "category": "nature",
+      "subcategory_key": "sunsets_views",
+      "method": "model_review_existing_catalogue",
+      "reason": "Title and existing description explicitly identify a recurring scenic/viewing pause; no new geometry or access claim."
+    },
+    "3bf81d77-893f-4f1f-b7ed-e7df5d65b2a6": {
+      "category": "nature",
+      "subcategory_key": "sunsets_views",
+      "method": "model_review_existing_catalogue",
+      "reason": "Title and existing description explicitly identify a recurring scenic/viewing pause; no new geometry or access claim."
+    },
+    "a26d3917-0a9a-4708-895b-1d170fb2196e": {
+      "category": "nature",
+      "subcategory_key": "sunsets_views",
+      "method": "model_review_existing_catalogue",
+      "reason": "Title and existing description explicitly identify a recurring scenic/viewing pause; no new geometry or access claim."
+    },
+    "346d4347-26d3-423c-89b0-53eb7d4034e8": {
+      "category": "nature",
+      "subcategory_key": "parks_gardens",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing forest/urban-green-space outing; not a source-verified hiking route."
+    },
+    "e764160a-7d06-45a2-a36e-69b3c318e61c": {
+      "category": "nature",
+      "subcategory_key": "parks_gardens",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing forest/urban-green-space outing; not a source-verified hiking route."
+    },
+    "2a1a4475-637d-4418-8156-acc155b3289f": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing description identifies a coastal/beach outing; preserve all original access/conditions qualifications."
+    },
+    "daa0865c-2be5-41c6-ace0-decb254bb815": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing description identifies a coastal/beach outing; preserve all original access/conditions qualifications."
+    },
+    "deab66ed-0928-41a2-82d8-7cbf76e2d4fb": {
+      "category": "nature",
+      "subcategory_key": "beaches_lakes",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing description identifies a coastal/beach outing; preserve all original access/conditions qualifications."
+    },
+    "61062f48-7ff2-4ac2-b941-c9aebd28c6ec": {
+      "category": "nature",
+      "subcategory_key": "hikes_trails",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing description explicitly proposes a public waterfront walk. Detailed subtype stays informal; no named-hike or navigational qualification is implied."
+    },
+    "ea3a8961-f244-4797-9753-b19efef6a427": {
+      "category": "nature",
+      "subcategory_key": "hikes_trails",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing description explicitly proposes a public waterfront walk. Detailed subtype stays informal; no named-hike or navigational qualification is implied."
+    },
+    "33df817a-0834-415e-adc3-666a5ea823bc": {
+      "category": "nature",
+      "subcategory_key": "sunsets_views",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing public waterfront place/scenic pause; no mapped route, boat access or ticket is implied."
+    },
+    "7ca357e7-059f-4d7b-b381-f0bf6f4b7a3f": {
+      "category": "nature",
+      "subcategory_key": "sunsets_views",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing public waterfront place/scenic pause; no mapped route, boat access or ticket is implied."
+    },
+    "6ba3ab4b-930c-4ee8-bf13-e52fa08d1fc8": {
+      "category": "nature",
+      "subcategory_key": "sunsets_views",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing public waterfront place/scenic pause; no mapped route, boat access or ticket is implied."
+    },
+    "7932f941-ef63-4875-9695-e66d7b8f6735": {
+      "category": "nature",
+      "subcategory_key": "sunsets_views",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing public waterfront place/scenic pause; no mapped route, boat access or ticket is implied."
+    },
+    "7b969a28-e640-416b-98a3-1fb422ced58e": {
+      "category": "nature",
+      "subcategory_key": "sunsets_views",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing public waterfront place/scenic pause; no mapped route, boat access or ticket is implied."
+    },
+    "bdf9cefd-a961-46c5-ba08-47e236d681a5": {
+      "category": "food",
+      "subcategory_key": "food_experiences",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing description proposes an informal food outing rather than a single booked venue."
+    },
+    "f338b482-2dc6-4f22-ad82-a3fee1c2895f": {
+      "category": "food",
+      "subcategory_key": "food_experiences",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing description proposes an informal food outing rather than a single booked venue."
+    },
+    "47a00191-9950-409c-96cb-8aa051ceb116": {
+      "category": "nightlife",
+      "subcategory_key": "clubs",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model grouping of the existing selected club identity only; no claim that it is currently open or that an event is scheduled."
+    },
+    "5410c9c7-29ec-4986-bb68-3781588bda1a": {
+      "category": "nightlife",
+      "subcategory_key": "clubs",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model grouping of the existing selected club identity only; no claim that it is currently open or that an event is scheduled."
+    },
+    "57cc5065-56c8-4f94-9b8b-0c4de434eb02": {
+      "category": "nightlife",
+      "subcategory_key": "clubs",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model grouping of the existing selected club identity only; no claim that it is currently open or that an event is scheduled."
+    },
+    "5e572397-192e-43c1-8169-818d74d941bb": {
+      "category": "nightlife",
+      "subcategory_key": "clubs",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model grouping of the existing selected club identity only; no claim that it is currently open or that an event is scheduled."
+    },
+    "78425480-e64e-4e45-81f0-7af199b581f8": {
+      "category": "nightlife",
+      "subcategory_key": "clubs",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model grouping of the existing selected club identity only; no claim that it is currently open or that an event is scheduled."
+    },
+    "c850bafd-692c-47c2-a593-10366d87c33f": {
+      "category": "nightlife",
+      "subcategory_key": "clubs",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model grouping of the existing selected club identity only; no claim that it is currently open or that an event is scheduled."
+    },
+    "d5cb06e0-2316-4008-b630-bc5600fd969d": {
+      "category": "nightlife",
+      "subcategory_key": "clubs",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model grouping of the existing selected club identity only; no claim that it is currently open or that an event is scheduled."
+    },
+    "f763d430-198b-4bde-b1ec-b91bda2128c2": {
+      "category": "nightlife",
+      "subcategory_key": "clubs",
+      "method": "model_review_existing_catalogue",
+      "reason": "Model grouping of the existing selected club identity only; no claim that it is currently open or that an event is scheduled."
+    },
+    "3cfadd63-4def-4788-b70e-5fb5d9601d44": {
+      "category": "nightlife",
+      "subcategory_key": "live_music",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected music-venue identity, not a dated programme."
+    },
+    "9253180a-88c2-4f6e-8705-14d2a665f3ed": {
+      "category": "nightlife",
+      "subcategory_key": "live_music",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected music-venue identity, not a dated programme."
+    },
+    "56f412e8-24d7-4e44-850c-c2defa2d624d": {
+      "category": "nightlife",
+      "subcategory_key": "bars",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected bar identity; current opening and operating status remain unverified."
+    },
+    "c6b3ea88-39df-4e5b-af4d-7fc6d1551f82": {
+      "category": "nightlife",
+      "subcategory_key": "bars",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing selected bar identity; current opening and operating status remain unverified."
+    },
+    "9cc09019-1084-48c1-81e3-64a27fb122ad": {
+      "category": "food",
+      "subcategory_key": "food_experiences",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing description is a recurring dining outing; classify by traveller activity rather than time of day."
+    },
+    "d3c1170a-31c5-40f2-b7f7-dcb66844ab75": {
+      "category": "nature",
+      "subcategory_key": "sunsets_views",
+      "method": "model_review_existing_catalogue",
+      "reason": "Existing description is a recurring natural-sky viewing outing; classify by activity rather than time of day."
+    }
+  }
+}

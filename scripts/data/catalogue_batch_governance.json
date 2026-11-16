@@ -1,0 +1,28 @@
+{
+  "human_reviewed_batch_ids": ["islands-pilot-001"],
+  "approvals": {
+    "islands-pilot-001": {
+      "approved": true,
+      "fingerprint": "273aab488fe1b78d5ce3895b3ad4279502944d449a0599eeddeeb06bfe86e3f1",
+      "approval_basis": "User: okay lets move on with the import and the next batches",
+      "import_applied": true,
+      "import_confirmation_basis": "User reported verification works on 30 October 2026; not independently connected to live database"
+    },
+    "islands-pilot-002": {
+      "approved": true,
+      "fingerprint": "ef36032693a3e9cb663206a1b41fcf4b1bed17a8d91d01bb3d1796d56b94b31b",
+      "approval_basis": "6 November 2026: User authorizes importing accepted records once 60% passes and retaining non-matched items in the database; no further matching requested",
+      "approval_type": "threshold_policy_signoff",
+      "import_applied": false
+    }
+  },
+  "automatic_import_enabled": true,
+  "threshold_import_authorization": {
+    "approved": true,
+    "minimum_match_fraction": 0.60,
+    "approved_on": "2026-11-06",
+    "approval_basis": "User: for as long as the threshold is past the automation can be done, storing the non matched items in the database for later review and importing the rest",
+    "supersedes": "First ten packages require individual approval",
+    "live_execution_configured": false
+  }
+}
